@@ -9,6 +9,9 @@ class LGFX : public lgfx::LGFX_Device
 public:
     LGFX();
 
+    const uint16_t Width = 320;
+    const uint16_t Height = 480;
+
 private:
     lgfx::Panel_ST7796 _panel_instance;
     lgfx::Bus_Parallel8 _bus_instance;

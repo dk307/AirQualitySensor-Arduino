@@ -1,19 +1,18 @@
 #include "display.h"
-
-#include <demos\widgets\lv_demo_widgets.h>
+#include "ui/ui2.h"
 
 display display::instance;
 
 /* Display flushing */
 void display::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
-    auto &displayDevice = display::instance.displayDevice;
-    if (displayDevice.getStartCount() == 0)
+    auto &display_device = display::instance.display_device;
+    if (display_device.getStartCount() == 0)
     {
-        displayDevice.endWrite();
+        display_device.endWrite();
     }
 
-    displayDevice.pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1,
+    display_device.pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1,
                                (lgfx::swap565_t *)&color_p->full);
 
     lv_disp_flush_ready(disp); /* tell lvgl that flushing is done */
@@ -22,9 +21,9 @@ void display::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color
 /*Read the touchpad*/
 void display::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
 {
-    auto &displayDevice = display::instance.displayDevice;
+    auto &display_device = display::instance.display_device;
     uint16_t touchX, touchY;
-    const bool touched = displayDevice.getTouch(&touchX, &touchY);
+    const bool touched = display_device.getTouch(&touchX, &touchY);
 
     if (!touched)
     {
@@ -43,35 +42,35 @@ bool display::pre_begin()
 {
     lv_init();
 
-    if (!displayDevice.init())
+    if (!display_device.init())
     {
         log_e("Failed to init display");
     }
-    displayDevice.setRotation(1);
+    display_device.setRotation(1);
 
-    displayDevice.initDMA();
-    displayDevice.startWrite();
+    display_device.initDMA();
+    display_device.startWrite();
 
-    const auto screenWidth = displayDevice.width();
-    const auto screenHeight = displayDevice.height();
+    const auto screenWidth = display_device.width();
+    const auto screenHeight = display_device.height();
 
     log_i("Display initialized width:%d  height:%d", screenWidth, screenHeight);
 
     log_d("LV initialized");
-    const int BufferSize = 40;
+    const int buffer_size = 40;
 
-    const auto displayBufferSize = screenWidth * BufferSize * sizeof(lv_color_t);
-    disp_draw_buf = (lv_color_t *)heap_caps_malloc(displayBufferSize, MALLOC_CAP_DMA);
-    disp_draw_buf2 = (lv_color_t *)heap_caps_malloc(displayBufferSize, MALLOC_CAP_DMA);
+    const auto display_buffer_size = screenWidth * buffer_size * sizeof(lv_color_t);
+    disp_draw_buf = (lv_color_t *)heap_caps_malloc(display_buffer_size, MALLOC_CAP_DMA);
+    disp_draw_buf2 = (lv_color_t *)heap_caps_malloc(display_buffer_size, MALLOC_CAP_DMA);
 
-    lv_disp_draw_buf_init(&draw_buf, disp_draw_buf, disp_draw_buf2, screenWidth * BufferSize);
+    lv_disp_draw_buf_init(&draw_buf, disp_draw_buf, disp_draw_buf2, screenWidth * buffer_size);
 
     log_d("LVGL display buffer initialized");
 
     /*** LVGL : Setup & Initialize the display device driver ***/
     lv_disp_drv_init(&disp_drv);
-    disp_drv.hor_res = displayDevice.width();
-    disp_drv.ver_res = displayDevice.height();
+    disp_drv.hor_res = display_device.width();
+    disp_drv.ver_res = display_device.height();
     disp_drv.flush_cb = display_flush;
     disp_drv.draw_buf = &draw_buf;
     lv_display = lv_disp_drv_register(&disp_drv);
@@ -86,8 +85,8 @@ bool display::pre_begin()
 
     log_d("LVGL input device driver initialized");
 
-    // ui_init();
-    lv_demo_widgets();
+    // lv_demo_widgets();
+    ui_init();
 
     log_i("Done");
     return true;
@@ -100,4 +99,19 @@ void display::begin()
 void display::loop()
 {
     lv_timer_handler();
+}
+
+void display::update_boot_message(const std::string& message) 
+{
+    lv_label_set_text(ui_bootmessage, message.c_str());
+}
+
+void display::set_main_screen() 
+{
+    lv_disp_load_scr(ui_main_screen);
+}
+
+void display::set_aqi_value(uint16_t value)
+{
+    ui_set_aqi_value(value);
 }

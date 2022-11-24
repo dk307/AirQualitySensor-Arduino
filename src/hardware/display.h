@@ -11,10 +11,14 @@ public:
 
     static display instance;
 
+    void update_boot_message(const std::string& message);
+    void set_main_screen();
+    void set_aqi_value(uint16_t value);
+
 private:
     display() = default;
 
-    LGFX displayDevice;
+    LGFX display_device;
 
     lv_disp_draw_buf_t draw_buf{};
     lv_disp_drv_t disp_drv{};

@@ -33,12 +33,12 @@ LGFX::LGFX(void)
 
         // * The following setting values ​​are set to general default values ​​for each panel, and the pin number (-1 = disable) to which BUSY is connected, so please try commenting out any unknown items.
 
-        cfg.memory_width = 320;  // Maximum width supported by driver IC
-        cfg.memory_height = 480; // Maximum height supported by driver IC
-        cfg.panel_width = 320;   // actual displayable width
-        cfg.panel_height = 480;  // actual displayable height
-        cfg.offset_x = 0;        // Panel offset in X direction
-        cfg.offset_y = 0;        // Panel offset in Y direction
+        cfg.memory_width = LGFX::Width;   // Maximum width supported by driver IC
+        cfg.memory_height = LGFX::Height; // Maximum height supported by driver IC
+        cfg.panel_width = LGFX::Width;    // actual displayable width
+        cfg.panel_height = LGFX::Height;  // actual displayable height
+        cfg.offset_x = 0;                 // Panel offset in X direction
+        cfg.offset_y = 0;                 // Panel offset in Y direction
         cfg.offset_rotation = 2;
         cfg.dummy_read_pixel = 8;
         cfg.dummy_read_bits = 1;
