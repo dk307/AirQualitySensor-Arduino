@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lgfxdevice.h"
+#include <mutex>
 
 class display
 {
@@ -19,6 +20,7 @@ private:
     display() = default;
 
     LGFX display_device;
+    std::mutex lgvl_mutex;
 
     lv_disp_draw_buf_t draw_buf{};
     lv_disp_drv_t disp_drv{};

@@ -13,7 +13,7 @@ void display::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color
     }
 
     display_device.pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1,
-                               (lgfx::swap565_t *)&color_p->full);
+                                (lgfx::swap565_t *)&color_p->full);
 
     lv_disp_flush_ready(disp); /* tell lvgl that flushing is done */
 }
@@ -37,9 +37,10 @@ void display::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
         log_d("Touch at point %d:%d", touchX, touchY);
     }
 }
- 
+
 bool display::pre_begin()
 {
+    std::lock_guard<std::mutex> lock(lgvl_mutex);
     lv_init();
 
     if (!display_device.init())
@@ -85,8 +86,9 @@ bool display::pre_begin()
 
     log_d("LVGL input device driver initialized");
 
-    // lv_demo_widgets();
     ui_init();
+
+    lv_timer_handler();
 
     log_i("Done");
     return true;
@@ -98,20 +100,25 @@ void display::begin()
 
 void display::loop()
 {
+    std::lock_guard<std::mutex> lock(lgvl_mutex);
     lv_timer_handler();
 }
 
-void display::update_boot_message(const std::string& message) 
+void display::update_boot_message(const std::string &message)
 {
+    std::lock_guard<std::mutex> lock(lgvl_mutex);
     lv_label_set_text(ui_bootmessage, message.c_str());
 }
 
-void display::set_main_screen() 
+void display::set_main_screen()
 {
+    std::lock_guard<std::mutex> lock(lgvl_mutex);
+    log_i("Switching to main screen");
     lv_disp_load_scr(ui_main_screen);
 }
 
 void display::set_aqi_value(uint16_t value)
 {
+    std::lock_guard<std::mutex> lock(lgvl_mutex);
     ui_set_aqi_value(value);
 }
