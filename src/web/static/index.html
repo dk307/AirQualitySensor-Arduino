@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
+
+    <link rel="stylesheet" href="css/mdb.min.css" />
+    <link rel="shortcut icon" href="media/favicon.png" type="image/x-icon">
+    <link rel="icon" href="media/favicon.png" type="image/x-icon">
+    <title>Main</title>
+    <style>
+        .logs {
+            white-space: -moz-pre-wrap;
+            white-space: -o-pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar Start-->
+    <nav class="navbar fixed-top">
+        <!-- Container wrapper -->
+        <div class="container-fluid">
+            <!-- Navbar brand -->
+            <a class="navbar-brand mt-2 mt-sm-0" href="#">
+                <img src="media/logo.png" height="35" alt="Logo" loading="lazy" />
+                <span id="navHostName">Clock</span>
+            </a>
+
+            <!-- Right elements -->
+            <div class="d-flex align-items-center">
+                <button type="button" class="btn btn-info me-2" data-mdb-toggle="modal"
+                    data-mdb-target="#settingsModal">Settings</button>
+                <button type="button" class="btn btn-info me-2" data-mdb-toggle="modal" data-mdb-target="#logoutModal">
+                    Logout
+                </button>
+            </div>
+            <!-- Right elements -->
+        </div>
+        <!-- Container wrapper -->
+    </nav>
+    <!-- Navbar End -->
+
+    <main class="mt-5 pt-5">
+        <div class="container">
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">Light Intensity</div>
+                        <div class="card-body">
+                            <p class="card-text"><span id="lux">?</span>&nbsp;lux</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal Start -->
+        <div class="modal fade" id="settingsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Settings</h5>
+                        <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="d-grid gap-3">
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-toggle="modal"
+                                    data-mdb-dismiss="modal" data-mdb-target="#wifiSettingsModal">Wifi Settings</button>
+                            </div>
+
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-toggle="modal"
+                                    data-mdb-dismiss="modal" data-mdb-target="#websiteLoginModal">Website login</button>
+                            </div>
+
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-toggle="modal"
+                                    data-mdb-dismiss="modal" data-mdb-target="#otherSettingsModal">Other
+                                    Settings</button>
+                            </div>
+
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-toggle="modal"
+                                    data-mdb-dismiss="modal" data-mdb-target="#informationModal">Information</button>
+                            </div>
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-toggle="modal"
+                                    data-mdb-dismiss="modal" data-mdb-target="#logsModal">Logs</button>
+                            </div>
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-dismiss="modal"
+                                    id="restartDeviceButtonId">Restart</button>
+                            </div>
+
+                            <div class="p-2">
+                                <a role="button" class="btn btn-info btn-block" data-mdb-dismiss="modal"
+                                    id="backupButtonId">Backup</a>
+                                <a href="/api/config/get" id="backupButtonAId" download="backup.json" hidden>Backup</a>
+                            </div>
+
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-dismiss="modal"
+                                    id="restoreUploadButtonId">Restore</button>
+                            </div>
+
+                            <div class="p-2">
+                                <button type="button" class="btn btn-info btn-block" data-mdb-dismiss="modal"
+                                    id="firmwareUploadButtonId">Firmware update</button>
+                            </div>
+
+                            <div class="p-2">
+                                <button type="button" class="btn btn-danger btn-block" data-mdb-dismiss="modal"
+                                    id="factoryResetButtonId">Factory Reset</button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-mdb-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Settings Modal End-->
+
+        <!-- Wifi Settings Modal Start-->
+        <form class="needs-validation" action="/wifiupdate.handler" method="post">
+            <div class="modal fade" id="wifiSettingsModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Wifi Settings</h5>
+                            <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="form-outline mb-4">
+                                <input type="text" id="ssid" name="ssid" class="form-control form-control" required />
+                                <label class="form-label" for="ssid">Wifi Network</label>
+                            </div>
+
+                            <div class="form-outline mb-4 input-group">
+                                <input type="password" id="wifipassword" name="wifipassword"
+                                    class="form-control form-control" required />
+                                <label class="form-label" for="wifipassword">Wifi Password</label>
+                                <div class="input-group-text">
+                                    <input class="form-check-input mt-0" type="checkbox" id="wifitooglepassword"
+                                        value="" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Wifi Settings Modal End -->
+
+        <!-- Confirm Action Modal Start-->
+        <form id="confirmActionForm" method="post">
+            <div class="modal fade" id="confirmActionModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Confirm</h5>
+                            <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="mb-4">
+                                <span class="justify-left">Do you want to </span>
+                                <span class="justify-left" id="confirmAction"></span>
+                                <span class="justify-left">?</span>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="text-danger" id="confirmActionStatus"></div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Yes</button>
+                            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">No</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Confirm Action Modal End -->
+
+        <!-- Logout Modal Start-->
+        <form class="needs-validation" action="/logout.handler" method="post">
+            <div class="modal fade" id="logoutModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                            <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <span class="justify-left">Do you want to logout ?</span>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Yes</button>
+                            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">No</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Restart Modal End -->
+
+        <!-- Redirecting Modal Start-->
+        <form method="get" action="/">
+            <div class="modal fade" id="redirectingModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            <h5 class="d-inline-flex justify-content-start align-items-center">
+                                <span class="spinner-border text-primary" role="status">
+                                </span>&nbsp;&nbsp;<span id="reloadLoadingMessageId">Loading ...</span>
+                            </h5>
+                            <button type="submit" class="btn btn-info float-end" id="confirmActionModalRedirecting">Load
+                                Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Redirecting Modal End -->
+
+        <!-- Website Login Modal Start-->
+        <form class="needs-validation" action="/weblogin.update.handler" method="post">
+            <div class="modal fade" id="websiteLoginModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="websiteLoginModalLabel">Website Login</h5>
+                            <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="form-outline mb-4">
+                                <input type="text" id="webUserName" name="webUserName" class="form-control form-control"
+                                    required />
+                                <label class="form-label" for="ssid">Username</label>
+                            </div>
+
+                            <div class="form-outline mb-4 input-group">
+                                <input type="password" id="webPassword" name="webPassword"
+                                    class="form-control form-control" required />
+                                <label class="form-label" for="webPassword">Password</label>
+                                <div class="input-group-text">
+                                    <input class="form-check-input mt-0" type="checkbox" id="webPasswordToggle"
+                                        value="" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Website Login Modal End -->
+
+        <!-- Other Setings Modal Start-->
+        <form class="needs-validation" action="/othersettings.update.handler" method="post">
+            <div class="modal fade" id="otherSettingsModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Other Settings</h5>
+                            <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="form-outline mb-4">
+                                <input type="text" id="hostName" name="hostName" class="form-control form-control" />
+                                <label class="form-label" for="hostName">Hostname</label>
+                            </div>
+
+                            <div class="form-outline mb-4">
+                                <input type="text" id="ntpServer1" name="ntpServer1"
+                                    class="form-control form-control" required />
+                                <label class="form-label" for="ntpServer1">NTP Server -1</label>
+                            </div>
+
+                            <div class="form-outline mb-4">
+                                <input type="text" id="ntpServer2" name="ntpServer2"
+                                    class="form-control form-control" required />
+                                <label class="form-label" for="ntpServer2">NTP Server -2</label>
+                            </div>
+
+                            <div class="form-outline mb-4">
+                                <input type="number" id="ntpServerRefreshInterval" name="ntpServerRefreshInterval"
+                                    class="form-control form-control" required />
+                                <label class="form-label" for="ntpServerRefreshInterval">NTP Sync Interval (seconds)</label>
+                            </div>
+                            
+                            <label class="form-label select-label">Timezone</label>
+                            <select class="select" id="timezone" name="timezone">
+                                <option value="0">US Eastern Time</option>
+                                <option value="1">US Central Time</option>
+                                <option value="2">US Mountain Time</option>
+                                <option value="3">US Arizona</option>
+                                <option value="4">US Pacific Time</option>
+                            </select>
+                            
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Other Settings Modal End -->
+
+        <!-- Information Modal Start-->
+        <div class="modal fade" id="informationModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Information</h5>
+                        <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <table class="table table-sm table-borderless" id="informationTable">
+                            <tbody>
+                                <tr>
+                                    <td>Failed to get information
+                                    <td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" data-mdb-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Information Modal End -->
+
+        <!-- Logs Modal Start-->
+        <div class="modal fade" id="logsModal" tabindex="-1">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Logs</h5>
+                        <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <pre class="logs"><code id="logsBlock"></code></pre>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" data-mdb-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Logs Modal End -->
+
+        <!-- File Update Modal Start-->
+        <form class="needs-validation" id="fileUploadUploadForm" method="post" enctype="multipart/form-data">
+            <div class="modal fade" id="fileUploadUpdateModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="fileUploadUpdateModalLabel"></h5>
+                            <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="mb-1">
+                                <div id="selectFileMessageId">Select firmware file for upload and upgrade</div>
+                            </div>
+                            <div class="mb-4">
+                                <input class="form-control" id="fileUploadFileUploadId" type="file"
+                                    name="fileUploadFileUploadId" required />
+                            </div>
+                            <div class="mb-4" id="fileUploadUploadStatusWrapper">
+                                <div>Upload Status:</div>
+                                <div class="progress" style="height: 15px;">
+                                    <div id="fileUploadUploadProgressBar" class="progress-bar" role="progressbar"
+                                        style="width: 0%;"></div>
+                                </div>
+                                <div id="fileUploadUploadStatus"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" id="fileUploadButton">Upload</button>
+                            <button class="btn btn-secondary" data-mdb-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- File update Modal End -->
+
+    </main>
+
+    <script src="js/s.js"></script>
+    <script>
+        function updateHostName() {
+            $.ajax({
+                type: "GET",
+                url: "/api/config/get",
+                async: true,
+                dataType: "json",
+                success: function (data) {
+                    var hostName = data['hostname'];
+                    if (!(hostName === "")) {
+                        $('#navHostName').html(hostName);
+                    }
+                }
+            });
+        }
+
+        function updateLux(e) {
+            var data = e.data;
+            if (data != null) {
+                $('#lux').html(data);
+            }
+        }
+
+        function updateInformation() {
+            $.ajax({
+                type: "GET",
+                url: "/api/information/get",
+                dataType: "json",
+                success: function (data) {
+                    $("#informationTable tr").remove();
+                    var table = $('#informationTable');
+
+                    for (var i = 0; i < data.length; i++) {
+                        table.append("<tr><td>" + data[i].key + "</td><td>" + data[i].value + "</td></tr>");
+                    }
+
+                    $('#informationModal').modal('handleUpdate');
+                }
+            });
+        }
+
+        function showConfirmModal(actionName, url) {
+            $('#confirmAction').text(actionName);
+            $('#confirmActionForm').attr('action', url);
+            $('#confirmActionStatus').hide();
+            $('#confirmActionModal').modal('show');
+        };
+
+        function showUploadFileModal(url, title, selectFileMessage) {
+            $('#fileUploadUploadForm').attr('action', url);
+            $('#fileUploadUpdateModalLabel').text(title);
+            $('#selectFileMessageId').text(selectFileMessage);
+            $("#fileUploadUploadStatusWrapper").hide();
+            $('#fileUploadButton').show();
+            $('#fileUploadUpdateModal').modal('show');
+        }
+
+        var eventsSource = new EventSource('/events');
+        var informationUpdateRefreshInterval;
+        var fileUploadFileUploadMd5;
+
+        $(document).ready(function () {
+            // Wifi Password toggle
+            $('#wifitooglepassword').change(function () {
+                let input = $('#wifipassword');
+                if (input.attr('type') == 'password') {
+                    input.attr('type', 'text');
+                } else {
+                    input.attr('type', 'password');
+                }
+            });
+
+            // Login Password toggle
+            $('#webPasswordToggle').change(function () {
+                let input = $('#webPassword');
+                if (input.attr('type') == 'password') {
+                    input.attr('type', 'text');
+                } else {
+                    input.attr('type', 'password');
+                }
+            });
+
+            document.getElementById('wifiSettingsModal').addEventListener('show.mdb.modal', (e) => {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/wifi/get",
+                    dataType: "json",
+                    success: function (data) {
+                        $('#ssid').val(data["ssid"]);
+                    },
+                    error: function () {
+                        $('#ssid').val('');
+                        console.warn('Failed to update');
+                    }
+                });
+            });
+
+            document.getElementById('websiteLoginModal').addEventListener('show.mdb.modal', (e) => {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/config/get",
+                    dataType: "json",
+                    success: function (data) {
+                        $('#webUserName').val(data["webusername"]);
+                    },
+                    error: function () {
+                        $('#webUserName').val('');
+                        console.warn('Failed to update');
+                    }
+                });
+            });
+
+            document.getElementById('otherSettingsModal').addEventListener('show.mdb.modal', (e) => {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/config/get",
+                    dataType: "json",
+                    success: function (data) {
+                        $('#hostName').val(data["hostname"]);
+                        $('#ntpServerRefreshInterval').val(data["ntpserverrefreshinterval"] / 1000);
+                        $('#ntpServer1').val(data["ntpserver1"]);
+                        $('#ntpServer2').val(data["ntpserver2"]);
+                        $('#timezone').val(data["timezone"]);
+                    },
+                    error: function () {
+                        console.warn('Failed to update');
+                    }
+                });
+            });
+
+            document.getElementById('informationModal').addEventListener('show.mdb.modal', (e) => {
+                updateInformation();
+                informationUpdateRefreshInterval = setInterval(updateInformation, 10000);
+            });
+
+            document.getElementById('informationModal').addEventListener('hide.mdb.modal', (e) => {
+                clearInterval(informationUpdateRefreshInterval);
+            });
+
+            var logsSource;
+
+            function appendLogs(e) {
+                var data = e.data;
+                if (data != null) {
+                    var logsBlock = $('#logsBlock');
+                    logsBlock.html(logsBlock.html() + data + "\r\n");
+                }
+            }
+
+            document.getElementById('logsModal').addEventListener('show.mdb.modal', (e) => {
+                $('#logsBlock').text('');
+                logsSource = new EventSource('/logs');
+                logsSource.addEventListener("logs", appendLogs);
+            });
+
+            document.getElementById('logsModal').addEventListener('hide.mdb.modal', (e) => {
+                if (logsSource) {
+                    logsSource.close();
+                    logsSource = null;
+                }
+            });
+
+            document.getElementById('restartDeviceButtonId').addEventListener('click', function () {
+                showConfirmModal('restart', '/restart.handler');
+            });
+
+            document.getElementById('factoryResetButtonId').addEventListener('click', function () {
+                showConfirmModal('factory reset', '/factory.reset.handler');
+            });
+
+            document.getElementById('backupButtonId').addEventListener('click', function () {
+                $('#backupButtonAId')[0].click();
+            });
+
+            document.getElementById('firmwareUploadButtonId').addEventListener('click', function () {
+                showUploadFileModal('/firmware.update.handler',
+                    'Firmware upgrade',
+                    'Select firmware file for upload and upgrade');
+            });
+
+            document.getElementById('restoreUploadButtonId').addEventListener('click', function () {
+                showUploadFileModal('/setting.restore.handler',
+                    'Restore Settings',
+                    'Select settings file for upload and restore');
+            });
+
+            $("#confirmActionForm").on('submit', function (e) {
+                e.preventDefault();
+                var form = $('#confirmActionForm');
+
+                $.ajax({
+                    type: form.attr('method'),
+                    url: form.attr('action'),
+                    data: new FormData(this),
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    beforeSend: function () {
+                        $('#confirmActionStatus').hide();
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        if (jqXHR.status == 500) {
+                            $('#confirmActionStatus').text(jqXHR.responseText);
+                        } else {
+                            $('#confirmActionStatus').text('Operation failed');
+                        }
+                        $('#confirmActionStatus').show();
+                    },
+                    success: function (resp) {
+                        $('#confirmActionModal').modal('hide');
+                        $('#redirectingModal').modal('show');
+                        setTimeout(function () {
+                            $('#confirmActionModalRedirecting').trigger('click');
+                        }, 5000);
+                    }
+                });
+            });
+
+            // File upload via Ajax
+            $("#fileUploadUploadForm").on('submit', function (e) {
+                e.preventDefault();
+                var form = $('#fileUploadUploadForm');
+                $.ajax({
+                    xhr: function () {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener("progress", function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = ((evt.loaded / evt.total) * 100).toFixed();
+                                $("#fileUploadUploadProgressBar").width(percentComplete + '%');
+                                $("#fileUploadUploadProgressBar").html('<span class="text-center">' + percentComplete + '%</span>');
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    type: form.attr('method'),
+                    url: form.attr('action'),
+                    data: new FormData(this),
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    headers: { 'md5': fileUploadFileUploadMd5 },
+                    beforeSend: function () {
+                        $("#fileUploadUploadProgressBar").width('0%');
+                        $('#fileUploadUploadStatus').html('');
+                        $("#fileUploadUploadStatusWrapper").show();
+                        $('#fileUploadButton').hide();
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        if (jqXHR.status == 500) {
+                            $('#fileUploadUploadStatus').html('<div class="text-danger" id="fileUploadUpgradeError"></div>');
+                            $('#fileUploadUpgradeError').text(jqXHR.responseText);
+                        } else {
+                            $('#fileUploadUploadStatus').html('<div class="text-danger">File upload failed, please try again.</div>');
+                        }
+                        $('#fileUploadButton').show();
+                    },
+                    success: function (resp) {
+                        $('#reloadLoadingMessageId').html('Upload successful. Loading...');
+                        $('#fileUploadUpdateModal').modal('hide');
+                        $('#redirectingModal').modal('show');
+                        setTimeout(function () {
+                            $('#confirmActionModalRedirecting').trigger('click');
+                        }, 7000);
+                    }
+                });
+            });
+
+            // md5
+            document.getElementById('fileUploadFileUploadId').addEventListener('change', function () {
+                if (this.files[0].size > 1024 * 1024) {
+                    $('#fileUploadUploadStatus').html('<div class="text-danger">File is too big.</div>');
+                    $("#fileUploadUploadStatusWrapper").show();
+                    this.value = "";
+                    return;
+                } else {
+                    $('#fileUploadUploadStatus').html('');
+                    $("#fileUploadUploadStatusWrapper").hide();
+                }
+
+                var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
+                    file = this.files[0],
+                    chunkSize = 1024 * 1024,
+                    chunks = Math.ceil(file.size / chunkSize),
+                    currentChunk = 0,
+                    spark = new SparkMD5.ArrayBuffer(),
+                    fileReader = new FileReader();
+
+                fileReader.onload = function (e) {
+                    spark.append(e.target.result);
+                    currentChunk++;
+
+                    if (currentChunk < chunks) {
+                        loadNext();
+                    } else {
+                        fileUploadFileUploadMd5 = spark.end();
+                        console.info('computed hash', fileUploadFileUploadMd5);
+                    }
+                };
+
+                fileReader.onerror = function () {
+                    console.warn('oops, something went wrong.');
+                };
+
+                function loadNext() {
+                    var start = currentChunk * chunkSize,
+                        end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
+
+                    fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
+                }
+                loadNext();
+            });
+        });
+
+        $(document).ready(function () {
+            eventsSource.addEventListener("lux", updateLux);
+            updateHostName();
+        });
+    </script>
+</body>
+
+</html>

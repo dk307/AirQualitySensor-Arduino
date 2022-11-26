@@ -56,13 +56,12 @@ void wifi_manager::wifi_start()
 //     log_i("Requested to forget WiFi. Started Captive portal.");
 // }
 
-// function to request a connection to new WiFi credentials
-// void wifi_manager::setNewWifi(const String &newSSID, const String &newPass)
-// {
-//     ssid = newSSID;
-//     pass = newPass;
-//     reconnect = true;
-// }
+void wifi_manager::set_new_wifi(const String &newSSID, const String &newPass)
+{
+    newSsid = newSSID;
+    newPassword = newPass;
+    reconnect = true;
+}
 
 // function to connect to new WiFi credentials
 void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
@@ -78,6 +77,7 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
         const String oldSSID = WiFi.SSID();
         const String oldPSK = WiFi.psk();
 
+        log_i("Connecting to new ssid:%s", newSSID);
         WiFi.begin(newSSID.c_str(), newPass.c_str(), 0, NULL, true);
         vTaskDelay(2000);
 
@@ -143,11 +143,10 @@ void wifi_manager::stop_captive_portal()
     callChangeListeners();
 }
 
-// // return captive portal state
-// bool wifi_manager::isCaptivePortal()
-// {
-//         return inCaptivePortal;
-// }
+bool wifi_manager::isCaptivePortal()
+{
+    return in_captive_portal;
+}
 
 // return current SSID
 IPAddress wifi_manager::LocalIP()
@@ -165,7 +164,6 @@ int8_t wifi_manager::RSSI()
     return WiFi.RSSI();
 }
 
-// captive portal loop
 void wifi_manager::loop()
 {
     if (in_captive_portal)
@@ -174,10 +172,18 @@ void wifi_manager::loop()
 
         // only wait for 5 min in portal and then reboot
         if ((millis() - captive_portal_start) > (5 * 60 * 1000))
-        { 
+        {
             log_i("Captive portal timeout");
             operations::instance.reboot();
         }
+    }
+
+    if (reconnect)
+    {
+        set_wifi(newSsid, newPassword);
+        reconnect = false;
+        newSsid.clear();
+        newPassword.clear();
     }
 }
 

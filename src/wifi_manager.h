@@ -14,18 +14,21 @@ public:
     void loop();
 
     // void forget();
-    // bool isCaptivePortal();
-    void set_wifi(const String &newSSID, const String &newPass);
+    bool isCaptivePortal();
+    void set_new_wifi(const String &newSSID, const String &newPass);
 
     static IPAddress LocalIP();
     static String SSID();
     static int8_t RSSI();
-    void disconnect(bool disconnectWifi);
     static wifi_manager instance;
 
 private:
     wifi_manager() = default;
     std::unique_ptr<DNSServer> dns_server;
+
+    bool reconnect = false;
+    String newSsid;
+    String newPassword;
 
     bool in_captive_portal{false};
     uint64_t captive_portal_start{0};
@@ -35,6 +38,7 @@ private:
     void wifi_start();
     void start_captive_portal();
     void stop_captive_portal();
+    void set_wifi(const String &newSSID, const String &newPass);
 
     static String get_rfc_name();
     static String get_rfc_952_host_name(const String &name);

@@ -1,7 +1,9 @@
 #include "ui2.h"
-#include "ui_callback.h"
+#include "ui_interface.h"
+#include <task_wrapper.h>
 
 #include <tuple>
+#include <memory>
 
 ///////////////////// VARIABLES ////////////////////
 lv_obj_t *ui_bootscreen;
@@ -12,6 +14,7 @@ void ui_event_mainscreen(lv_event_t *e);
 lv_obj_t *ui_main_screen;
 lv_obj_t *ui_settings_screen;
 lv_obj_t *ui_aqi_value_label;
+lv_obj_t *ui_settings_screen_tab_information_table;
 
 static const lv_font_t *font_large = &lv_font_montserrat_20;
 static const lv_font_t *font_normal = &lv_font_montserrat_14;
@@ -21,6 +24,8 @@ static lv_style_t style_text_muted;
 static lv_style_t style_title;
 static lv_style_t style_label_default;
 
+static std::unique_ptr<task_wrapper> information_refresh_task;
+
 ///////////////////// FUNCTIONS ////////////////////
 void ui_event_mainscreen(lv_event_t *e)
 {
@@ -28,7 +33,7 @@ void ui_event_mainscreen(lv_event_t *e)
     lv_obj_t *target = lv_event_get_target(e);
     if (event_code == LV_EVENT_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_BOTTOM)
     {
-        lv_scr_load_anim(ui_settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 500, 0, false);
+        lv_scr_load_anim(ui_settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
     }
 }
 
@@ -90,12 +95,60 @@ void ui_main_screen_screen_init(void)
     }
 }
 
+void ui_load_information()
+{
+    log_d("updating info table");
+    const auto data = ui_interface::instance.get_information_table();
+
+    lv_table_set_col_cnt(ui_settings_screen_tab_information_table, 2);
+    lv_table_set_row_cnt(ui_settings_screen_tab_information_table, data.size());
+
+    lv_table_set_col_width(ui_settings_screen_tab_information_table, 0, 140);
+    lv_table_set_col_width(ui_settings_screen_tab_information_table, 1, 420 - 140);
+
+    for (auto i = 0; i < data.size(); i++)
+    {
+        lv_table_set_cell_value(ui_settings_screen_tab_information_table, i, 0, std::get<0>(data[i]).c_str());
+        lv_table_set_cell_value(ui_settings_screen_tab_information_table, i, 1, std::get<1>(data[i]).c_str());
+    }
+}
+
+void ui_settings_screen_events_callback(lv_event_t *e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+    if (event_code == LV_EVENT_SCREEN_LOAD_START)
+    {
+        log_d("setting screen shown");
+        ui_load_information();
+        information_refresh_task = std::make_unique<task_wrapper>([]
+                                                                  {
+                                                                      for (;;)
+                                                                      {
+                                                                          ui_load_information();
+                                                                          vTaskDelay(5000);
+                                                                      } });
+
+        information_refresh_task->spawn_arduino_main_core("ui info table refresh");
+    }
+    else if (event_code == LV_EVENT_SCREEN_UNLOADED)
+    {
+        log_d("setting screen hidden");
+        information_refresh_task.reset();
+    }
+    else if (event_code == LV_EVENT_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_BOTTOM)
+    {
+        lv_scr_load_anim(ui_main_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
+    }
+}
+
 void ui_settings_screen_screen_init(void)
 {
     ui_settings_screen = lv_obj_create(NULL);
 
     auto ui_settings_screen_tab = lv_tabview_create(ui_settings_screen, LV_DIR_TOP, 45);
     lv_obj_set_style_text_font(ui_settings_screen, font_normal, 0);
+
+    lv_obj_add_event_cb(ui_settings_screen, ui_settings_screen_events_callback, LV_EVENT_ALL, NULL);
 
     // Settings tab
     {
@@ -140,22 +193,8 @@ void ui_settings_screen_screen_init(void)
     {
         auto ui_settings_screen_tab_information = lv_tabview_add_tab(ui_settings_screen_tab, "Information");
 
-        auto table = lv_table_create(ui_settings_screen_tab_information);
-        lv_obj_set_size(table, lv_pct(100), LV_SIZE_CONTENT);
-
-        const auto data = ui_callback::instance.get_information_table();
-
-        lv_table_set_col_cnt(table, 2);
-        lv_table_set_row_cnt(table, data.size());
-
-        lv_table_set_col_width(table, 0, 140);
-        lv_table_set_col_width(table, 1, 420 - 140);
-
-        for (auto i = 0; i < data.size(); i++)
-        {
-            lv_table_set_cell_value(table, i, 0, std::get<0>(data[i]).c_str());
-            lv_table_set_cell_value(table, i, 1, std::get<1>(data[i]).c_str());
-        }
+        ui_settings_screen_tab_information_table = lv_table_create(ui_settings_screen_tab_information);
+        lv_obj_set_size(ui_settings_screen_tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
     }
 }
 

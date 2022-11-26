@@ -34,7 +34,7 @@ void display::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
         data->state = LV_INDEV_STATE_PR;
         data->point.x = touchX;
         data->point.y = touchY;
-        log_d("Touch at point %d:%d", touchX, touchY);
+        log_v("Touch at point %d:%d", touchX, touchY);
     }
 }
 

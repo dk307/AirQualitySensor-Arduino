@@ -30,6 +30,11 @@ public:
         return ESP_OK;
     }
 
+    esp_err_t spawn_arduino_main_core(const char *name, uint32_t stack_depth = 8192, uint32_t priority = 1)
+    {
+        return spawn_pinned(name, stack_depth, priority, 1);
+    }
+
     /// Starts the task on the specified CPU.
     esp_err_t spawn_pinned(const char *name, uint32_t stack_depth, uint32_t priority, BaseType_t cpu)
     {
@@ -68,7 +73,7 @@ protected:
 
 private:
     std::function<void(void)> call;
-    std::atomic<TaskHandle_t> handle_ {nullptr};
+    std::atomic<TaskHandle_t> handle_{nullptr};
 
     task_wrapper(const task_wrapper &) = delete;
     task_wrapper(task_wrapper &&) = delete;
