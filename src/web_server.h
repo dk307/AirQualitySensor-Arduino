@@ -11,60 +11,60 @@ public:
 
 private:
     web_server() {}
-    void serverRouting();
+    void server_routing();
 
     // handler
-    static void handleLogin(AsyncWebServerRequest *request);
-    static void handleLogout(AsyncWebServerRequest *request);
-    static void wifiUpdate(AsyncWebServerRequest *request);
-    static void webLoginUpdate(AsyncWebServerRequest *request);
-    static void otherSettingsUpdate(AsyncWebServerRequest *request);
-    static void factoryReset(AsyncWebServerRequest *request);
-    static void restartDevice(AsyncWebServerRequest *request);
+    static void handle_login(AsyncWebServerRequest *request);
+    static void handle_logout(AsyncWebServerRequest *request);
+    static void wifi_update(AsyncWebServerRequest *request);
+    static void web_login_update(AsyncWebServerRequest *request);
+    static void other_settings_update(AsyncWebServerRequest *request);
+    static void factory_reset(AsyncWebServerRequest *request);
+    static void restart_device(AsyncWebServerRequest *request);
 
-    static void firmwareUpdateUpload(AsyncWebServerRequest *request,
-                                     const String &filename,
-                                     size_t index,
-                                     uint8_t *data,
-                                     size_t len,
-                                     bool final);
-    static void rebootOnUploadComplete(AsyncWebServerRequest *request);
+    static void firmware_update_upload(AsyncWebServerRequest *request,
+                                       const String &filename,
+                                       size_t index,
+                                       uint8_t *data,
+                                       size_t len,
+                                       bool final);
+    static void reboot_on_upload_complete(AsyncWebServerRequest *request);
 
-    static void restoreConfigurationUpload(AsyncWebServerRequest *request,
-                                           const String &filename,
-                                           size_t index,
-                                           uint8_t *data,
-                                           size_t len,
-                                           bool final);
+    static void restore_configuration_upload(AsyncWebServerRequest *request,
+                                             const String &filename,
+                                             size_t index,
+                                             uint8_t *data,
+                                             size_t len,
+                                             bool final);
 
-    static void handleEarlyUpdateDisconnect();
+    static void handle_early_update_disconnect();
 
     // ajax
-    static void sensorGet(AsyncWebServerRequest *request);
-    static void wifiGet(AsyncWebServerRequest *request);
-    static void informationGet(AsyncWebServerRequest *request);
-    static void configGet(AsyncWebServerRequest *request);
+    static void sensor_get(AsyncWebServerRequest *request);
+    static void wifi_get(AsyncWebServerRequest *request);
+    static void information_get(AsyncWebServerRequest *request);
+    static void config_get(AsyncWebServerRequest *request);
 
     // helpers
-    static bool isAuthenticated(AsyncWebServerRequest *request);
-    static bool manageSecurity(AsyncWebServerRequest *request);
-    static void handleNotFound(AsyncWebServerRequest *request);
-    static void handleFileRead(AsyncWebServerRequest *request);
-    static bool isCaptivePortalRequest(AsyncWebServerRequest *request);
-    static void redirectToRoot(AsyncWebServerRequest *request);
-    static void handleError(AsyncWebServerRequest *request, const String &error, int code);
-    void onEventConnect(AsyncEventSourceClient *client);
-    bool filterEvents(AsyncWebServerRequest *request);
+    static bool is_authenticated(AsyncWebServerRequest *request);
+    static bool manage_security(AsyncWebServerRequest *request);
+    static void handle_not_found(AsyncWebServerRequest *request);
+    static void handle_file_read(AsyncWebServerRequest *request);
+    static bool is_captive_portal_request(AsyncWebServerRequest *request);
+    static void redirect_to_root(AsyncWebServerRequest *request);
+    static void handle_error(AsyncWebServerRequest *request, const String &error, int code);
+    void on_event_connect(AsyncEventSourceClient *client);
+    bool filter_events(AsyncWebServerRequest *request);
 
-    static bool isIp(const String &str);
-    static String toStringIp(const IPAddress &ip);
+    static bool is_ip(const String &str);
+    static String to_string_ip(const IPAddress &ip);
     template <class Array, class K, class T>
-    static void addKeyValueObject(Array &array, const K &key, const T &value);
+    static void add_key_value_object(Array &array, const K &key, const T &value);
     template <class V, class T>
-    static void addToJsonDoc(V &doc, T id, float value);
+    static void add_to_json_doc(V &doc, T id, float value);
     void notifySensorChange();
 
     AsyncWebServer http_server{80};
     AsyncEventSource events{"/events"};
-    std::unique_ptr<std::vector<uint8_t>> restoreConfigData;
+    std::unique_ptr<std::vector<uint8_t>> restore_config_data;
 };

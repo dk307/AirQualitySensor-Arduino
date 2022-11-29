@@ -9,8 +9,8 @@ public:
 
     static sdcard instance;
 
-    bool mount();
-
 private:
     sdcard() = default;
+
+    bool mount();
 };

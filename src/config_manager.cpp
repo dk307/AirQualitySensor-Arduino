@@ -2,20 +2,21 @@
 
 #include <Arduino.h>
 
-#include <LittleFS.h>
+#include <SD.h>
 #include <MD5Builder.h>
 
-static const char ConfigFilePath[] PROGMEM = "/Config.json";
-static const char ConfigChecksumFilePath[] PROGMEM = "/ConfigChecksum.json";
+static const char ConfigFilePath[] PROGMEM = "/config.json";
+static const char ConfigChecksumFilePath[] PROGMEM = "/config_checksum.json";
 static const char HostNameId[] PROGMEM = "hostname";
 static const char WebUserNameId[] PROGMEM = "webusername";
 static const char WebPasswordId[] PROGMEM = "webpassword";
-
+static const char SsidId[] PROGMEM = "ssid";
+static const char SsidPasswordId[] PROGMEM = "ssidpassword";
 
 config config::instance;
 
 template <class... T>
-String config::md5Hash(T &&...data)
+String config::md5_hash(T &&...data)
 {
     MD5Builder hashBuilder;
     hashBuilder.begin();
@@ -25,9 +26,9 @@ String config::md5Hash(T &&...data)
 }
 
 template <class... T>
-size_t config::writeToFile(const String &fileName, T &&...contents)
+size_t config::write_to_file(const String &fileName, T &&...contents)
 {
-    File file = LittleFS.open(fileName, "w");
+    File file = SD.open(fileName, "w");
     if (!file)
     {
         return 0;
@@ -38,107 +39,113 @@ size_t config::writeToFile(const String &fileName, T &&...contents)
     return bytesWritten;
 }
 
-void config::erase()
+size_t config::write_to_file(const String &fileName, const char *data, unsigned int len)
 {
-    LittleFS.remove(FPSTR(ConfigChecksumFilePath));
-    LittleFS.remove(FPSTR(ConfigFilePath));
+    return write_to_file(fileName, reinterpret_cast<const uint8_t *>(data), static_cast<size_t>(len));
 }
 
-bool config::begin()
+void config::erase()
 {
-    const auto configData = readFile(FPSTR(ConfigFilePath));
+    SD.remove(FPSTR(ConfigChecksumFilePath));
+    SD.remove(FPSTR(ConfigFilePath));
+}
 
-    if (configData.isEmpty())
+bool config::pre_begin()
+{
+    const auto config_data = read_file(FPSTR(ConfigFilePath));
+
+    if (config_data.isEmpty())
     {
         log_w("No stored config found");
         reset();
         return false;
     }
 
-    DynamicJsonDocument jsonDocument(2048);
-    if (!deserializeToJson(configData.c_str(), jsonDocument))
+    DynamicJsonDocument json_document(2048);
+    if (!deserialize_to_json(config_data.c_str(), json_document))
     {
         reset();
         return false;
     }
 
     // read checksum from file
-    const auto readChecksum = readFile(FPSTR(ConfigChecksumFilePath));
-    const auto checksum = md5Hash(configData);
+    const auto read_checksum = read_file(FPSTR(ConfigChecksumFilePath));
+    const auto checksum = md5_hash(config_data);
 
-    if (!checksum.equalsIgnoreCase(readChecksum))
+    if (!checksum.equalsIgnoreCase(read_checksum))
     {
         log_e("Config data checksum mismatch");
         reset();
         return false;
     }
 
-    data.set_host_name(jsonDocument[FPSTR(HostNameId)].as<String>());
-    // data.webUserName = jsonDocument[FPSTR(WebUserNameId)].as<String>();
-    // data.webPassword = jsonDocument[FPSTR(WebPasswordId)].as<String>();
+    data.set_host_name(json_document[FPSTR(HostNameId)].as<String>());
+    data.set_web_user_name(json_document[FPSTR(WebUserNameId)].as<String>());
+    data.set_web_password(json_document[FPSTR(WebPasswordId)].as<String>());
+    data.set_wifi_ssid(json_document[FPSTR(SsidId)].as<String>());
+    data.set_wifi_password(json_document[FPSTR(SsidPasswordId)].as<String>());
 
-    // data.ntpServer1 = jsonDocument[FPSTR(NtpServer1Id)].as<String>();
-    // data.ntpServer2 = jsonDocument[FPSTR(NtpServer2Id)].as<String>();
-    // data.timezone = static_cast<TimeZoneSupported>(jsonDocument[FPSTR(TimeZoneId)].as<uint64_t>());
-    // data.ntpServerRefreshInterval = jsonDocument[FPSTR(NtpServerRefreshIntervalId)].as<uint64_t>();
+    log_i("Loaded Config from file");
 
-    // LOG_DEBUG(F("Loaded Config from file"));
+    log_i("Hostname:%s", data.get_host_name().c_str());
+    log_i("Web user name:%s", data.get_web_user_name().c_str());
+    log_i("Web user password:%s", data.get_web_password().c_str());
+    log_i("Wifi ssid:%s", data.get_wifi_ssid().c_str());
+    log_i("Wifi ssid password:%s", data.get_wifi_password().c_str());
+
     return true;
 }
 
 void config::reset()
 {
     data.setDefaults();
-    requestSave = true;
+    request_save = true;
 }
 
 void config::save()
 {
-    // LOG_INFO(F("Saving configuration"));
+    log_i("Saving configuration");
 
-    // DynamicJsonDocument jsonDocument(2048);
+    DynamicJsonDocument json_document(2048);
 
-    // jsonDocument[FPSTR(HostNameId)] = data.hostName.c_str();
-    // jsonDocument[FPSTR(WebUserNameId)] = data.webUserName.c_str();
-    // jsonDocument[FPSTR(WebPasswordId)] = data.webPassword.c_str();
-    // jsonDocument[FPSTR(NtpServer1Id)] = data.ntpServer1;
-    // jsonDocument[FPSTR(NtpServer2Id)] = data.ntpServer2;
+    json_document[FPSTR(HostNameId)] = data.get_host_name();
+    json_document[FPSTR(WebUserNameId)] = data.get_web_user_name();
+    json_document[FPSTR(WebPasswordId)] = data.get_web_password();
+    json_document[FPSTR(SsidId)] = data.get_wifi_ssid();
+    json_document[FPSTR(SsidPasswordId)] = data.get_wifi_password();
 
-    // jsonDocument[FPSTR(NtpServerRefreshIntervalId)] = data.ntpServerRefreshInterval;
-    // jsonDocument[FPSTR(TimeZoneId)] = static_cast<uint64_t>(data.timezone);
+    String json;
+    serializeJson(json_document, json);
 
-    // String json;
-    // serializeJson(jsonDocument, json);
+    if (write_to_file(FPSTR(ConfigFilePath), json.c_str(), json.length()) == json.length())
+    {
+        const auto checksum = md5_hash(json);
+        if (write_to_file(FPSTR(ConfigChecksumFilePath), checksum.c_str(), checksum.length()) != checksum.length())
+        {
+            log_e("Failed to write config checksum file");
+        }
+    }
+    else
+    {
+        log_e("Failed to write config file");
+    }
 
-    // if (writeToFile(FPSTR(ConfigFilePath), json.c_str(), json.length()) == json.length())
-    // {
-    //     const auto checksum = md5Hash(json);
-    //     if (writeToFile(FPSTR(ConfigChecksumFilePath), checksum.c_str(), checksum.length()) != checksum.length())
-    //     {
-    //         LOG_ERROR(F("Failed to write config checksum file"));
-    //     }
-    // }
-    // else
-    // {
-    //     LOG_ERROR(F("Failed to write config file"));
-    // }
-
-    // LOG_INFO(F("Saving Configuration done"));
-    // callChangeListeners();
+    log_i("Saving Configuration done");
+    call_change_listeners();
 }
 
 void config::loop()
 {
-    if (requestSave)
+    if (request_save)
     {
-        requestSave = false;
+        request_save = false;
         save();
     }
 }
 
-String config::readFile(const String &fileName)
+String config::read_file(const String &fileName)
 {
-    File file = LittleFS.open(fileName, "r");
+    File file = SD.open(fileName, "r");
     if (!file)
     {
         return String();
@@ -149,48 +156,48 @@ String config::readFile(const String &fileName)
     return json;
 }
 
-String config::getAllConfigAsJson()
+String config::get_all_config_as_json()
 {
     loop(); // save if needed
-    return readFile(FPSTR(ConfigFilePath));
+    return read_file(FPSTR(ConfigFilePath));
 }
 
-bool config::restoreAllConfigAsJson(const std::vector<uint8_t> &json, const String &hashMd5)
+bool config::restore_all_config_as_json(const std::vector<uint8_t> &json, const String &hashMd5)
 {
-    // DynamicJsonDocument jsonDocument(2048);
-    // if (!deserializeToJson(json, jsonDocument))
-    // {
-    //     return false;
-    // }
+    DynamicJsonDocument json_doc(2048);
+    if (!deserialize_to_json(json, json_doc))
+    {
+        return false;
+    }
 
-    // const auto expectedMd5 = md5Hash(json.data(), json.size());
-    // if (!expectedMd5.equalsIgnoreCase(hashMd5))
-    // {
-    //     LOG_ERROR(F("Uploaded Md5 for config does not match. File md5:") << expectedMd5);
-    //     return false;
-    // }
+    const auto expected_md5 = md5_hash(const_cast<uint8_t *>(json.data()), json.size());
+    if (!expected_md5.equalsIgnoreCase(hashMd5))
+    {
+        log_e("Uploaded Md5 for config does not match. File md5:%s", expected_md5.c_str());
+        return false;
+    }
 
-    // if (writeToFile(FPSTR(ConfigFilePath), json.data(), json.size()) != json.size())
-    // {
-    //     return false;
-    // }
+    if (write_to_file(FPSTR(ConfigFilePath), json.data(), json.size()) != json.size())
+    {
+        return false;
+    }
 
-    // if (writeToFile(FPSTR(ConfigChecksumFilePath), hashMd5.c_str(), hashMd5.length()) != hashMd5.length())
-    // {
-    //     return false;
-    // }
+    if (write_to_file(FPSTR(ConfigChecksumFilePath), hashMd5.c_str(), hashMd5.length()) != hashMd5.length())
+    {
+        return false;
+    }
     return true;
 }
 
 template <class T>
-bool config::deserializeToJson(const T &data, DynamicJsonDocument &jsonDocument)
+bool config::deserialize_to_json(const T &data, DynamicJsonDocument &jsonDocument)
 {
     DeserializationError error = deserializeJson(jsonDocument, data);
 
     // Test if parsing succeeds.
     if (error)
     {
-        log_e("deserializeJson for config failed: %s" , error.f_str());
+        log_e("deserializeJson for config failed: %s", error.f_str());
         return false;
     }
     return true;

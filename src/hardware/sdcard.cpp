@@ -12,8 +12,7 @@ bool sdcard::pre_begin()
     pinMode(SD_CS, OUTPUT);
     digitalWrite(SD_CS, HIGH);
     SPI.begin(SDMMC_CLK, SDMMC_D0, SDMMC_CMD);
-
-    return true;
+    return mount();
 }
 
 void sdcard::begin()
@@ -36,10 +35,13 @@ bool sdcard::mount()
     if (card_type == CARD_NONE)
     {
         log_i("No SD card");
+        return false;
     }
     else
     {
         log_i("SD card type :%d", card_type);
+        const auto cardSize = SD.cardSize() / (1024 * 1024);
+        log_i("SD Card Size: %llu MB", cardSize);
     }
 
     return true;

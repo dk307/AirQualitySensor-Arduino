@@ -50,7 +50,7 @@ void operations::reboot()
 	reboot_pending = true;
 }
 
-bool operations::startUpdate(size_t length, const String &md5, String &error)
+bool operations::start_update(size_t length, const String &md5, String &error)
 {
 	log_i("Update call start with length:%d bytes", length);
 	log_i("Current Sketch size:%d bytes", ESP.getSketchSize());
@@ -59,7 +59,7 @@ bool operations::startUpdate(size_t length, const String &md5, String &error)
 	const uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
 	if (!Update.setMD5(md5.c_str()))
 	{
-		log_d("Md5 Invalid:%s", error.c_str());
+		log_e("Md5 Invalid:%s", error.c_str());
 		return false;
 	}
 
@@ -70,13 +70,13 @@ bool operations::startUpdate(size_t length, const String &md5, String &error)
 	}
 	else
 	{
-		getUpdateError(error);
+		get_update_error(error);
 		log_e("Update begin failed with %s", error.c_str());
 		return false;
 	}
 }
 
-bool operations::writeUpdate(const uint8_t *data, size_t length, String &error)
+bool operations::write_update(const uint8_t *data, size_t length, String &error)
 {
 	log_d("Update write with length:%d", length);
 	log_d("Update stats Size: %d progress:%d remaining:%d ", Update.size(), Update.progress(), Update.remaining());
@@ -88,13 +88,13 @@ bool operations::writeUpdate(const uint8_t *data, size_t length, String &error)
 	}
 	else
 	{
-		getUpdateError(error);
+		get_update_error(error);
 		log_e("Update write failed with %s", error.c_str());
 		return false;
 	}
 }
 
-bool operations::endUpdate(String &error)
+bool operations::end_update(String &error)
 {
 	log_e("Update end called");
 
@@ -105,13 +105,13 @@ bool operations::endUpdate(String &error)
 	}
 	else
 	{
-		getUpdateError(error);
+		get_update_error(error);
 		log_e("Update end failed with %s", error.c_str());
 		return false;
 	}
 }
 
-void operations::abortUpdate()
+void operations::abort_update()
 {
 	log_d("Update end called");
 	if (Update.isRunning())
@@ -127,12 +127,12 @@ void operations::abortUpdate()
 	}
 }
 
-bool operations::isUpdateInProgress()
+bool operations::is_update_in_progress()
 {
 	return Update.isRunning();
 }
 
-void operations::getUpdateError(String &error)
+void operations::get_update_error(String &error)
 {
 	StreamString streamString;
 	Update.printError(streamString);

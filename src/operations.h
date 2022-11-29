@@ -13,18 +13,18 @@ public:
 
     void factoryReset();
 
-    //update
-    bool startUpdate(size_t length, const String& md5, String &error);
-    bool writeUpdate(const uint8_t *data, size_t length, String &error);
-    bool endUpdate(String &error);
-    void abortUpdate();
-    bool isUpdateInProgress();
+    // update
+    bool start_update(size_t length, const String &md5, String &error);
+    bool write_update(const uint8_t *data, size_t length, String &error);
+    bool end_update(String &error);
+    void abort_update();
+    bool is_update_in_progress();
 
     static operations instance;
 
 private:
     operations() {}
-    void getUpdateError(String &error);
+    void get_update_error(String &error);
     [[noreturn]] static void reset();
 
     MultiResetDetector *mrd = nullptr;

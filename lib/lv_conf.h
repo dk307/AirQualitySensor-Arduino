@@ -16,6 +16,8 @@
 #define LV_CONF_H
 
 #include <stdint.h>
+#include <sdkconfig.h>
+#include <esp_attr.h>
 
 /*====================
    COLOR SETTINGS
@@ -44,7 +46,7 @@
  *=========================*/
 
 /*1: use custom malloc/free, 0: use the built-in `lv_mem_alloc()` and `lv_mem_free()`*/
-#define LV_MEM_CUSTOM 1
+#define LV_MEM_CUSTOM 0
 #if LV_MEM_CUSTOM == 0
     /*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
     #define LV_MEM_SIZE (48U * 1024U)          /*[bytes]*/
@@ -327,7 +329,7 @@
 #define LV_ATTRIBUTE_LARGE_CONST
 
 /*Compiler prefix for a big array declaration in RAM*/
-#define LV_ATTRIBUTE_LARGE_RAM_ARRAY
+#define LV_ATTRIBUTE_LARGE_RAM_ARRAY 
 
 /*Place performance critical functions into a faster memory (e.g RAM)*/
 #define LV_ATTRIBUTE_FAST_MEM
@@ -715,7 +717,7 @@
 *==================*/
 
 /*Enable the examples to be built with the library*/
-#define LV_BUILD_EXAMPLES 1
+#define LV_BUILD_EXAMPLES 0
 
 /*===================
  * DEMO USAGE

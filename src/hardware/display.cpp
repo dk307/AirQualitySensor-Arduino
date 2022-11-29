@@ -107,7 +107,7 @@ void display::loop()
 void display::update_boot_message(const std::string &message)
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
-    lv_label_set_text(ui_bootmessage, message.c_str());
+    lv_label_set_text(ui_boot_message, message.c_str());
 }
 
 void display::set_main_screen()

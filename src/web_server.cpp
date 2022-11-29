@@ -8,7 +8,7 @@
 #include "wifi_manager.h"
 #include "config_manager.h"
 #include "ui/ui_interface.h"
-		 
+
 #include "operations.h"
 #include "hardware.h"
 #include "web.h"
@@ -20,7 +20,7 @@ typedef struct
 	const uint32_t Size;
 	const char *MediaType;
 	const uint8_t Zipped;
-} StaticFilesMap;
+} static_files_map;
 
 static const char JsonMediaType[] PROGMEM = "application/json";
 static const char JsMediaType[] PROGMEM = "text/javascript";
@@ -45,7 +45,7 @@ static const char CacheControlHeader[] PROGMEM = "Cache-Control";
 static const char CookieHeader[] PROGMEM = "Cookie";
 static const char AuthCookieName[] PROGMEM = "ESPSESSIONID=";
 
-const static StaticFilesMap staticFilesMap[] PROGMEM = {
+const static static_files_map staticFilesMap[] PROGMEM = {
 	{IndexUrl, index_html_gz, index_html_gz_len, HtmlMediaType, true},
 	{LoginUrl, login_html_gz, login_html_gz_len, HtmlMediaType, true},
 	{LogoUrl, logo_png, logo_png_len, PngMediaType, false},
@@ -56,7 +56,7 @@ const static StaticFilesMap staticFilesMap[] PROGMEM = {
 	{MdbCssUrl, mdb_min_css_gz, mdb_min_css_gz_len, CssMediaType, true},
 };
 
-web_server web_server::instance;
+web_server EXT_RAM_ATTR web_server::instance;
 
 String create_hash(const String &user, const String &password, const String &ipAddress)
 {
@@ -83,19 +83,19 @@ String create_hash(const String &user, const String &password, const String &ipA
 void web_server::begin()
 {
 	log_i("WebServer Starting");
-	events.onConnect(std::bind(&web_server::onEventConnect, this, std::placeholders::_1));
-	events.setFilter(std::bind(&web_server::filterEvents, this, std::placeholders::_1));
+	events.onConnect(std::bind(&web_server::on_event_connect, this, std::placeholders::_1));
+	events.setFilter(std::bind(&web_server::filter_events, this, std::placeholders::_1));
 	http_server.addHandler(&events);
 	http_server.begin();
-	serverRouting();
+	server_routing();
 	log_i("WebServer Started");
 
 	// hardware::instance.temperatureChangeCallback.addConfigSaveCallback(std::bind(&WebServer::notifySensorChange, this));
 }
 
-bool web_server::manageSecurity(AsyncWebServerRequest *request)
+bool web_server::manage_security(AsyncWebServerRequest *request)
 {
-	if (!isAuthenticated(request))
+	if (!is_authenticated(request))
 	{
 		log_w("Auth Failed");
 		request->send(401, FPSTR(JsonMediaType), F("{\"msg\": \"Not-authenticated\"}"));
@@ -104,9 +104,9 @@ bool web_server::manageSecurity(AsyncWebServerRequest *request)
 	return true;
 }
 
-bool web_server::filterEvents(AsyncWebServerRequest *request)
+bool web_server::filter_events(AsyncWebServerRequest *request)
 {
-	if (!isAuthenticated(request))
+	if (!is_authenticated(request))
 	{
 		log_w("Dropping events request");
 		return false;
@@ -114,32 +114,32 @@ bool web_server::filterEvents(AsyncWebServerRequest *request)
 	return true;
 }
 
-void web_server::serverRouting()
+void web_server::server_routing()
 {
 	// form calls
-	http_server.on(("/login.handler"), HTTP_POST, handleLogin);
-	http_server.on(("/logout.handler"), HTTP_POST, handleLogout);
-	http_server.on(("/wifiupdate.handler"), HTTP_POST, wifiUpdate);
+	http_server.on(("/login.handler"), HTTP_POST, handle_login);
+	http_server.on(("/logout.handler"), HTTP_POST, handle_logout);
+	http_server.on(("/wifiupdate.handler"), HTTP_POST, wifi_update);
 
-	http_server.on(("/othersettings.update.handler"), HTTP_POST, otherSettingsUpdate);
-	http_server.on(("/weblogin.update.handler"), HTTP_POST, webLoginUpdate);
+	http_server.on(("/othersettings.update.handler"), HTTP_POST, other_settings_update);
+	http_server.on(("/weblogin.update.handler"), HTTP_POST, web_login_update);
 
 	// ajax form call
-	http_server.on(("/factory.reset.handler"), HTTP_POST, factoryReset);
-	http_server.on(("/firmware.update.handler"), HTTP_POST, rebootOnUploadComplete, firmwareUpdateUpload);
-	http_server.on(("/setting.restore.handler"), HTTP_POST, rebootOnUploadComplete, restoreConfigurationUpload);
-	http_server.on(("/restart.handler"), HTTP_POST, restartDevice);
+	http_server.on(("/factory.reset.handler"), HTTP_POST, factory_reset);
+	http_server.on(("/firmware.update.handler"), HTTP_POST, reboot_on_upload_complete, firmware_update_upload);
+	http_server.on(("/setting.restore.handler"), HTTP_POST, reboot_on_upload_complete, restore_configuration_upload);
+	http_server.on(("/restart.handler"), HTTP_POST, restart_device);
 
 	// json ajax calls
-	http_server.on(("/api/sensor/get"), HTTP_GET, sensorGet);
-	http_server.on(("/api/wifi/get"), HTTP_GET, wifiGet);
-	http_server.on(("/api/information/get"), HTTP_GET, informationGet);
-	http_server.on(("/api/config/get"), HTTP_GET, configGet);
+	http_server.on(("/api/sensor/get"), HTTP_GET, sensor_get);
+	http_server.on(("/api/wifi/get"), HTTP_GET, wifi_get);
+	http_server.on(("/api/information/get"), HTTP_GET, information_get);
+	http_server.on(("/api/config/get"), HTTP_GET, config_get);
 
-	http_server.onNotFound(handleFileRead);
+	http_server.onNotFound(handle_file_read);
 }
 
-void web_server::onEventConnect(AsyncEventSourceClient *client)
+void web_server::on_event_connect(AsyncEventSourceClient *client)
 {
 	if (client->lastId())
 	{
@@ -153,10 +153,10 @@ void web_server::onEventConnect(AsyncEventSourceClient *client)
 	}
 }
 
-void web_server::wifiGet(AsyncWebServerRequest *request)
+void web_server::wifi_get(AsyncWebServerRequest *request)
 {
 	log_i("/api/wifi/get");
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -171,14 +171,14 @@ void web_server::wifiGet(AsyncWebServerRequest *request)
 	request->send(response);
 }
 
-void web_server::wifiUpdate(AsyncWebServerRequest *request)
+void web_server::wifi_update(AsyncWebServerRequest *request)
 {
 	const auto SsidParameter = F("ssid");
 	const auto PasswordParameter = F("wifipassword");
 
 	log_i("Wifi Update");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -186,33 +186,30 @@ void web_server::wifiUpdate(AsyncWebServerRequest *request)
 	if (request->hasArg(SsidParameter) && request->hasArg(PasswordParameter))
 	{
 		wifi_manager::instance.set_new_wifi(request->arg(SsidParameter), request->arg(PasswordParameter));
-		redirectToRoot(request);
+		redirect_to_root(request);
 		return;
 	}
 	else
 	{
-		handleError(request, F("Required parameters not provided"), 400);
+		handle_error(request, F("Required parameters not provided"), 400);
 	}
 }
 
 template <class Array, class K, class T>
-void web_server::addKeyValueObject(Array &array, const K &key, const T &value)
+void web_server::add_key_value_object(Array &array, const K &key, const T &value)
 {
 	auto j1 = array.createNestedObject();
 	j1[F("key")] = key;
 	j1[F("value")] = value;
 }
 
-void web_server::informationGet(AsyncWebServerRequest *request)
+void web_server::information_get(AsyncWebServerRequest *request)
 {
 	log_d("/api/information/get");
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
-
-	// const auto maxFreeHeapSize = ESP.getMaxFreeBlockSize() / 1024;
-	// const auto freeHeap = ESP.getFreeHeap() / 1024;
 
 	auto response = new AsyncJsonResponse(true, 1024);
 	auto arr = response->getRoot();
@@ -221,44 +218,26 @@ void web_server::informationGet(AsyncWebServerRequest *request)
 
 	for (auto &&[key, value] : data)
 	{
-		addKeyValueObject(arr, key, value);
+		add_key_value_object(arr, key, value);
 	}
-
-	// addKeyValueObject(arr, F("Version"), VERSION);
-	// addKeyValueObject(arr, F("Uptime"), GetUptime());
-	// addKeyValueObject(arr, F("AP SSID"), WiFi.SSID());
-	// addKeyValueObject(arr, F("AP Signal Strength"), WiFi.RSSI());
-	// addKeyValueObject(arr, F("Mac Address"), WiFi.softAPmacAddress());
-
-	// addKeyValueObject(arr, F("Reset Info"), ESP.getResetInfo());
-	// addKeyValueObject(arr, F("CPU Frequency (MHz)"), system_get_cpu_freq());
-
-	// addKeyValueObject(arr, F("Max Block Free Size (KB)"), maxFreeHeapSize);
-	// addKeyValueObject(arr, F("Free Heap (KB)"), freeHeap);
-
-	// FSInfo fsInfo;
-	// LittleFS.info(fsInfo);
-
-	// addKeyValueObject(arr, F("Filesystem Total Size (KB)"), fsInfo.totalBytes / 1024);
-	// addKeyValueObject(arr, F("Filesystem Free Size (KB)"), (fsInfo.totalBytes - fsInfo.usedBytes) / 1024);
 
 	response->setLength();
 	request->send(response);
 }
 
-void web_server::configGet(AsyncWebServerRequest *request)
+void web_server::config_get(AsyncWebServerRequest *request)
 {
 	log_w("/api/information/get");
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
-	const auto json = config::instance.getAllConfigAsJson();
+	const auto json = config::instance.get_all_config_as_json();
 	request->send(200, FPSTR(JsonMediaType), json);
 }
 
 template <class V, class T>
-void web_server::addToJsonDoc(V &doc, T id, float value)
+void web_server::add_to_json_doc(V &doc, T id, float value)
 {
 	if (!isnan(value))
 	{
@@ -266,10 +245,10 @@ void web_server::addToJsonDoc(V &doc, T id, float value)
 	}
 }
 
-void web_server::sensorGet(AsyncWebServerRequest *request)
+void web_server::sensor_get(AsyncWebServerRequest *request)
 {
 	log_d("/api/sensor/get");
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -282,7 +261,7 @@ void web_server::sensorGet(AsyncWebServerRequest *request)
 }
 
 // Check if header is present and correct
-bool web_server::isAuthenticated(AsyncWebServerRequest *request)
+bool web_server::is_authenticated(AsyncWebServerRequest *request)
 {
 	log_v("Checking if authenticated");
 	if (request->hasHeader(FPSTR(CookieHeader)))
@@ -304,7 +283,7 @@ bool web_server::isAuthenticated(AsyncWebServerRequest *request)
 	return false;
 }
 
-void web_server::handleLogin(AsyncWebServerRequest *request)
+void web_server::handle_login(AsyncWebServerRequest *request)
 {
 	const auto UserNameParameter = F("username");
 	const auto PasswordParameter = F("password");
@@ -350,14 +329,14 @@ void web_server::handleLogin(AsyncWebServerRequest *request)
 	}
 	else
 	{
-		handleError(request, F("Login Parameter not provided"), 400);
+		handle_error(request, F("Login Parameter not provided"), 400);
 	}
 }
 
 /**
  * Manage logout (simply remove correct token and redirect to login form)
  */
-void web_server::handleLogout(AsyncWebServerRequest *request)
+void web_server::handle_logout(AsyncWebServerRequest *request)
 {
 	log_i("Disconnection");
 	AsyncWebServerResponse *response = request->beginResponse(301); // Sends 301 redirect
@@ -368,14 +347,14 @@ void web_server::handleLogout(AsyncWebServerRequest *request)
 	return;
 }
 
-void web_server::webLoginUpdate(AsyncWebServerRequest *request)
+void web_server::web_login_update(AsyncWebServerRequest *request)
 {
 	const auto webUserName = F("webUserName");
 	const auto webPassword = F("webPassword");
 
 	log_i("web login Update");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -388,14 +367,14 @@ void web_server::webLoginUpdate(AsyncWebServerRequest *request)
 	}
 	else
 	{
-		handleError(request, F("Correct Parameters not provided"), 400);
+		handle_error(request, F("Correct Parameters not provided"), 400);
 	}
 
 	config::instance.save();
-	redirectToRoot(request);
+	redirect_to_root(request);
 }
 
-void web_server::otherSettingsUpdate(AsyncWebServerRequest *request)
+void web_server::other_settings_update(AsyncWebServerRequest *request)
 {
 	const auto hostName = F("hostName");
 	const auto ntpServer1 = F("ntpServer1");
@@ -405,7 +384,7 @@ void web_server::otherSettingsUpdate(AsyncWebServerRequest *request)
 
 	log_i("config Update");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -416,14 +395,14 @@ void web_server::otherSettingsUpdate(AsyncWebServerRequest *request)
 	}
 
 	config::instance.save();
-	redirectToRoot(request);
+	redirect_to_root(request);
 }
 
-void web_server::restartDevice(AsyncWebServerRequest *request)
+void web_server::restart_device(AsyncWebServerRequest *request)
 {
 	log_i("restart");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -432,11 +411,11 @@ void web_server::restartDevice(AsyncWebServerRequest *request)
 	operations::instance.reboot();
 }
 
-void web_server::factoryReset(AsyncWebServerRequest *request)
+void web_server::factory_reset(AsyncWebServerRequest *request)
 {
 	log_i("factoryReset");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -445,11 +424,11 @@ void web_server::factoryReset(AsyncWebServerRequest *request)
 	operations::instance.factoryReset();
 }
 
-void web_server::rebootOnUploadComplete(AsyncWebServerRequest *request)
+void web_server::reboot_on_upload_complete(AsyncWebServerRequest *request)
 {
 	log_i("reboot");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -458,7 +437,7 @@ void web_server::rebootOnUploadComplete(AsyncWebServerRequest *request)
 	operations::instance.reboot();
 }
 
-void web_server::handleFileRead(AsyncWebServerRequest *request)
+void web_server::handle_file_read(AsyncWebServerRequest *request)
 {
 	auto path = request->url();
 	log_d("handleFileRead: %s", path.c_str());
@@ -475,7 +454,7 @@ void web_server::handleFileRead(AsyncWebServerRequest *request)
 								  path.startsWith(F("/font/")) ||
 								  path.equalsIgnoreCase(FPSTR(LoginUrl));
 
-	if (!worksWithoutAuth && !isAuthenticated(request))
+	if (!worksWithoutAuth && !is_authenticated(request))
 	{
 		log_d("Redirecting to login page");
 		path = String(FPSTR(LoginUrl));
@@ -505,27 +484,27 @@ void web_server::handleFileRead(AsyncWebServerRequest *request)
 		}
 	}
 
-	handleNotFound(request);
+	handle_not_found(request);
 }
 
 /** Redirect to captive portal if we got a request for another domain.
  * Return true in that case so the page handler do not try to handle the request again. */
-bool web_server::isCaptivePortalRequest(AsyncWebServerRequest *request)
+bool web_server::is_captive_portal_request(AsyncWebServerRequest *request)
 {
-	if (!isIp(request->host()))
+	if (!is_ip(request->host()))
 	{
 		log_i("Request redirected to captive portal");
 		AsyncWebServerResponse *response = request->beginResponse(302, TextPlainMediaType);
-		response->addHeader(F("Location"), String(F("http://")) + toStringIp(request->client()->localIP()));
+		response->addHeader(F("Location"), String(F("http://")) + to_string_ip(request->client()->localIP()));
 		request->send(response);
 		return true;
 	}
 	return false;
 }
 
-void web_server::handleNotFound(AsyncWebServerRequest *request)
+void web_server::handle_not_found(AsyncWebServerRequest *request)
 {
-	if (isCaptivePortalRequest(request))
+	if (is_captive_portal_request(request))
 	{
 		// if captive portal redirect instead of displaying the error page
 		return;
@@ -545,11 +524,11 @@ void web_server::handleNotFound(AsyncWebServerRequest *request)
 		message += String(F(" ")) + request->argName(i) + F(": ") + request->arg(i) + "\n";
 	}
 
-	handleError(request, message, 404);
+	handle_error(request, message, 404);
 }
 
 // is this an IP?
-bool web_server::isIp(const String &str)
+bool web_server::is_ip(const String &str)
 {
 	for (unsigned int i = 0; i < str.length(); i++)
 	{
@@ -562,28 +541,28 @@ bool web_server::isIp(const String &str)
 	return true;
 }
 
-String web_server::toStringIp(const IPAddress &ip)
+String web_server::to_string_ip(const IPAddress &ip)
 {
 	return ip.toString();
 }
 
-void web_server::redirectToRoot(AsyncWebServerRequest *request)
+void web_server::redirect_to_root(AsyncWebServerRequest *request)
 {
 	AsyncWebServerResponse *response = request->beginResponse(301); // Sends 301 redirect
 	response->addHeader(F("Location"), F("/"));
 	request->send(response);
 }
 
-void web_server::firmwareUpdateUpload(AsyncWebServerRequest *request,
-									  const String &filename,
-									  size_t index,
-									  uint8_t *data,
-									  size_t len,
-									  bool final)
+void web_server::firmware_update_upload(AsyncWebServerRequest *request,
+										const String &filename,
+										size_t index,
+										uint8_t *data,
+										size_t len,
+										bool final)
 {
 	log_d("firmwareUpdateUpload");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -602,49 +581,49 @@ void web_server::firmwareUpdateUpload(AsyncWebServerRequest *request,
 
 		if (md5.length() != 32)
 		{
-			handleError(request, F("MD5 parameter invalid. Check file exists."), 500);
+			handle_error(request, F("MD5 parameter invalid. Check file exists."), 500);
 			return;
 		}
 
-		if (operations::instance.startUpdate(request->contentLength(), md5, error))
+		if (operations::instance.start_update(request->contentLength(), md5, error))
 		{
 			// success, let's make sure we end the update if the client hangs up
-			request->onDisconnect(handleEarlyUpdateDisconnect);
+			request->onDisconnect(handle_early_update_disconnect);
 		}
 		else
 		{
-			handleError(request, error, 500);
+			handle_error(request, error, 500);
 			return;
 		}
 	}
 
-	if (operations::instance.isUpdateInProgress())
+	if (operations::instance.is_update_in_progress())
 	{
-		if (!operations::instance.writeUpdate(data, len, error))
+		if (!operations::instance.write_update(data, len, error))
 		{
-			handleError(request, error, 500);
+			handle_error(request, error, 500);
 		}
 
 		if (final)
 		{
-			if (!operations::instance.endUpdate(error))
+			if (!operations::instance.end_update(error))
 			{
-				handleError(request, error, 500);
+				handle_error(request, error, 500);
 			}
 		}
 	}
 }
 
-void web_server::restoreConfigurationUpload(AsyncWebServerRequest *request,
-											const String &filename,
-											size_t index,
-											uint8_t *data,
-											size_t len,
-											bool final)
+void web_server::restore_configuration_upload(AsyncWebServerRequest *request,
+											  const String &filename,
+											  size_t index,
+											  uint8_t *data,
+											  size_t len,
+											  bool final)
 {
 	log_i("restoreConfigurationUpload");
 
-	if (!manageSecurity(request))
+	if (!manage_security(request))
 	{
 		return;
 	}
@@ -652,12 +631,12 @@ void web_server::restoreConfigurationUpload(AsyncWebServerRequest *request,
 	String error;
 	if (!index)
 	{
-		web_server::instance.restoreConfigData = std::make_unique<std::vector<uint8_t>>();
+		web_server::instance.restore_config_data = std::make_unique<std::vector<uint8_t>>();
 	}
 
 	for (size_t i = 0; i < len; i++)
 	{
-		web_server::instance.restoreConfigData->push_back(data[i]);
+		web_server::instance.restore_config_data->push_back(data[i]);
 	}
 
 	if (final)
@@ -672,19 +651,19 @@ void web_server::restoreConfigurationUpload(AsyncWebServerRequest *request,
 
 		if (md5.length() != 32)
 		{
-			handleError(request, F("MD5 parameter invalid. Check file exists."), 500);
+			handle_error(request, F("MD5 parameter invalid. Check file exists."), 500);
 			return;
 		}
 
-		if (!config::instance.restoreAllConfigAsJson(*web_server::instance.restoreConfigData, md5))
+		if (!config::instance.restore_all_config_as_json(*web_server::instance.restore_config_data, md5))
 		{
-			handleError(request, F("Restore Failed"), 500);
+			handle_error(request, F("Restore Failed"), 500);
 			return;
 		}
 	}
 }
 
-void web_server::handleError(AsyncWebServerRequest *request, const String &message, int code)
+void web_server::handle_error(AsyncWebServerRequest *request, const String &message, int code)
 {
 	if (!message.isEmpty())
 	{
@@ -697,9 +676,9 @@ void web_server::handleError(AsyncWebServerRequest *request, const String &messa
 	request->send(response);
 }
 
-void web_server::handleEarlyUpdateDisconnect()
+void web_server::handle_early_update_disconnect()
 {
-	operations::instance.abortUpdate();
+	operations::instance.abort_update();
 }
 
 void web_server::notifySensorChange()

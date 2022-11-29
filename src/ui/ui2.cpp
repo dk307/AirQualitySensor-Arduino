@@ -8,9 +8,7 @@
 ///////////////////// VARIABLES ////////////////////
 lv_obj_t *ui_bootscreen;
 lv_obj_t *ui_bootlogo;
-lv_obj_t *ui_bootmessage;
-
-void ui_event_mainscreen(lv_event_t *e);
+lv_obj_t *ui_boot_message;
 lv_obj_t *ui_main_screen;
 lv_obj_t *ui_settings_screen;
 lv_obj_t *ui_aqi_value_label;
@@ -18,13 +16,16 @@ lv_obj_t *ui_settings_screen_tab_information_table;
 
 static const lv_font_t *font_large = &lv_font_montserrat_20;
 static const lv_font_t *font_normal = &lv_font_montserrat_14;
-static const lv_font_t *font_extra_large_number = &ui_font_BigNumberCompact96;
+static const lv_font_t *font_extra_large_number = &lv_font_montserrat_20;
 
-static lv_style_t style_text_muted;
-static lv_style_t style_title;
-static lv_style_t style_label_default;
+
+static EXT_RAM_ATTR lv_style_t style_text_muted;
+static EXT_RAM_ATTR lv_style_t style_title;
+static EXT_RAM_ATTR lv_style_t style_label_default;
 
 static std::unique_ptr<task_wrapper> information_refresh_task;
+
+LV_IMG_DECLARE(ui_img_1508142627); // assets\icons8-wind-100.png
 
 ///////////////////// FUNCTIONS ////////////////////
 void ui_event_mainscreen(lv_event_t *e)
@@ -51,12 +52,12 @@ void ui_bootscreen_screen_init(void)
     lv_obj_set_size(ui_bootlogo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_align(ui_bootlogo, LV_ALIGN_CENTER, 0, -20);
 
-    ui_bootmessage = lv_label_create(ui_bootscreen);
-    lv_obj_set_size(ui_bootmessage, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(ui_bootmessage, LV_ALIGN_CENTER, 0, 60);
-    lv_label_set_text(ui_bootmessage, "Starting");
-    lv_obj_set_style_text_color(ui_bootmessage, lv_color_hex(0xFCFEFC), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_bootmessage, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui_boot_message = lv_label_create(ui_bootscreen);
+    lv_obj_set_size(ui_boot_message, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_align(ui_boot_message, LV_ALIGN_CENTER, 0, 60);
+    lv_label_set_text(ui_boot_message, "Starting");
+    lv_obj_set_style_text_color(ui_boot_message, lv_color_hex(0xFCFEFC), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_boot_message, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void ui_main_screen_screen_init(void)

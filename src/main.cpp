@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "hardware.h"
 #include "wifi_manager.h"
+#include "config_manager.h"
 #include "web_server.h"
 #include "operations.h"
 #include "hardware\display.h"
@@ -11,6 +12,8 @@ void setup(void)
 	if (!hardware::instance.pre_begin()) {
 		log_e("Boot Failure");
 	}
+
+	config::instance.pre_begin();
 	
 	log_i("Pre Begin Done");
 
@@ -30,5 +33,6 @@ void loop(void)
 {
 	hardware::instance.loop();
 	wifi_manager::instance.loop();
+	config::instance.loop();
 	operations::instance.loop();
 }

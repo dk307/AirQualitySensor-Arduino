@@ -8,17 +8,17 @@ class change_callback
 public:
     void addConfigSaveCallback(std::function<void()> func)
     {
-        configsavecallback.push_back(func);
+        change_callbacks.push_back(func);
     }
 
-    void callChangeListeners() const
+    void call_change_listeners() const
     {
-        for (auto &&ftn : configsavecallback)
+        for (auto &&ftn : change_callbacks)
         {
             ftn();
         }
     }
 
 private:
-    std::vector<std::function<void()>> configsavecallback;
+    std::vector<std::function<void()>> change_callbacks;
 };

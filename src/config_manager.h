@@ -92,7 +92,7 @@ private:
 class config : public change_callback
 {
 public:
-    bool begin();
+    bool pre_begin();
     void save();
     void reset();
     void loop();
@@ -100,25 +100,26 @@ public:
     static void erase();
     static config instance;
 
-    String getAllConfigAsJson();
+    String get_all_config_as_json();
 
     // does not restore to memory, needs reboot
-    bool restoreAllConfigAsJson(const std::vector<uint8_t> &json, const String &md5);
+    bool restore_all_config_as_json(const std::vector<uint8_t> &json, const String &md5);
 
     config_data data;
 
 private:
     config() = default;
-    static String readFile(const String &fileName);
+    static String read_file(const String &fileName);
 
     template <class... T>
-    static String md5Hash(T &&...data);
+    static String md5_hash(T &&...data);
 
     template <class... T>
-    static size_t writeToFile(const String &fileName, T &&...contents);
+    static size_t write_to_file(const String &fileName, T &&...contents);
+    static size_t write_to_file(const String &fileName, const char * data, unsigned int len);
 
     template <class T>
-    bool deserializeToJson(const T &data, DynamicJsonDocument &jsonDocument);
+    bool deserialize_to_json(const T &data, DynamicJsonDocument &jsonDocument);
 
-    bool requestSave{false};
+    bool request_save{false};
 };

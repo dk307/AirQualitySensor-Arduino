@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <DNSServer.h>
 #include <memory>
+#include <psram_allocator.h>
 
 #include "change_callback.h"
 
@@ -24,7 +25,7 @@ public:
 
 private:
     wifi_manager() = default;
-    std::unique_ptr<DNSServer> dns_server;
+    std::unique_ptr<DNSServer, psram::deleter> dns_server;
 
     bool reconnect = false;
     String newSsid;
@@ -33,12 +34,11 @@ private:
     bool in_captive_portal{false};
     uint64_t captive_portal_start{0};
 
-    const unsigned long timeout = 60000;
-
     void wifi_start();
     void start_captive_portal();
     void stop_captive_portal();
     void set_wifi(const String &newSSID, const String &newPass);
+    static bool connect_wifi(const String &newSSID, const String &newPass);
 
     static String get_rfc_name();
     static String get_rfc_952_host_name(const String &name);
