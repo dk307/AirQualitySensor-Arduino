@@ -13,6 +13,8 @@ static const char WebPasswordId[] PROGMEM = "webpassword";
 static const char SsidId[] PROGMEM = "ssid";
 static const char SsidPasswordId[] PROGMEM = "ssidpassword";
 
+static const char ScreenBrightnessId[] PROGMEM = "screenbrightness";
+
 config config::instance;
 
 template <class... T>
@@ -85,6 +87,9 @@ bool config::pre_begin()
     data.set_wifi_ssid(json_document[FPSTR(SsidId)].as<String>());
     data.set_wifi_password(json_document[FPSTR(SsidPasswordId)].as<String>());
 
+    const auto screen_brightness = json_document[FPSTR(ScreenBrightnessId)].as<uint8_t>();
+    data.set_manual_screen_brightness(screen_brightness ? std::optional<uint8_t>(screen_brightness) : std::nullopt);
+
     log_i("Loaded Config from file");
 
     log_i("Hostname:%s", data.get_host_name().c_str());
@@ -92,6 +97,7 @@ bool config::pre_begin()
     log_i("Web user password:%s", data.get_web_password().c_str());
     log_i("Wifi ssid:%s", data.get_wifi_ssid().c_str());
     log_i("Wifi ssid password:%s", data.get_wifi_password().c_str());
+    log_i("Manual screen brightness:%d", data.get_manual_screen_brightness().value_or(0));
 
     return true;
 }
@@ -113,6 +119,7 @@ void config::save()
     json_document[FPSTR(WebPasswordId)] = data.get_web_password();
     json_document[FPSTR(SsidId)] = data.get_wifi_ssid();
     json_document[FPSTR(SsidPasswordId)] = data.get_wifi_password();
+    json_document[FPSTR(ScreenBrightnessId)] = data.get_manual_screen_brightness().value_or(0);
 
     String json;
     serializeJson(json_document, json);

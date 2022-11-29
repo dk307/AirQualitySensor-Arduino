@@ -15,7 +15,7 @@ public:
     void loop();
 
     // void forget();
-    bool isCaptivePortal();
+    bool is_captive_portal();
     void set_new_wifi(const String &newSSID, const String &newPass);
 
     static IPAddress LocalIP();

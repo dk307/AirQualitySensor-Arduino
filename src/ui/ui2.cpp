@@ -13,11 +13,11 @@ lv_obj_t *ui_main_screen;
 lv_obj_t *ui_settings_screen;
 lv_obj_t *ui_aqi_value_label;
 lv_obj_t *ui_settings_screen_tab_information_table;
+lv_obj_t *ui_settings_screen_tab_settings_brightness_slider;
 
 static const lv_font_t *font_large = &lv_font_montserrat_20;
 static const lv_font_t *font_normal = &lv_font_montserrat_14;
 static const lv_font_t *font_extra_large_number = &lv_font_montserrat_20;
-
 
 static EXT_RAM_ATTR lv_style_t style_text_muted;
 static EXT_RAM_ATTR lv_style_t style_title;
@@ -105,13 +105,15 @@ void ui_load_information()
     lv_table_set_row_cnt(ui_settings_screen_tab_information_table, data.size());
 
     lv_table_set_col_width(ui_settings_screen_tab_information_table, 0, 140);
-    lv_table_set_col_width(ui_settings_screen_tab_information_table, 1, 420 - 140);
+    lv_table_set_col_width(ui_settings_screen_tab_information_table, 1, 430 - 140);
 
     for (auto i = 0; i < data.size(); i++)
     {
         lv_table_set_cell_value(ui_settings_screen_tab_information_table, i, 0, std::get<0>(data[i]).c_str());
         lv_table_set_cell_value(ui_settings_screen_tab_information_table, i, 1, std::get<1>(data[i]).c_str());
     }
+
+    lv_slider_set_value(ui_settings_screen_tab_settings_brightness_slider, ui_interface::instance.get_manual_screen_brightness(), LV_ANIM_OFF);
 }
 
 void ui_settings_screen_events_callback(lv_event_t *e)
@@ -126,7 +128,7 @@ void ui_settings_screen_events_callback(lv_event_t *e)
                                                                       for (;;)
                                                                       {
                                                                           ui_load_information();
-                                                                          vTaskDelay(5000);
+                                                                          vTaskDelay(1000);
                                                                       } });
 
         information_refresh_task->spawn_arduino_main_core("ui info table refresh");
@@ -139,6 +141,16 @@ void ui_settings_screen_events_callback(lv_event_t *e)
     else if (event_code == LV_EVENT_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_BOTTOM)
     {
         lv_scr_load_anim(ui_main_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
+    }
+}
+
+void ui_settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e)
+{
+    lv_event_code_t event_code = lv_event_get_code(e);
+    if (event_code == LV_EVENT_VALUE_CHANGED)
+    {
+        const auto value = lv_slider_get_value(ui_settings_screen_tab_settings_brightness_slider);
+        ui_interface::instance.set_manual_screen_brightness(value);
     }
 }
 
@@ -181,12 +193,12 @@ void ui_settings_screen_screen_init(void)
             lv_obj_set_grid_cell(auto_brightness_switch_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
             // slider
-            auto brightness_slider = lv_slider_create(brightness_panel);
-            lv_obj_set_width(brightness_slider, lv_pct(97));
-            lv_slider_set_range(brightness_slider, 0, 255);
-            // lv_obj_add_event_cb(brightness_slider, slider_event_cb, LV_EVENT_ALL, NULL);
-            lv_obj_refresh_ext_draw_size(brightness_slider);
-            lv_obj_set_grid_cell(brightness_slider, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+            ui_settings_screen_tab_settings_brightness_slider = lv_slider_create(brightness_panel);
+            lv_obj_set_width(ui_settings_screen_tab_settings_brightness_slider, lv_pct(97));
+            lv_slider_set_range(ui_settings_screen_tab_settings_brightness_slider, 1, 255);
+            lv_obj_add_event_cb(ui_settings_screen_tab_settings_brightness_slider, ui_settings_screen_tab_settings_brightness_slider_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+            lv_obj_refresh_ext_draw_size(ui_settings_screen_tab_settings_brightness_slider);
+            lv_obj_set_grid_cell(ui_settings_screen_tab_settings_brightness_slider, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
         }
     }
 

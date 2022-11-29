@@ -67,8 +67,7 @@ bool wifi_manager::connect_wifi(const String &ssid, const String &password)
     if (WiFi.waitForConnectResult(timeout) == WL_CONNECTED)
     {
         // connected
-        log_i("Connected to WiFi details with IP: %s", WiFi.localIP().toString().c_str());
-        WiFi.setHostname(rfc_name.c_str());
+        log_i("Connected to WiFi %s with IP: %s", ssid.c_str(), WiFi.localIP().toString().c_str());
         WiFi.setAutoReconnect(true);
         return true;
     }
@@ -143,14 +142,13 @@ void wifi_manager::start_captive_portal()
 
 void wifi_manager::stop_captive_portal()
 {
-    WiFi.mode(WIFI_STA);
     dns_server.reset();
 
     in_captive_portal = false;
     call_change_listeners();
 }
 
-bool wifi_manager::isCaptivePortal()
+bool wifi_manager::is_captive_portal()
 {
     return in_captive_portal;
 }
@@ -229,10 +227,11 @@ String wifi_manager::get_rfc_name()
 
     if (rfc_name.isEmpty())
     {
+        const auto mac_address = ESP.getEfuseMac();
         uint64_t chipId = 0;
         for (auto i = 0; i < 17; i = i + 8)
         {
-            chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+            chipId |= ((mac_address >> (40 - i)) & 0xff) << i;
         }
         rfc_name = "ESP-" + String(chipId, HEX);
     }

@@ -15,6 +15,8 @@ public:
     void update_boot_message(const std::string& message);
     void set_main_screen();
     void set_aqi_value(uint16_t value);
+    uint8_t get_brightness();
+    void set_brightness(uint8_t value);
 
 private:
     display() = default;

@@ -1,5 +1,7 @@
 #include "ui_interface.h"
 #include "wifi_manager.h"
+#include "config_manager.h"
+#include "hardware/display.h"
 
 #include <Arduino.h>
 #include <Wifi.h>
@@ -77,7 +79,7 @@ String ui_interface::network_status()
         }
         else
         {
-            stream.printf(" Ssid:%s IP:%s RSSI:%d db", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str(), info.rssi);
+            stream.printf("\nSsid:%s\nIP:%s\nRSSI:%d db", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str(), info.rssi);
         }
     }
     break;
@@ -91,15 +93,29 @@ String ui_interface::network_status()
     return stream;
 }
 
+uint8_t ui_interface::get_manual_screen_brightness()
+{
+    return display::instance.get_brightness();
+}
+
+void ui_interface::set_manual_screen_brightness(uint8_t value)
+{
+    log_i("Setting display brightness to %d", value);
+    display::instance.set_brightness(value);
+
+    config::instance.data.set_manual_screen_brightness(value);
+    config::instance.save();
+}
+
 ui_interface::information_table_type ui_interface::get_information_table()
 {
     return {
-        {F("Chip"), to_string(ESP.getChipModel(), " Rev: ", ESP.getChipRevision(), " Flash: ", stringify_size(ESP.getFlashChipSize()))},
+        {F("Chip"), to_string(ESP.getChipModel(), "\nRev: ", ESP.getChipRevision(), "\nFlash: ", stringify_size(ESP.getFlashChipSize()))},
         {F("Heap"), to_string(stringify_size(ESP.getFreeHeap()), " free out of ", stringify_size(ESP.getHeapSize()))},
         {F("PsRam"), to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
         {F("Uptime"), get_up_time()},
         {F("Mac Address"), WiFi.softAPmacAddress()},
-        {F("Captive portal"), wifi_manager::instance.isCaptivePortal() ? "Yes" : "No"},
+        {F("Captive portal"), wifi_manager::instance.is_captive_portal() ? "Yes" : "No"},
         {F("Network"), network_status()},
     };
 }

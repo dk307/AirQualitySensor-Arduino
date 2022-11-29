@@ -164,9 +164,8 @@ void web_server::wifi_get(AsyncWebServerRequest *request)
 	auto response = new AsyncJsonResponse(false, 256);
 	auto jsonBuffer = response->getRoot();
 
-	jsonBuffer[F("captivePortal")] = wifi_manager::instance.isCaptivePortal();
-	jsonBuffer[F("ssid")] = wifi_manager::SSID();
-
+	jsonBuffer[F("captivePortal")] = wifi_manager::instance.is_captive_portal();
+	jsonBuffer[F("ssid")] = config::instance.data.get_wifi_ssid();
 	response->setLength();
 	request->send(response);
 }

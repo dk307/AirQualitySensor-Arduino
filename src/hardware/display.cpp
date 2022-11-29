@@ -1,5 +1,6 @@
 #include "display.h"
 #include "ui/ui2.h"
+#include "config_manager.h"
 
 display display::instance;
 
@@ -55,7 +56,7 @@ bool display::pre_begin()
     const auto screenWidth = display_device.width();
     const auto screenHeight = display_device.height();
 
-    log_i("Display initialized width:%d  height:%d", screenWidth, screenHeight);
+    log_i("Display initialized width:%d height:%d", screenWidth, screenHeight);
 
     log_d("LV initialized");
     const int buffer_size = 40;
@@ -96,6 +97,8 @@ bool display::pre_begin()
 
 void display::begin()
 {
+    auto brightness = config::instance.data.get_manual_screen_brightness();
+    display_device.setBrightness(brightness.value_or(128));
 }
 
 void display::loop()
@@ -121,4 +124,14 @@ void display::set_aqi_value(uint16_t value)
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
     ui_set_aqi_value(value);
+}
+
+uint8_t display::get_brightness()
+{
+    return display_device.getBrightness();
+}
+
+void display::set_brightness(uint8_t value)
+{
+    display_device.setBrightness(value);
 }

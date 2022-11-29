@@ -6,7 +6,6 @@
 
 struct config_data
 {
-
     config_data()
     {
         setDefaults();
@@ -79,12 +78,24 @@ struct config_data
         wifi_password = wifi_password_;
     }
 
+    std::optional<uint8_t> get_manual_screen_brightness() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        return manual_screen_brightness;
+    }
+    void set_manual_screen_brightness(const std::optional<uint8_t> &screen_brightness_)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        manual_screen_brightness = screen_brightness_;
+    }
+
 private:
     String host_name;
     String web_user_name;
     String web_password;
     String wifi_ssid;
     String wifi_password;
+    std::optional<uint8_t> manual_screen_brightness;
 
     mutable std::mutex data_mutex;
 };
@@ -116,7 +127,7 @@ private:
 
     template <class... T>
     static size_t write_to_file(const String &fileName, T &&...contents);
-    static size_t write_to_file(const String &fileName, const char * data, unsigned int len);
+    static size_t write_to_file(const String &fileName, const char *data, unsigned int len);
 
     template <class T>
     bool deserialize_to_json(const T &data, DynamicJsonDocument &jsonDocument);
