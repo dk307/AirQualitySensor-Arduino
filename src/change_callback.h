@@ -6,7 +6,7 @@
 class change_callback
 {
 public:
-    void addConfigSaveCallback(std::function<void()> func)
+    void add_config_save_callback(const std::function<void()>& func)
     {
         change_callbacks.push_back(func);
     }

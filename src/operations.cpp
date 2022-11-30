@@ -26,7 +26,6 @@ void operations::factoryReset()
 	log_w("Doing Factory Reset");
 	nvs_flash_erase();
 	config::erase();
-	// LittleFS.format();
 	reset();
 }
 
