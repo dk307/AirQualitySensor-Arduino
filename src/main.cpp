@@ -26,7 +26,7 @@ void setup(void)
 	display::instance.update_boot_message("Done");
 	display::instance.set_main_screen();
 
-	log_i("Done");
+	log_i("Done on core:%d", xPortGetCoreID());
 }
 
 void loop(void)

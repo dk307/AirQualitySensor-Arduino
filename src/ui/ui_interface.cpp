@@ -7,6 +7,7 @@
 #include <Wifi.h>
 #include <esp_wifi.h>
 #include <StreamString.h>
+#include <SD.h>
 
 #include <memory>
 #include <sstream>
@@ -75,7 +76,7 @@ String ui_interface::network_status()
         const auto result_info = esp_wifi_sta_get_ap_info(&info);
         if (result_info != ESP_OK)
         {
-            stream.printf(", failed to get info with :d", result_info);
+            stream.printf(", failed to get info with error:%d", result_info);
         }
         else
         {
@@ -117,5 +118,6 @@ ui_interface::information_table_type ui_interface::get_information_table()
         {F("Mac Address"), WiFi.softAPmacAddress()},
         {F("Captive portal"), wifi_manager::instance.is_captive_portal() ? "Yes" : "No"},
         {F("Network"), network_status()},
+        {F("SD Card Size:"), to_string(SD.cardSize() / (1024 * 1024), " MB")},
     };
 }

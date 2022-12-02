@@ -25,7 +25,7 @@ static EXT_RAM_ATTR lv_style_t style_label_default;
 
 static std::unique_ptr<task_wrapper> information_refresh_task;
 
-LV_IMG_DECLARE(ui_img_1508142627); // assets\icons8-wind-100.png
+LV_IMG_DECLARE(ui_img_logo); // assets\icons8-wind-100.png
 
 ///////////////////// FUNCTIONS ////////////////////
 void ui_event_mainscreen(lv_event_t *e)
@@ -48,7 +48,7 @@ void ui_bootscreen_screen_init(void)
     lv_obj_set_style_bg_opa(ui_bootscreen, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_bootlogo = lv_img_create(ui_bootscreen);
-    lv_img_set_src(ui_bootlogo, &ui_img_1508142627);
+    lv_img_set_src(ui_bootlogo, &ui_img_logo);
     lv_obj_set_size(ui_bootlogo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_align(ui_bootlogo, LV_ALIGN_CENTER, 0, -20);
 
@@ -125,8 +125,10 @@ void ui_settings_screen_events_callback(lv_event_t *e)
         ui_load_information();
         information_refresh_task = std::make_unique<task_wrapper>([]
                                                                   {
+
                                                                       for (;;)
                                                                       {
+                                                                          // log_d("Core:%d", xPortGetCoreID());
                                                                           ui_load_information();
                                                                           vTaskDelay(1000);
                                                                       } });
