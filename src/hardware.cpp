@@ -7,12 +7,11 @@ hardware hardware::instance;
 
 bool hardware::pre_begin()
 {
-    if (!display::instance.pre_begin())
+    if (!sdcard::instance.pre_begin())
     {
         return false;
     }
-
-    if (!sdcard::instance.pre_begin())
+    if (!display::instance.pre_begin())
     {
         return false;
     }

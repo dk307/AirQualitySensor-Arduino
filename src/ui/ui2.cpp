@@ -12,12 +12,18 @@ lv_obj_t *ui_boot_message;
 lv_obj_t *ui_main_screen;
 lv_obj_t *ui_settings_screen;
 lv_obj_t *ui_aqi_value_label;
+lv_obj_t *ui_co2_value_label;
+lv_obj_t *ui_voc_value_label;
 lv_obj_t *ui_settings_screen_tab_information_table;
 lv_obj_t *ui_settings_screen_tab_settings_brightness_slider;
 
 static const lv_font_t *font_large = &lv_font_montserrat_20;
 static const lv_font_t *font_normal = &lv_font_montserrat_14;
 static const lv_font_t *font_extra_large_number = &lv_font_montserrat_20;
+
+// loaded from sd card
+lv_font_t *font_montserrat_light_numbers_96;
+lv_font_t *font_montserrat_light_numbers_112;
 
 static EXT_RAM_ATTR lv_style_t style_text_muted;
 static EXT_RAM_ATTR lv_style_t style_title;
@@ -60,40 +66,59 @@ void ui_bootscreen_screen_init(void)
     lv_obj_set_style_text_font(ui_boot_message, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
+lv_obj_t *ui_main_screen_create_panel(lv_obj_t *panel, const char *label_text, 
+                                      lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
+{
+    lv_obj_set_size(panel, w, h);
+    lv_obj_align(panel, LV_ALIGN_TOP_LEFT, x_ofs, y_ofs);
+    lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(panel, lv_color_hex(0x35e41d), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(panel, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    const uint8_t extra_y = 10;
+    auto label = lv_label_create(panel);
+    lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, extra_y);
+    lv_label_set_text(label, label_text);
+    lv_obj_set_style_text_color(label, lv_color_hex(0x1E1E1E), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(label, font_large, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    auto value_label = lv_label_create(panel);
+    lv_obj_set_size(value_label, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_align(value_label, LV_ALIGN_TOP_MID, 0, extra_y + 30);
+    lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
+    lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(value_label, font_montserrat_light_numbers_112, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_label_set_text(value_label, "999");
+
+    return value_label;
+}
+
 void ui_main_screen_screen_init(void)
 {
     ui_main_screen = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_main_screen, LV_OBJ_FLAG_SCROLLABLE);
 
-    // AQI panel
     {
         auto ui_main_screen_aqi_panel = lv_obj_create(ui_main_screen);
-        lv_obj_set_size(ui_main_screen_aqi_panel, lv_pct(50), lv_pct(100));
-        lv_obj_set_style_border_width(ui_main_screen_aqi_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_left(ui_main_screen_aqi_panel, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_right(ui_main_screen_aqi_panel, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_top(ui_main_screen_aqi_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_bottom(ui_main_screen_aqi_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        const uint8_t extra_y = 40;
-        auto ui_main_screen_Label1 = lv_label_create(ui_main_screen_aqi_panel);
-        lv_obj_set_size(ui_main_screen_Label1, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_obj_align(ui_main_screen_Label1, LV_ALIGN_TOP_MID, 0, extra_y);
-        lv_label_set_text(ui_main_screen_Label1, "AQI");
-        lv_obj_set_style_text_color(ui_main_screen_Label1, lv_color_hex(0x1E1E1E), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_opa(ui_main_screen_Label1, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(ui_main_screen_Label1, font_large, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        ui_aqi_value_label = lv_label_create(ui_main_screen_aqi_panel);
-        lv_obj_set_size(ui_aqi_value_label, lv_pct(100), LV_SIZE_CONTENT);
-        lv_obj_align(ui_aqi_value_label, LV_ALIGN_TOP_MID, 0, extra_y + 20);
-        lv_label_set_long_mode(ui_aqi_value_label, LV_LABEL_LONG_SCROLL);
-        lv_obj_set_style_text_align(ui_aqi_value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(ui_aqi_value_label, font_extra_large_number, LV_PART_MAIN | LV_STATE_DEFAULT);
-        ui_set_aqi_value(999);
-
-        lv_obj_add_event_cb(ui_main_screen, ui_event_mainscreen, LV_EVENT_ALL, NULL);
+        ui_aqi_value_label = ui_main_screen_create_panel(ui_main_screen_aqi_panel, "AQI", 10, 10, 225, 145);
     }
+    {
+        auto ui_main_screen_aqi_panel = lv_obj_create(ui_main_screen);
+        ui_co2_value_label = ui_main_screen_create_panel(ui_main_screen_aqi_panel, "CO2", 245, 10, 225, 145);
+    }
+    {
+        auto ui_main_screen_voc_panel = lv_obj_create(ui_main_screen);
+        ui_voc_value_label = ui_main_screen_create_panel(ui_main_screen_voc_panel, "VOC", 245, 165, 225, 145);
+    }
+
+    lv_obj_add_event_cb(ui_main_screen, ui_event_mainscreen, LV_EVENT_ALL, NULL);
 }
 
 void ui_load_information()
@@ -125,7 +150,6 @@ void ui_settings_screen_events_callback(lv_event_t *e)
         ui_load_information();
         information_refresh_task = std::make_unique<task_wrapper>([]
                                                                   {
-
                                                                       for (;;)
                                                                       {
                                                                           // log_d("Core:%d", xPortGetCoreID());
@@ -213,6 +237,21 @@ void ui_settings_screen_screen_init(void)
     }
 }
 
+void ui_load_from_sd_card()
+{
+    if (lv_fs_is_ready('S'))
+    {
+        log_i("lv fs is ready");
+    }
+    else
+    {
+        log_e("lv fs not ready");
+    }
+
+    font_montserrat_light_numbers_96 = lv_font_load("S:display/font/montserrat_light_numbers_96.bin");
+    font_montserrat_light_numbers_112 = lv_font_load("S:display/font/montserrat_light_numbers_112.bin");
+}
+
 void ui_init()
 {
     lv_disp_t *dispp = lv_disp_get_default();
@@ -230,9 +269,30 @@ void ui_init()
 
     lv_disp_set_theme(dispp, theme);
     ui_bootscreen_screen_init();
+
+    lv_disp_load_scr(ui_bootscreen);
+
+    ui_inline_loop(100);
+
+    log_i("Loaded boot screen");
+
+    lv_label_set_text(ui_boot_message, "Loading from SD Card");
+    ui_inline_loop(50);
+
+    ui_load_from_sd_card(); // might take some time
+
     ui_main_screen_screen_init();
     ui_settings_screen_screen_init();
-    lv_disp_load_scr(ui_bootscreen);
+}
+
+void ui_inline_loop(uint64_t maxWait)
+{
+    const auto now = millis();
+    while (millis() - now < maxWait)
+    {
+        lv_timer_handler();
+        delay(5);
+    }
 }
 
 void ui_set_aqi_value(uint16_t value)
@@ -261,5 +321,5 @@ void ui_set_aqi_value(uint16_t value)
         color = 0x866846;
     }
 
-    lv_obj_set_style_text_color(ui_aqi_value_label, lv_color_hex(color), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui_aqi_value_label, lv_color_hex(0x35e41d), LV_PART_MAIN | LV_STATE_DEFAULT);
 }

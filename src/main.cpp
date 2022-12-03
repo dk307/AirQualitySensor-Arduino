@@ -19,10 +19,10 @@ void setup(void)
 
 	operations::instance.begin();
 	hardware::instance.begin();
-	// display::instance.update_boot_message("Checking Wifi");
+	display::instance.update_boot_message("Wifi setup");
 	wifi_manager::instance.begin();
+	display::instance.update_boot_message("Webserver setup");
 	web_server::instance.begin();
-
 	display::instance.update_boot_message("Done");
 	display::instance.set_main_screen();
 

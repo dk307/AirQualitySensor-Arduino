@@ -1,4 +1,6 @@
 #include "display.h"
+
+#include <lgvl_fs_sd_card.h>
 #include "ui/ui2.h"
 #include "config_manager.h"
 
@@ -43,6 +45,7 @@ bool display::pre_begin()
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
     lv_init();
+    lv_fs_if_fatfs_init();
 
     if (!display_device.init())
     {
@@ -89,8 +92,6 @@ bool display::pre_begin()
 
     ui_init();
 
-    lv_timer_handler();
-
     log_i("Done");
     return true;
 }
@@ -111,6 +112,7 @@ void display::update_boot_message(const std::string &message)
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
     lv_label_set_text(ui_boot_message, message.c_str());
+    ui_inline_loop(50);
 }
 
 void display::set_main_screen()
@@ -135,3 +137,4 @@ void display::set_brightness(uint8_t value)
 {
     display_device.setBrightness(value);
 }
+
