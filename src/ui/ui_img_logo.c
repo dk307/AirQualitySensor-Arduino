@@ -3,7 +3,7 @@
 // LVGL VERSION: 8.3.3
 // PROJECT: SquareLine_Project
 
-#include "ui2.h"
+#include <lvgl.h>
 
 #ifndef LV_ATTRIBUTE_MEM_ALIGN
     #define LV_ATTRIBUTE_MEM_ALIGN

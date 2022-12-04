@@ -5,15 +5,7 @@
 #include <math.h>
 #include <atomic>
 
-enum class sensor_level
-{
-    _1, // good
-    _2,
-    _3,
-    _4,
-    _5,
-    _6, // very inhealthy
-};
+#include "sensor_id.h"
 
 class sensor_definition_display
 {
@@ -37,7 +29,7 @@ private:
     const sensor_level level;
 };
 
-class sensor_definition
+class sensor_definition : public change_callback
 {
 public:
     sensor_definition(const char *name, const char *unit, const sensor_definition_display *display_definitions, size_t display_definitions_count)
@@ -45,11 +37,11 @@ public:
     {
     }
 
-    virtual sensor_level level() const
+    sensor_level calculate_level(double value_p) const
     {
         for (uint8_t i = 0; i < display_definitions_count; i++)
         {
-            if (display_definitions[i].is_in_range(value))
+            if (display_definitions[i].is_in_range(value_p))
             {
                 return display_definitions[i].get_level();
             }
@@ -58,7 +50,14 @@ public:
     }
 
     double get_value() const { return value.load(); }
-    void set_value(double value_) { value.store(value_); }
+    void set_value(double value_)
+    {
+        if (value.exchange(value_) != value_)
+        {
+            call_change_listeners();
+        }
+    }
+
     const char *get_unit() const { return unit; }
 
 private:

@@ -35,4 +35,6 @@ void loop(void)
 	wifi_manager::instance.loop();
 	config::instance.loop();
 	operations::instance.loop();
+
+	delay(2);
 }

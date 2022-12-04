@@ -3,6 +3,7 @@
 #include <lgvl_fs_sd_card.h>
 #include "ui/ui2.h"
 #include "config_manager.h"
+#include "hardware.h"
 
 display display::instance;
 
@@ -98,6 +99,18 @@ bool display::pre_begin()
 
 void display::begin()
 {
+    for (auto i = 0; i < static_cast<uint8_t>(sensor_id_index::last); i++)
+    {
+        const auto id = static_cast<sensor_id_index>(i);
+        hardware::instance.get_sensor(id).add_config_save_callback([id, this]
+            {
+            const auto& sensor =  hardware::instance.get_sensor(id);
+            const auto value = sensor.get_value();
+            const auto level = sensor.calculate_level(value);
+            std::lock_guard<std::mutex> lock(lgvl_mutex);
+            ui_set_sensor_value(id, value, level); });
+    }
+
     auto brightness = config::instance.data.get_manual_screen_brightness();
     display_device.setBrightness(brightness.value_or(128));
 }
@@ -122,12 +135,6 @@ void display::set_main_screen()
     lv_disp_load_scr(ui_main_screen);
 }
 
-void display::set_aqi_value(uint16_t value)
-{
-    std::lock_guard<std::mutex> lock(lgvl_mutex);
-    ui_set_aqi_value(value);
-}
-
 uint8_t display::get_brightness()
 {
     return display_device.getBrightness();
@@ -137,4 +144,3 @@ void display::set_brightness(uint8_t value)
 {
     display_device.setBrightness(value);
 }
-

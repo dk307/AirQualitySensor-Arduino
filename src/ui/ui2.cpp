@@ -11,13 +11,18 @@ lv_obj_t *ui_bootlogo;
 lv_obj_t *ui_boot_message;
 lv_obj_t *ui_main_screen;
 lv_obj_t *ui_settings_screen;
+
 lv_obj_t *ui_aqi_value_label;
 lv_obj_t *ui_co2_value_label;
 lv_obj_t *ui_voc_value_label;
+lv_obj_t *ui_aqi_value_panel;
+lv_obj_t *ui_co2_value_panel;
+lv_obj_t *ui_voc_value_panel;
+
 lv_obj_t *ui_settings_screen_tab_information_table;
 lv_obj_t *ui_settings_screen_tab_settings_brightness_slider;
 
-static const lv_font_t *font_large = &lv_font_montserrat_20;
+static const lv_font_t *font_large = &lv_font_montserrat_24;
 static const lv_font_t *font_normal = &lv_font_montserrat_14;
 static const lv_font_t *font_extra_large_number = &lv_font_montserrat_20;
 
@@ -32,6 +37,8 @@ static EXT_RAM_ATTR lv_style_t style_label_default;
 static std::unique_ptr<task_wrapper> information_refresh_task;
 
 LV_IMG_DECLARE(ui_img_logo); // assets\icons8-wind-100.png
+
+void ui_set_label_panel_color(lv_obj_t *panel, uint64_t level);
 
 ///////////////////// FUNCTIONS ////////////////////
 void ui_event_mainscreen(lv_event_t *e)
@@ -66,13 +73,20 @@ void ui_bootscreen_screen_init(void)
     lv_obj_set_style_text_font(ui_boot_message, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
-lv_obj_t *ui_main_screen_create_panel(lv_obj_t *panel, const char *label_text, 
+lv_obj_t *ui_main_screen_create_panel(lv_obj_t *panel, const char *label_text,
                                       lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
 {
     lv_obj_set_size(panel, w, h);
     lv_obj_align(panel, LV_ALIGN_TOP_LEFT, x_ofs, y_ofs);
     lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(panel, lv_color_hex(0x35e41d), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_set_label_panel_color(panel, 0);
+
+    lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
+
     lv_obj_set_style_radius(panel, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_right(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -95,7 +109,7 @@ lv_obj_t *ui_main_screen_create_panel(lv_obj_t *panel, const char *label_text,
     lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(value_label, font_montserrat_light_numbers_112, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_label_set_text(value_label, "999");
+    lv_label_set_text(value_label, "99");
 
     return value_label;
 }
@@ -104,18 +118,19 @@ void ui_main_screen_screen_init(void)
 {
     ui_main_screen = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_main_screen, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(ui_main_screen, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
 
     {
-        auto ui_main_screen_aqi_panel = lv_obj_create(ui_main_screen);
-        ui_aqi_value_label = ui_main_screen_create_panel(ui_main_screen_aqi_panel, "AQI", 10, 10, 225, 145);
+        ui_aqi_value_panel = lv_obj_create(ui_main_screen);
+        ui_aqi_value_label = ui_main_screen_create_panel(ui_aqi_value_panel, "AQI", 10, 10, 225, 145);
     }
     {
-        auto ui_main_screen_aqi_panel = lv_obj_create(ui_main_screen);
-        ui_co2_value_label = ui_main_screen_create_panel(ui_main_screen_aqi_panel, "CO2", 245, 10, 225, 145);
+        ui_co2_value_panel = lv_obj_create(ui_main_screen);
+        ui_co2_value_label = ui_main_screen_create_panel(ui_co2_value_panel, "CO2", 245, 10, 225, 145);
     }
     {
-        auto ui_main_screen_voc_panel = lv_obj_create(ui_main_screen);
-        ui_voc_value_label = ui_main_screen_create_panel(ui_main_screen_voc_panel, "VOC", 245, 165, 225, 145);
+        ui_voc_value_panel = lv_obj_create(ui_main_screen);
+        ui_voc_value_label = ui_main_screen_create_panel(ui_voc_value_panel, "VOC", 245, 165, 225, 145);
     }
 
     lv_obj_add_event_cb(ui_main_screen, ui_event_mainscreen, LV_EVENT_ALL, NULL);
@@ -150,12 +165,13 @@ void ui_settings_screen_events_callback(lv_event_t *e)
         ui_load_information();
         information_refresh_task = std::make_unique<task_wrapper>([]
                                                                   {
-                                                                      for (;;)
+                                                                      do
                                                                       {
                                                                           // log_d("Core:%d", xPortGetCoreID());
                                                                           ui_load_information();
                                                                           vTaskDelay(1000);
-                                                                      } });
+                                                                      } while(true); 
+                                                                  });
 
         information_refresh_task->spawn_arduino_main_core("ui info table refresh");
     }
@@ -295,31 +311,47 @@ void ui_inline_loop(uint64_t maxWait)
     }
 }
 
-void ui_set_aqi_value(uint16_t value)
+void ui_set_label_panel_color(lv_obj_t *panel, uint64_t level)
 {
-    lv_label_set_text_fmt(ui_aqi_value_label, "%d", value);
 
     uint32_t color;
-    if (value < 50)
+    uint32_t color_grad;
+
+    switch (level)
     {
-        color = 0x35e41d; // green
-    }
-    else if (value < 100)
-    {
-        color = 0xc6bd15; // yellow
-    }
-    else if (value < 150)
-    {
-        color = 0xcd6f1b; // orange
-    }
-    else if (value < 200)
-    {
-        color = 0xd32514; // red
-    }
-    else if (value < 200)
-    {
-        color = 0x866846;
+    case 0:
+        color = 0x4BD175;
+        color_grad = 0x228D44;
+        break;
+    default:
+        color = 0;
+        color_grad = 0x228D44;
     }
 
-    lv_obj_set_style_text_color(ui_aqi_value_label, lv_color_hex(0x35e41d), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(panel, lv_color_hex(color), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(panel, lv_color_hex(color_grad), LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+void ui_set_sensor_value(sensor_id_index id, uint16_t value, sensor_level level)
+{
+    switch (id)
+    {
+    case sensor_id_index::aqi:
+        ui_set_label_panel_color(ui_aqi_value_panel, level);
+        lv_label_set_text_fmt(ui_aqi_value_label, "%d", value);
+        break;
+
+    case sensor_id_index::voc:
+        ui_set_label_panel_color(ui_voc_value_panel, level);
+        lv_label_set_text_fmt(ui_voc_value_label, "%d", value);
+        break;
+
+    case sensor_id_index::co2:
+        ui_set_label_panel_color(ui_co2_value_panel, level);
+        lv_label_set_text_fmt(ui_co2_value_label, "%d", value);
+        break;
+
+    case sensor_id_index::temperatureF:
+        break;
+    }
 }

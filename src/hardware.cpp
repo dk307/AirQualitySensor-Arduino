@@ -22,6 +22,17 @@ void hardware::begin()
 {
     display::instance.begin();
     sdcard::instance.begin();
+
+    sensor_read_task = std::make_unique<task_wrapper>([]
+                                                      {
+                                                                      do
+                                                                      {
+                                                                          log_d("Core:%d", xPortGetCoreID());
+                                                                          // ui_load_information();
+                                                                          vTaskDelay(1000);
+                                                                      } while(true); });
+
+    sensor_read_task->spawn_pinned("sensor read task", 8192, 1, 0);                                                                
 }
 
 void hardware::loop()

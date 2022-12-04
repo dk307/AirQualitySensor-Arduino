@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <functional>
+#include <memory>
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
