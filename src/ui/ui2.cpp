@@ -5,82 +5,57 @@
 #include <tuple>
 #include <memory>
 
-///////////////////// VARIABLES ////////////////////
-lv_obj_t *ui_bootscreen;
-lv_obj_t *ui_bootlogo;
-lv_obj_t *ui_boot_message;
-lv_obj_t *ui_main_screen;
-lv_obj_t *ui_settings_screen;
-
-lv_obj_t *ui_aqi_value_label;
-lv_obj_t *ui_co2_value_label;
-lv_obj_t *ui_voc_value_label;
-lv_obj_t *ui_aqi_value_panel;
-lv_obj_t *ui_co2_value_panel;
-lv_obj_t *ui_voc_value_panel;
-
-lv_obj_t *ui_settings_screen_tab_information_table;
-lv_obj_t *ui_settings_screen_tab_settings_brightness_slider;
-
-static const lv_font_t *font_large = &lv_font_montserrat_24;
-static const lv_font_t *font_normal = &lv_font_montserrat_14;
-static const lv_font_t *font_extra_large_number = &lv_font_montserrat_20;
-
-// loaded from sd card
-lv_font_t *font_montserrat_light_numbers_96;
-lv_font_t *font_montserrat_light_numbers_112;
-
-static EXT_RAM_ATTR lv_style_t style_text_muted;
-static EXT_RAM_ATTR lv_style_t style_title;
-static EXT_RAM_ATTR lv_style_t style_label_default;
-
-static std::unique_ptr<task_wrapper> information_refresh_task;
+ui EXT_RAM_ATTR ui::instance;
 
 LV_IMG_DECLARE(ui_img_logo); // assets\icons8-wind-100.png
 
-void ui_set_label_panel_color(lv_obj_t *panel, uint64_t level);
+template <void (ui::*ftn)(lv_event_t *)>
+void event_callback(lv_event_t *e)
+{
+    auto p_this = reinterpret_cast<ui *>(lv_event_get_user_data(e));
+    (p_this->*ftn)(e);
+}
 
-///////////////////// FUNCTIONS ////////////////////
-void ui_event_mainscreen(lv_event_t *e)
+void ui::event_mainscreen(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t *target = lv_event_get_target(e);
     if (event_code == LV_EVENT_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_BOTTOM)
     {
-        lv_scr_load_anim(ui_settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
+        lv_scr_load_anim(settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
     }
 }
 
-///////////////////// SCREENS ////////////////////
-void ui_bootscreen_screen_init(void)
+void ui::bootscreen_screen_init(void)
 {
-    ui_bootscreen = lv_obj_create(NULL);
-    lv_obj_clear_flag(ui_bootscreen, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_scrollbar_mode(ui_bootscreen, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_style_bg_color(ui_bootscreen, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_bootscreen, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    bootscreen = lv_obj_create(NULL);
+    lv_obj_clear_flag(bootscreen, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(bootscreen, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_style_bg_color(bootscreen, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(bootscreen, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_bootlogo = lv_img_create(ui_bootscreen);
-    lv_img_set_src(ui_bootlogo, &ui_img_logo);
-    lv_obj_set_size(ui_bootlogo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(ui_bootlogo, LV_ALIGN_CENTER, 0, -20);
+    bootlogo = lv_img_create(bootscreen);
+    lv_img_set_src(bootlogo, &ui_img_logo);
+    lv_obj_set_size(bootlogo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_align(bootlogo, LV_ALIGN_CENTER, 0, -20);
 
-    ui_boot_message = lv_label_create(ui_bootscreen);
-    lv_obj_set_size(ui_boot_message, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(ui_boot_message, LV_ALIGN_CENTER, 0, 60);
-    lv_label_set_text(ui_boot_message, "Starting");
-    lv_obj_set_style_text_color(ui_boot_message, lv_color_hex(0xFCFEFC), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui_boot_message, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
+    boot_message = lv_label_create(bootscreen);
+    lv_obj_set_size(boot_message, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_align(boot_message, LV_ALIGN_CENTER, 0, 60);
+    lv_label_set_text(boot_message, "Starting");
+    lv_obj_set_style_text_color(boot_message, lv_color_hex(0xFCFEFC), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(boot_message, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
-lv_obj_t *ui_main_screen_create_panel(lv_obj_t *panel, const char *label_text,
-                                      lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
+ui::panel_and_label ui::main_screen_create_panel(const char *label_text,
+                                                 lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
 {
+    auto panel = lv_obj_create(main_screen);
     lv_obj_set_size(panel, w, h);
     lv_obj_align(panel, LV_ALIGN_TOP_LEFT, x_ofs, y_ofs);
     lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_set_label_panel_color(panel, 0);
+    set_label_panel_color(panel, 0);
 
     lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -111,67 +86,57 @@ lv_obj_t *ui_main_screen_create_panel(lv_obj_t *panel, const char *label_text,
     lv_obj_set_style_text_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_text(value_label, "99");
 
-    return value_label;
+    return {panel, value_label};
 }
 
-void ui_main_screen_screen_init(void)
+void ui::main_screen_screen_init(void)
 {
-    ui_main_screen = lv_obj_create(NULL);
-    lv_obj_clear_flag(ui_main_screen, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(ui_main_screen, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    main_screen = lv_obj_create(NULL);
+    lv_obj_clear_flag(main_screen, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(main_screen, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    {
-        ui_aqi_value_panel = lv_obj_create(ui_main_screen);
-        ui_aqi_value_label = ui_main_screen_create_panel(ui_aqi_value_panel, "AQI", 10, 10, 225, 145);
-    }
-    {
-        ui_co2_value_panel = lv_obj_create(ui_main_screen);
-        ui_co2_value_label = ui_main_screen_create_panel(ui_co2_value_panel, "CO2", 245, 10, 225, 145);
-    }
-    {
-        ui_voc_value_panel = lv_obj_create(ui_main_screen);
-        ui_voc_value_label = ui_main_screen_create_panel(ui_voc_value_panel, "VOC", 245, 165, 225, 145);
-    }
+    main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::pm_2_5)] = main_screen_create_panel("PM2.5", 10, 10, 225, 145);
+    main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::voc)] = main_screen_create_panel("VOC", 245, 10, 225, 145);
 
-    lv_obj_add_event_cb(ui_main_screen, ui_event_mainscreen, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(main_screen, event_callback<&ui::event_mainscreen>, LV_EVENT_ALL, this);
+    log_d("Main screen init done");
 }
 
-void ui_load_information()
+void ui::load_information()
 {
     log_d("updating info table");
     const auto data = ui_interface::instance.get_information_table();
 
-    lv_table_set_col_cnt(ui_settings_screen_tab_information_table, 2);
-    lv_table_set_row_cnt(ui_settings_screen_tab_information_table, data.size());
+    lv_table_set_col_cnt(settings_screen_tab_information_table, 2);
+    lv_table_set_row_cnt(settings_screen_tab_information_table, data.size());
 
-    lv_table_set_col_width(ui_settings_screen_tab_information_table, 0, 140);
-    lv_table_set_col_width(ui_settings_screen_tab_information_table, 1, 430 - 140);
+    lv_table_set_col_width(settings_screen_tab_information_table, 0, 140);
+    lv_table_set_col_width(settings_screen_tab_information_table, 1, 430 - 140);
 
     for (auto i = 0; i < data.size(); i++)
     {
-        lv_table_set_cell_value(ui_settings_screen_tab_information_table, i, 0, std::get<0>(data[i]).c_str());
-        lv_table_set_cell_value(ui_settings_screen_tab_information_table, i, 1, std::get<1>(data[i]).c_str());
+        lv_table_set_cell_value(settings_screen_tab_information_table, i, 0, std::get<0>(data[i]).c_str());
+        lv_table_set_cell_value(settings_screen_tab_information_table, i, 1, std::get<1>(data[i]).c_str());
     }
 
-    lv_slider_set_value(ui_settings_screen_tab_settings_brightness_slider, ui_interface::instance.get_manual_screen_brightness(), LV_ANIM_OFF);
+    lv_slider_set_value(settings_screen_tab_settings_brightness_slider, ui_interface::instance.get_manual_screen_brightness(), LV_ANIM_OFF);
 }
 
-void ui_settings_screen_events_callback(lv_event_t *e)
+void ui::settings_screen_events_callback(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
     if (event_code == LV_EVENT_SCREEN_LOAD_START)
     {
         log_d("setting screen shown");
-        ui_load_information();
-        information_refresh_task = std::make_unique<task_wrapper>([]
+        load_information();
+        information_refresh_task = std::make_unique<task_wrapper>([this]
                                                                   {
                                                                       do
                                                                       {
                                                                           // log_d("Core:%d", xPortGetCoreID());
-                                                                          ui_load_information();
+                                                                          load_information();
                                                                           vTaskDelay(1000);
-                                                                      } while(true); 
-                                                                  });
+                                                                      } while(true); });
 
         information_refresh_task->spawn_arduino_main_core("ui info table refresh");
     }
@@ -182,39 +147,39 @@ void ui_settings_screen_events_callback(lv_event_t *e)
     }
     else if (event_code == LV_EVENT_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_BOTTOM)
     {
-        lv_scr_load_anim(ui_main_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
+        lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
     }
 }
 
-void ui_settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e)
+void ui::settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
     if (event_code == LV_EVENT_VALUE_CHANGED)
     {
-        const auto value = lv_slider_get_value(ui_settings_screen_tab_settings_brightness_slider);
+        const auto value = lv_slider_get_value(settings_screen_tab_settings_brightness_slider);
         ui_interface::instance.set_manual_screen_brightness(value);
     }
 }
 
-void ui_settings_screen_screen_init(void)
+void ui::settings_screen_screen_init(void)
 {
-    ui_settings_screen = lv_obj_create(NULL);
+    settings_screen = lv_obj_create(NULL);
 
-    auto ui_settings_screen_tab = lv_tabview_create(ui_settings_screen, LV_DIR_TOP, 45);
-    lv_obj_set_style_text_font(ui_settings_screen, font_normal, 0);
+    auto settings_screen_tab = lv_tabview_create(settings_screen, LV_DIR_TOP, 45);
+    lv_obj_set_style_text_font(settings_screen, font_normal, 0);
 
-    lv_obj_add_event_cb(ui_settings_screen, ui_settings_screen_events_callback, LV_EVENT_ALL, NULL);
+    lv_obj_add_event_cb(settings_screen, event_callback<&ui::settings_screen_events_callback>, LV_EVENT_ALL, this);
 
     // Settings tab
     {
-        auto ui_settings_screen_tab_settings = lv_tabview_add_tab(ui_settings_screen_tab, "Settings");
+        auto settings_screen_tab_settings = lv_tabview_add_tab(settings_screen_tab, "Settings");
 
         // Settings - Brightness panel
         {
             static const lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
             static const lv_coord_t grid_main_col_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
 
-            auto brightness_panel = lv_obj_create(ui_settings_screen_tab_settings);
+            auto brightness_panel = lv_obj_create(settings_screen_tab_settings);
             lv_obj_set_size(brightness_panel, lv_pct(100), LV_SIZE_CONTENT);
             lv_obj_set_grid_dsc_array(brightness_panel, grid_main_col_dsc, grid_main_row_dsc);
 
@@ -235,25 +200,26 @@ void ui_settings_screen_screen_init(void)
             lv_obj_set_grid_cell(auto_brightness_switch_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
             // slider
-            ui_settings_screen_tab_settings_brightness_slider = lv_slider_create(brightness_panel);
-            lv_obj_set_width(ui_settings_screen_tab_settings_brightness_slider, lv_pct(97));
-            lv_slider_set_range(ui_settings_screen_tab_settings_brightness_slider, 1, 255);
-            lv_obj_add_event_cb(ui_settings_screen_tab_settings_brightness_slider, ui_settings_screen_tab_settings_brightness_slider_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
-            lv_obj_refresh_ext_draw_size(ui_settings_screen_tab_settings_brightness_slider);
-            lv_obj_set_grid_cell(ui_settings_screen_tab_settings_brightness_slider, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+            settings_screen_tab_settings_brightness_slider = lv_slider_create(brightness_panel);
+            lv_obj_set_width(settings_screen_tab_settings_brightness_slider, lv_pct(97));
+            lv_slider_set_range(settings_screen_tab_settings_brightness_slider, 1, 255);
+            lv_obj_add_event_cb(settings_screen_tab_settings_brightness_slider,
+                                event_callback<&ui::settings_screen_tab_settings_brightness_slider_event_cb>, LV_EVENT_VALUE_CHANGED, this);
+            lv_obj_refresh_ext_draw_size(settings_screen_tab_settings_brightness_slider);
+            lv_obj_set_grid_cell(settings_screen_tab_settings_brightness_slider, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
         }
     }
 
     // Information tab
     {
-        auto ui_settings_screen_tab_information = lv_tabview_add_tab(ui_settings_screen_tab, "Information");
+        auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, "Information");
 
-        ui_settings_screen_tab_information_table = lv_table_create(ui_settings_screen_tab_information);
-        lv_obj_set_size(ui_settings_screen_tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
+        settings_screen_tab_information_table = lv_table_create(settings_screen_tab_information);
+        lv_obj_set_size(settings_screen_tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
     }
 }
 
-void ui_load_from_sd_card()
+void ui::load_from_sd_card()
 {
     if (lv_fs_is_ready('S'))
     {
@@ -266,12 +232,14 @@ void ui_load_from_sd_card()
 
     font_montserrat_light_numbers_96 = lv_font_load("S:display/font/montserrat_light_numbers_96.bin");
     font_montserrat_light_numbers_112 = lv_font_load("S:display/font/montserrat_light_numbers_112.bin");
+
+    log_d("Loaded From SD Card");
 }
 
-void ui_init()
+void ui::init()
 {
     lv_disp_t *dispp = lv_disp_get_default();
-    lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED),
+    lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_LIGHT_BLUE), lv_palette_main(LV_PALETTE_RED),
                                               false, LV_FONT_DEFAULT);
 
     lv_style_init(&style_text_muted);
@@ -284,24 +252,24 @@ void ui_init()
     lv_style_set_text_font(&style_label_default, font_normal);
 
     lv_disp_set_theme(dispp, theme);
-    ui_bootscreen_screen_init();
+    bootscreen_screen_init();
 
-    lv_disp_load_scr(ui_bootscreen);
+    lv_disp_load_scr(bootscreen);
 
-    ui_inline_loop(100);
+    inline_loop(100);
 
     log_i("Loaded boot screen");
 
-    lv_label_set_text(ui_boot_message, "Loading from SD Card");
-    ui_inline_loop(50);
+    lv_label_set_text(boot_message, "Loading from SD Card");
+    inline_loop(50);
 
-    ui_load_from_sd_card(); // might take some time
+    load_from_sd_card(); // might take some time
 
-    ui_main_screen_screen_init();
-    ui_settings_screen_screen_init();
+    main_screen_screen_init();
+    settings_screen_screen_init();
 }
 
-void ui_inline_loop(uint64_t maxWait)
+void ui::inline_loop(uint64_t maxWait)
 {
     const auto now = millis();
     while (millis() - now < maxWait)
@@ -311,47 +279,65 @@ void ui_inline_loop(uint64_t maxWait)
     }
 }
 
-void ui_set_label_panel_color(lv_obj_t *panel, uint64_t level)
+void ui::set_label_panel_color(lv_obj_t *panel, uint64_t level)
 {
-
     uint32_t color;
     uint32_t color_grad;
 
     switch (level)
     {
     case 0:
-        color = 0x4BD175;
+        color = 0x4BD175; // green
         color_grad = 0x228D44;
         break;
+    case 1:
+        color = 0x767C30; // yellow
+        color_grad = 0xBFCC20;
+        break;
+    case 2:
+        color = 0xEC9706; // orange
+        color_grad = 0xED7117;
+        break;
+    case 3:
+        color = 0x900D09; // red
+        color_grad = 0xE3242B;
+        break;
+    case 4:
+        color = 0x710193; // purple
+        color_grad = 0xA32CC4;
+        break;
     default:
-        color = 0;
-        color_grad = 0x228D44;
+    case 5:
+        color = 0x940606; // Maroon
+        color_grad = 0xc30808;
+        break;
     }
 
     lv_obj_set_style_bg_color(panel, lv_color_hex(color), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_color(panel, lv_color_hex(color_grad), LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
-void ui_set_sensor_value(sensor_id_index id, uint16_t value, sensor_level level)
+void ui::set_sensor_value(sensor_id_index id, uint16_t value, sensor_level level)
 {
-    switch (id)
+    const auto &pair = main_screen_panel_and_label.at(static_cast<size_t>(id));
+    if (pair.panel)
     {
-    case sensor_id_index::aqi:
-        ui_set_label_panel_color(ui_aqi_value_panel, level);
-        lv_label_set_text_fmt(ui_aqi_value_label, "%d", value);
-        break;
-
-    case sensor_id_index::voc:
-        ui_set_label_panel_color(ui_voc_value_panel, level);
-        lv_label_set_text_fmt(ui_voc_value_label, "%d", value);
-        break;
-
-    case sensor_id_index::co2:
-        ui_set_label_panel_color(ui_co2_value_panel, level);
-        lv_label_set_text_fmt(ui_co2_value_label, "%d", value);
-        break;
-
-    case sensor_id_index::temperatureF:
-        break;
+        set_label_panel_color(pair.panel, level);
     }
+
+    if (pair.label)
+    {
+        lv_label_set_text_fmt(pair.label, "%d", value);
+    }
+}
+
+void ui::update_boot_message(const std::string &message)
+{
+    lv_label_set_text(boot_message, message.c_str());
+    inline_loop(50);
+}
+
+void ui::set_main_screen()
+{
+    lv_disp_load_scr(main_screen);
 }

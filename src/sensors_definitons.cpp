@@ -1,9 +1,14 @@
 #include "hardware.h"
 
-const std::array<sensor_definition_display, 3> hardware::aqi_definition_display{
-    sensor_definition_display{0, 50, 0},
+#include <limits>
+
+const std::array<sensor_definition_display, 6> hardware::aqi_definition_display{
+    sensor_definition_display{std::numeric_limits<uint32_t>::min(), 50, 0},
     sensor_definition_display{50, 100, 1},
-    sensor_definition_display{100, 200, 2},
+    sensor_definition_display{100, 150, 2},
+    sensor_definition_display{151, 200, 3},
+    sensor_definition_display{201, 300, 4},
+    sensor_definition_display{300, std::numeric_limits<uint32_t>::max(), 5},
 };
 
 const std::array<sensor_definition_display, 1> hardware::voc_definition_display{

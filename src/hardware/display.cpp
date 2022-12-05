@@ -91,7 +91,7 @@ bool display::pre_begin()
 
     log_d("LVGL input device driver initialized");
 
-    ui_init();
+    ui::instance.init();
 
     log_i("Done");
     return true;
@@ -99,20 +99,23 @@ bool display::pre_begin()
 
 void display::begin()
 {
+
     for (auto i = 0; i < static_cast<uint8_t>(sensor_id_index::last); i++)
     {
         const auto id = static_cast<sensor_id_index>(i);
         hardware::instance.get_sensor(id).add_config_save_callback([id, this]
-            {
+                                                                   {
             const auto& sensor =  hardware::instance.get_sensor(id);
             const auto value = sensor.get_value();
             const auto level = sensor.calculate_level(value);
             std::lock_guard<std::mutex> lock(lgvl_mutex);
-            ui_set_sensor_value(id, value, level); });
+            ui::instance.set_sensor_value(id, value, level); });
     }
 
     auto brightness = config::instance.data.get_manual_screen_brightness();
     display_device.setBrightness(brightness.value_or(128));
+
+    log_i("Display Ready");
 }
 
 void display::loop()
@@ -124,15 +127,14 @@ void display::loop()
 void display::update_boot_message(const std::string &message)
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
-    lv_label_set_text(ui_boot_message, message.c_str());
-    ui_inline_loop(50);
+    ui::instance.update_boot_message(message);
 }
 
 void display::set_main_screen()
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
     log_i("Switching to main screen");
-    lv_disp_load_scr(ui_main_screen);
+    ui::instance.set_main_screen();
 }
 
 uint8_t display::get_brightness()

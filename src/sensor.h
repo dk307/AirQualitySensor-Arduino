@@ -20,7 +20,7 @@ public:
 
     bool is_in_range(double value) const
     {
-        return range_min >= value && value < range_max;
+        return range_min <= value && value < range_max;
     }
 
 private:
