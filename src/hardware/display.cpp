@@ -99,15 +99,14 @@ bool display::pre_begin()
 
 void display::begin()
 {
-
-    for (auto i = 0; i < static_cast<uint8_t>(sensor_id_index::last); i++)
+    for (auto i = 0; i < total_sensors; i++)
     {
         const auto id = static_cast<sensor_id_index>(i);
         hardware::instance.get_sensor(id).add_config_save_callback([id, this]
                                                                    {
             const auto& sensor =  hardware::instance.get_sensor(id);
             const auto value = sensor.get_value();
-            const auto level = sensor.calculate_level(value);
+            const auto level = sensor_definitions[static_cast<uint8_t>(id)].calculate_level(value);
             std::lock_guard<std::mutex> lock(lgvl_mutex);
             ui::instance.set_sensor_value(id, value, level); });
     }

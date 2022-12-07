@@ -25,7 +25,7 @@ void sdcard::loop()
 
 bool sdcard::mount()
 {
-    if (!SD.begin(SD_CS))
+    if (!SD.begin(SD_CS, SPI, 4000000 * 2))
     {
         log_e("Failed to initialize SD Card");
         return false;

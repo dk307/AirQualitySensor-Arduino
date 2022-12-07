@@ -43,8 +43,10 @@ private:
     const lv_font_t *font_extra_large_number = &lv_font_montserrat_20;
 
     // loaded from sd card
+    lv_font_t *font_montserrat_light_numbers_48;
     lv_font_t *font_montserrat_light_numbers_96;
     lv_font_t *font_montserrat_light_numbers_112;
+    lv_font_t *font_montserrat_bold_numbers_48;
 
     lv_style_t style_text_muted;
     lv_style_t style_title;
@@ -56,12 +58,18 @@ private:
     void set_label_panel_color(lv_obj_t *panel, uint64_t level);
     void event_mainscreen(lv_event_t *e);
     void bootscreen_screen_init(void);
-    panel_and_label main_screen_create_panel(const char *label_text,
-                                             lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h);
+    panel_and_label main_screen_create_big_panel(sensor_id_index index,
+                                                 lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w = 225, lv_coord_t h = 140);
+    panel_and_label main_screen_create_small_panel(sensor_id_index index,
+                                                   lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w = 107, lv_coord_t h = 81);
+    panel_and_label main_screen_create_temperature_panel(sensor_id_index index, lv_coord_t x_ofs, lv_coord_t y_ofs);
+    panel_and_label main_screen_create_humidity_panel(sensor_id_index index, lv_coord_t x_ofs, lv_coord_t y_ofs);
     void main_screen_screen_init(void);
     void load_information();
     void settings_screen_events_callback(lv_event_t *e);
     void settings_screen_screen_init(void);
     void settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e);
     void load_from_sd_card();
+
+    static void set_padding_zero(lv_obj_t *obj);
 };

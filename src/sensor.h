@@ -29,7 +29,7 @@ private:
     const sensor_level level;
 };
 
-class sensor_definition : public change_callback
+class sensor_definition
 {
 public:
     sensor_definition(const char *name, const char *unit, const sensor_definition_display *display_definitions, size_t display_definitions_count)
@@ -49,6 +49,21 @@ public:
         return display_definitions[0].get_level();
     }
 
+    const char *get_unit() const { return unit; }
+    const char *get_name() const { return name; }
+
+private:
+    const char *name;
+    const char *unit;
+    const sensor_definition_display *display_definitions;
+    const uint8_t display_definitions_count;
+};
+
+extern const std::array<sensor_definition, total_sensors> sensor_definitions;
+
+class sensor_value : public change_callback
+{
+public:
     double get_value() const { return value.load(); }
     void set_value(double value_)
     {
@@ -58,12 +73,6 @@ public:
         }
     }
 
-    const char *get_unit() const { return unit; }
-
 private:
-    const char *name;
-    const char *unit;
-    const sensor_definition_display *display_definitions;
-    const uint8_t display_definitions_count;
     std::atomic<double> value{NAN};
 };

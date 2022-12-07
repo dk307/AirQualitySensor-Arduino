@@ -9,6 +9,7 @@
 void setup(void)
 {
 	Serial.begin(115200);
+	log_i("Start");
 	if (!hardware::instance.pre_begin()) {
 		log_e("Boot Failure");
 	}

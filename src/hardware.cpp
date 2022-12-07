@@ -30,8 +30,13 @@ void hardware::begin()
                                                                           log_d("Core:%d", xPortGetCoreID());                                                                       
                                                                           sensors[0].set_value(esp_random() % 999);
                                                                           sensors[1].set_value(esp_random() % 500);
-                                                                          sensors[2].set_value(esp_random() % 2000);
-                                                                          vTaskDelay(3000);
+                                                                          sensors[2].set_value(esp_random() % 99);
+                                                                          sensors[3].set_value(esp_random() % 99);                                                
+                                                                          sensors[4].set_value(esp_random() % 9999);
+                                                                          sensors[5].set_value(esp_random() % 999);
+                                                                          sensors[6].set_value(esp_random() % 999);
+                                                                          sensors[7].set_value(esp_random() % 999);
+                                                                          vTaskDelay(5000);
                                                                       } while(true); });
 
     sensor_read_task->spawn_pinned("sensor read task", 8192, 1, 0);                                                                

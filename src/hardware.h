@@ -12,7 +12,7 @@ public:
 
     static hardware instance;
 
-    sensor_definition &get_sensor(sensor_id_index index)
+    sensor_value &get_sensor(sensor_id_index index)
     {
         return sensors[static_cast<uint8_t>(index)];
     }
@@ -26,16 +26,7 @@ private:
     const static std::array<sensor_definition_display, 1> temperature_definition_display;
 
     // same index as sensor_id_index
-    std::array<sensor_definition, total_sensors> sensors{
-        sensor_definition{"AQI", "", aqi_definition_display.data(), aqi_definition_display.size()},
-        sensor_definition{"Voc", "", voc_definition_display.data(), voc_definition_display.size()},
-        sensor_definition{"CO2", "", co2_definition_display.data(), co2_definition_display.size()},
-        sensor_definition{"Temperature", "F", temperature_definition_display.data(), temperature_definition_display.size()},
-        sensor_definition{"Temperature", "F", temperature_definition_display.data(), temperature_definition_display.size()},
-        sensor_definition{"Temperature", "F", temperature_definition_display.data(), temperature_definition_display.size()},
-        sensor_definition{"Temperature", "F", temperature_definition_display.data(), temperature_definition_display.size()},
-        sensor_definition{"Temperature", "F", temperature_definition_display.data(), temperature_definition_display.size()},
-    };
+    std::array<sensor_value, total_sensors> sensors;
 
     std::unique_ptr<task_wrapper> sensor_read_task;
 };

@@ -2,11 +2,10 @@
 
 #include <stdint.h>
 
-enum class sensor_id_index : std::size_t
+enum class sensor_id_index : uint8_t
 {
     pm_2_5 = 0,
     voc,
-    co2,
     temperatureF,
     humidity,
     eCO2,
@@ -16,6 +15,6 @@ enum class sensor_id_index : std::size_t
     last = pm_10,
 };
 
-constexpr size_t total_sensors = static_cast<size_t>(sensor_id_index::last);
+constexpr size_t total_sensors = static_cast<size_t>(sensor_id_index::last ) + 1;
 
 typedef uint8_t sensor_level;
