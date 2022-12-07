@@ -61,7 +61,7 @@ private:
     panel_and_label main_screen_create_big_panel(sensor_id_index index,
                                                  lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w = 225, lv_coord_t h = 140);
     panel_and_label main_screen_create_small_panel(sensor_id_index index,
-                                                   lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w = 107, lv_coord_t h = 81);
+                                                   lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w = 109, lv_coord_t h = 81);
     panel_and_label main_screen_create_temperature_panel(sensor_id_index index, lv_coord_t x_ofs, lv_coord_t y_ofs);
     panel_and_label main_screen_create_humidity_panel(sensor_id_index index, lv_coord_t x_ofs, lv_coord_t y_ofs);
     void main_screen_screen_init(void);

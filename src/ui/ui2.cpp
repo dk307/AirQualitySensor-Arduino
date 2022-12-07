@@ -197,9 +197,9 @@ void ui::main_screen_screen_init(void)
     main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::pm_2_5)] = main_screen_create_big_panel(sensor_id_index::pm_2_5, 10, 10);
     main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::voc)] = main_screen_create_big_panel(sensor_id_index::voc, 245, 10);
     main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::pm_10)] = main_screen_create_small_panel(sensor_id_index::pm_10, 10, 160);
-    main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::pm_4)] = main_screen_create_small_panel(sensor_id_index::pm_4, 128, 160);
+    main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::pm_4)] = main_screen_create_small_panel(sensor_id_index::pm_4, 127, 160);
     main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::pm_1)] = main_screen_create_small_panel(sensor_id_index::pm_1, 245, 160);
-    main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::eCO2)] = main_screen_create_small_panel(sensor_id_index::eCO2, 363, 160);
+    main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::eCO2)] = main_screen_create_small_panel(sensor_id_index::eCO2, 361, 160);
     main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::temperatureF)] =
         main_screen_create_temperature_panel(sensor_id_index::temperatureF, 10, -12);
     main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::humidity)] =

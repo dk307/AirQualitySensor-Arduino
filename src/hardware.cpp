@@ -32,7 +32,7 @@ void hardware::begin()
                                                                           sensors[1].set_value(esp_random() % 500);
                                                                           sensors[2].set_value(esp_random() % 99);
                                                                           sensors[3].set_value(esp_random() % 99);                                                
-                                                                          sensors[4].set_value(esp_random() % 9999);
+                                                                          sensors[4].set_value(esp_random() % 2000);
                                                                           sensors[5].set_value(esp_random() % 999);
                                                                           sensors[6].set_value(esp_random() % 999);
                                                                           sensors[7].set_value(esp_random() % 999);
