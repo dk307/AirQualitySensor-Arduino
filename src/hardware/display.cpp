@@ -102,7 +102,7 @@ void display::begin()
     for (auto i = 0; i < total_sensors; i++)
     {
         const auto id = static_cast<sensor_id_index>(i);
-        hardware::instance.get_sensor(id).add_config_save_callback([id, this]
+        hardware::instance.get_sensor(id).add_callback([id, this]
                                                                    {
             const auto& sensor =  hardware::instance.get_sensor(id);
             const auto value = sensor.get_value();

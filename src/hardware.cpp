@@ -45,5 +45,4 @@ void hardware::begin()
 void hardware::loop()
 {
     display::instance.loop();
-    sdcard::instance.loop();
 }

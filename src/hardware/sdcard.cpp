@@ -12,6 +12,7 @@ bool sdcard::pre_begin()
     pinMode(SD_CS, OUTPUT);
     digitalWrite(SD_CS, HIGH);
     SPI.begin(SDMMC_CLK, SDMMC_D0, SDMMC_CMD);
+
     return mount();
 }
 
@@ -19,13 +20,9 @@ void sdcard::begin()
 {
 }
 
-void sdcard::loop()
-{
-}
-
 bool sdcard::mount()
 {
-    if (!SD.begin(SD_CS, SPI, 4000000 * 2))
+    if (!SD.begin(SD_CS))
     {
         log_e("Failed to initialize SD Card");
         return false;
