@@ -17,7 +17,13 @@ void event_callback(lv_event_t *e)
     (p_this->*ftn)(e);
 }
 
-void ui::event_mainscreen(lv_event_t *e)
+void event_callback_ftn(lv_event_t *e)
+{
+    auto p_ftn = reinterpret_cast<std::function<void(lv_event_t * e)> *>(lv_event_get_user_data(e));
+    (*p_ftn)(e);
+}
+
+void ui::event_main_screen(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t *target = lv_event_get_target(e);
@@ -27,20 +33,20 @@ void ui::event_mainscreen(lv_event_t *e)
     }
 }
 
-void ui::bootscreen_screen_init(void)
+void ui::boot_screen_screen_init(void)
 {
-    bootscreen = lv_obj_create(NULL);
-    lv_obj_clear_flag(bootscreen, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_scrollbar_mode(bootscreen, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_style_bg_color(bootscreen, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(bootscreen, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    boot_screen = lv_obj_create(NULL);
+    lv_obj_clear_flag(boot_screen, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(boot_screen, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_style_bg_color(boot_screen, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(boot_screen, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    bootlogo = lv_img_create(bootscreen);
-    lv_img_set_src(bootlogo, &ui_img_logo);
-    lv_obj_set_size(bootlogo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(bootlogo, LV_ALIGN_CENTER, 0, -20);
+    boot_logo = lv_img_create(boot_screen);
+    lv_img_set_src(boot_logo, &ui_img_logo);
+    lv_obj_set_size(boot_logo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_align(boot_logo, LV_ALIGN_CENTER, 0, -20);
 
-    boot_message = lv_label_create(bootscreen);
+    boot_message = lv_label_create(boot_screen);
     lv_obj_set_size(boot_message, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_align(boot_message, LV_ALIGN_CENTER, 0, 60);
     lv_label_set_text(boot_message, "Starting");
@@ -84,6 +90,9 @@ ui::panel_and_label ui::main_screen_create_big_panel(sensor_id_index index,
     lv_obj_set_style_text_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_text(value_label, "-");
 
+    const auto param = new std::pair<ui *, sensor_id_index>(this, index);
+    add_panel_callback_event(panel, index);
+
     return {panel, value_label};
 }
 
@@ -123,6 +132,7 @@ ui::panel_and_label ui::main_screen_create_small_panel(sensor_id_index index,
     lv_obj_set_style_text_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_text(value_label, "-");
 
+    add_panel_callback_event(panel, index);
     return {panel, value_label};
 }
 
@@ -154,6 +164,7 @@ ui::panel_and_label ui::main_screen_create_temperature_panel(sensor_id_index ind
     lv_obj_set_style_bg_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_text_fmt(value_label, "- %s", sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
+    add_panel_callback_event(panel, index);
     return {nullptr, value_label};
 }
 
@@ -185,6 +196,7 @@ ui::panel_and_label ui::main_screen_create_humidity_panel(sensor_id_index index,
     lv_obj_set_style_bg_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_text_fmt(value_label, "- %s", sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
+    add_panel_callback_event(panel, index);
     return {nullptr, value_label};
 }
 
@@ -205,8 +217,44 @@ void ui::main_screen_screen_init(void)
     main_screen_panel_and_label[static_cast<size_t>(sensor_id_index::humidity)] =
         main_screen_create_humidity_panel(sensor_id_index::humidity, -10, -12);
 
-    lv_obj_add_event_cb(main_screen, event_callback<&ui::event_mainscreen>, LV_EVENT_ALL, this);
+    lv_obj_add_event_cb(main_screen, event_callback<&ui::event_main_screen>, LV_EVENT_ALL, this);
     log_d("Main screen init done");
+}
+
+void ui::sensor_detail_screen_init(void)
+{
+    sensor_detail_screen = lv_obj_create(NULL);
+    lv_obj_clear_flag(sensor_detail_screen, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(sensor_detail_screen, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    sensor_detail_screen_top_label = lv_label_create(sensor_detail_screen);
+    lv_obj_set_size(sensor_detail_screen_top_label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_align(sensor_detail_screen_top_label, LV_ALIGN_TOP_MID, 0, 15);
+
+    lv_obj_set_style_text_color(sensor_detail_screen_top_label, lv_color_hex(0x1E1E1E), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(sensor_detail_screen_top_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(sensor_detail_screen_top_label, font_large, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t *close_button = lv_btn_create(sensor_detail_screen);
+    lv_obj_add_flag(close_button, LV_OBJ_FLAG_FLOATING | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_bg_color(close_button, lv_color_white(), LV_STATE_CHECKED);
+    lv_obj_set_style_pad_all(close_button, 15, 0);
+    lv_obj_set_style_radius(close_button, LV_RADIUS_CIRCLE, 0);
+
+    lv_obj_set_style_shadow_width(close_button, 0, 0);
+    lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_CLOSE, 0);
+
+    lv_obj_set_size(close_button, LV_DPX(60), LV_DPX(60));
+    lv_obj_align(close_button, LV_ALIGN_BOTTOM_RIGHT, -LV_DPX(15), -LV_DPX(15));
+
+    add_event_callback(
+        close_button, [this](lv_event_t *e)
+        { if (e->code == LV_EVENT_PRESSED) {
+             lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_OUT, 300, 0, false);
+         } },
+        LV_EVENT_PRESSED);
+
+    log_d("Sensor detail init done");
 }
 
 void ui::load_information()
@@ -240,7 +288,6 @@ void ui::settings_screen_events_callback(lv_event_t *e)
                                                                   {
                                                                       do
                                                                       {
-                                                                          // log_d("Core:%d", xPortGetCoreID());
                                                                           load_information();
                                                                           vTaskDelay(1000);
                                                                       } while(true); });
@@ -320,7 +367,6 @@ void ui::settings_screen_screen_init(void)
     // Information tab
     {
         auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, "Information");
-
         settings_screen_tab_information_table = lv_table_create(settings_screen_tab_information);
         lv_obj_set_size(settings_screen_tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
     }
@@ -365,9 +411,9 @@ void ui::init()
     lv_style_set_text_font(&style_label_default, font_normal);
 
     lv_disp_set_theme(dispp, theme);
-    bootscreen_screen_init();
+    boot_screen_screen_init();
 
-    lv_disp_load_scr(bootscreen);
+    lv_disp_load_scr(boot_screen);
 
     inline_loop(100);
 
@@ -379,6 +425,7 @@ void ui::init()
     load_from_sd_card(); // might take some time
 
     main_screen_screen_init();
+    sensor_detail_screen_init();
     settings_screen_screen_init();
 }
 
@@ -469,4 +516,29 @@ void ui::set_padding_zero(lv_obj_t *obj)
     lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+struct _lv_event_dsc_t *ui::add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter)
+{
+    auto param = new std::function<void(lv_event_t *)>(ftn);
+    return lv_obj_add_event_cb(obj, event_callback_ftn, LV_EVENT_ALL, param);
+}
+
+void ui::add_panel_callback_event(lv_obj_t *panel, sensor_id_index index)
+{
+    add_event_callback(
+        panel, [this, index](lv_event_t *e)
+        { if (e->code == LV_EVENT_PRESSED) {
+            show_sensor_detail_screen(index);
+         } },
+        LV_EVENT_PRESSED);
+}
+
+void ui::show_sensor_detail_screen(sensor_id_index index)
+{
+    log_i("Panel pressed for sensor index:%d", index);
+
+    lv_label_set_text(sensor_detail_screen_top_label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
+
+    lv_scr_load_anim(sensor_detail_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
 }
