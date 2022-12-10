@@ -295,23 +295,18 @@
                             </div>
 
                             <div class="form-outline mb-4">
-                                <input type="text" id="ntpServer1" name="ntpServer1"
-                                    class="form-control form-control" required />
-                                <label class="form-label" for="ntpServer1">NTP Server -1</label>
-                            </div>
-
-                            <div class="form-outline mb-4">
-                                <input type="text" id="ntpServer2" name="ntpServer2"
-                                    class="form-control form-control" required />
-                                <label class="form-label" for="ntpServer2">NTP Server -2</label>
+                                <input type="text" id="ntpServer" name="ntpServer" class="form-control form-control"
+                                    required />
+                                <label class="form-label" for="ntpServer">NTP Server -1</label>
                             </div>
 
                             <div class="form-outline mb-4">
                                 <input type="number" id="ntpServerRefreshInterval" name="ntpServerRefreshInterval"
                                     class="form-control form-control" required />
-                                <label class="form-label" for="ntpServerRefreshInterval">NTP Sync Interval (seconds)</label>
+                                <label class="form-label" for="ntpServerRefreshInterval">NTP Sync Interval
+                                    (seconds)</label>
                             </div>
-                            
+
                             <label class="form-label select-label">Timezone</label>
                             <select class="select" id="timezone" name="timezone">
                                 <option value="0">US Eastern Time</option>
@@ -320,7 +315,7 @@
                                 <option value="3">US Arizona</option>
                                 <option value="4">US Pacific Time</option>
                             </select>
-                            
+
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Close</button>
@@ -380,7 +375,8 @@
 
         <!-- File Update Modal Start-->
         <form class="needs-validation" id="fileUploadUploadForm" method="post" enctype="multipart/form-data">
-            <div class="modal fade" id="fileUploadUpdateModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal fade" id="fileUploadUpdateModal" tabindex="-1" data-bs-backdrop="static"
+                data-bs-keyboard="false">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -538,8 +534,7 @@
                     success: function (data) {
                         $('#hostName').val(data["hostname"]);
                         $('#ntpServerRefreshInterval').val(data["ntpserverrefreshinterval"] / 1000);
-                        $('#ntpServer1').val(data["ntpserver1"]);
-                        $('#ntpServer2').val(data["ntpserver2"]);
+                        $('#ntpServer').val(data["ntpserver"]);
                         $('#timezone').val(data["timezone"]);
                     },
                     error: function () {

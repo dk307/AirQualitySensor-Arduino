@@ -376,8 +376,7 @@ void web_server::web_login_update(AsyncWebServerRequest *request)
 void web_server::other_settings_update(AsyncWebServerRequest *request)
 {
 	const auto hostName = F("hostName");
-	const auto ntpServer1 = F("ntpServer1");
-	const auto ntpServer2 = F("ntpServer2");
+	const auto ntpServer = F("ntpServer");
 	const auto ntpServerRefreshInterval = F("ntpServerRefreshInterval");
 	const auto timezone = F("timezone");
 
@@ -391,6 +390,21 @@ void web_server::other_settings_update(AsyncWebServerRequest *request)
 	if (request->hasArg(hostName))
 	{
 		config::instance.data.set_host_name(request->arg(hostName));
+	}
+
+		if (request->hasArg(ntpServer))
+	{
+		config::instance.data.set_ntp_server(request->arg(ntpServer));
+	}
+ 
+	if (request->hasArg(ntpServerRefreshInterval))
+	{
+		config::instance.data.set_ntp_server_refresh_interval(request->arg(ntpServerRefreshInterval).toInt() * 1000);
+	}
+
+	if (request->hasArg(timezone))
+	{
+		config::instance.data.set_timezone(static_cast<TimeZoneSupported>(request->arg(timezone).toInt()));
 	}
 
 	config::instance.save();
@@ -493,7 +507,7 @@ bool web_server::is_captive_portal_request(AsyncWebServerRequest *request)
 	if (!is_ip(request->host()))
 	{
 		log_i("Request redirected to captive portal");
-		AsyncWebServerResponse *response = request->beginResponse(302, String(TextPlainMediaType), nullptr);
+		AsyncWebServerResponse *response = request->beginResponse(302, String(TextPlainMediaType), String());
 		response->addHeader(F("Location"), String(F("http://")) + to_string_ip(request->client()->localIP()));
 		request->send(response);
 		return true;

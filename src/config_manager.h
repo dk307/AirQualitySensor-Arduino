@@ -4,6 +4,15 @@
 #include <ArduinoJson.h>
 #include <mutex>
 
+enum class TimeZoneSupported
+{
+    USEastern = 0,
+    USCentral = 1,
+    USMountainTime = 2,
+    USArizona = 3,
+    USPacific = 4
+};
+
 struct config_data
 {
     config_data()
@@ -21,6 +30,10 @@ struct config_data
         web_password = defaultUserIDPassword;
         wifi_ssid.clear();
         wifi_password.clear();
+        ntp_server.clear();
+        ntp_server_refresh_interval = 60 * 1000;
+        time_zone = TimeZoneSupported::USPacific;
+        manual_screen_brightness.reset();
     }
 
     String get_host_name() const
@@ -89,12 +102,50 @@ struct config_data
         manual_screen_brightness = screen_brightness_;
     }
 
+    String get_ntp_server() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        return ntp_server;
+    }
+    void set_ntp_server(const String &ntp_server_)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        ntp_server = ntp_server_;
+    }
+
+    uint64_t get_ntp_server_refresh_interval() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        return ntp_server_refresh_interval;
+    }
+    void set_ntp_server_refresh_interval(uint64_t ntp_server_refresh_interval_)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        ntp_server_refresh_interval = ntp_server_refresh_interval_;
+    }
+
+    TimeZoneSupported get_timezone() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        return time_zone;
+    }
+    void set_timezone(TimeZoneSupported time_zone_)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        time_zone = time_zone_;
+    }
+
 private:
     String host_name;
     String web_user_name;
     String web_password;
     String wifi_ssid;
     String wifi_password;
+
+    String ntp_server;
+    uint64_t ntp_server_refresh_interval;
+    TimeZoneSupported time_zone;
+
     std::optional<uint8_t> manual_screen_brightness;
 
     mutable std::mutex data_mutex;

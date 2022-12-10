@@ -64,42 +64,22 @@ extern const std::array<sensor_definition, total_sensors> sensor_definitions;
 class sensor_value : public change_callback
 {
 public:
-    typedef int16_t value_type;
+    typedef int32_t value_type;
 
-    // max supported sensor value is 65535
-    value_type get_value() const { return value.load() / extra_digits; }
+    value_type get_value() const { return value.load(); }
 
     template <class T>
     void set_value(T value_)
     {
-        value_ = clamp_value<typename std::remove_reference<T>::type>(value_) * extra_digits;
-
-        if (value.exchange(value_) != value_)
+        const auto new_value = static_cast<value_type>(value_);
+        if (value.exchange(new_value) != new_value)
         {
             call_change_listeners();
         }
     }
 
-    double get_value_as_double() const
-    {
-        return static_cast<double>(value.load()) / extra_digits;
-    }
-
 private:
-    // store data as int32_t with 3 digits resolution
-    std::atomic<int32_t> value;
-
-    const uint16_t extra_digits = 1000U;
-
-    template <class T, typename = void>
-    value_type clamp_value(T value_)
-    {
-        return std::clamp<T>(value_, std::numeric_limits<value_type>::min(), std::numeric_limits<value_type>::max());
-    }
-
-    template <class T, std::enable_if_t<sizeof(T) <= sizeof(value_type)> * = nullptr>
-    value_type clamp_value(T value_)
-    {
-        return value_;
-    }
+    std::atomic<value_type> value{0};
 };
+
+ 
