@@ -27,9 +27,13 @@ void ui::event_main_screen(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t *target = lv_event_get_target(e);
-    if (event_code == LV_EVENT_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_BOTTOM)
+    if (event_code == LV_EVENT_GESTURE)
     {
-        lv_scr_load_anim(settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
+        const auto gesture_dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+        if ((gesture_dir == LV_DIR_BOTTOM) || (gesture_dir == LV_DIR_TOP))
+        {
+            lv_scr_load_anim(settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
+        }
     }
 }
 
@@ -200,6 +204,28 @@ ui::panel_and_label ui::main_screen_create_humidity_panel(sensor_id_index index,
     return {nullptr, value_label};
 }
 
+void ui::create_close_button_main(lv_obj_t *parent)
+{
+    lv_obj_t *close_button = lv_btn_create(parent);
+    lv_obj_add_flag(close_button, LV_OBJ_FLAG_FLOATING | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_bg_color(close_button, lv_color_white(), LV_STATE_CHECKED);
+    lv_obj_set_style_pad_all(close_button, 15, 0);
+    lv_obj_set_style_radius(close_button, LV_RADIUS_CIRCLE, 0);
+
+    lv_obj_set_style_shadow_width(close_button, 0, 0);
+    lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_CLOSE, 0);
+
+    lv_obj_set_size(close_button, LV_DPX(60), LV_DPX(60));
+    lv_obj_align(close_button, LV_ALIGN_BOTTOM_RIGHT, -LV_DPX(15), -LV_DPX(15));
+
+    add_event_callback(
+        close_button, [this](lv_event_t *e)
+        { if (e->code == LV_EVENT_PRESSED) {
+             lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_OUT, 200, 0, false);
+         } },
+        LV_EVENT_PRESSED);
+}
+
 void ui::main_screen_screen_init(void)
 {
     main_screen = lv_obj_create(NULL);
@@ -235,24 +261,7 @@ void ui::sensor_detail_screen_init(void)
     lv_obj_set_style_text_opa(sensor_detail_screen_top_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(sensor_detail_screen_top_label, font_large, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_t *close_button = lv_btn_create(sensor_detail_screen);
-    lv_obj_add_flag(close_button, LV_OBJ_FLAG_FLOATING | LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_set_style_bg_color(close_button, lv_color_white(), LV_STATE_CHECKED);
-    lv_obj_set_style_pad_all(close_button, 15, 0);
-    lv_obj_set_style_radius(close_button, LV_RADIUS_CIRCLE, 0);
-
-    lv_obj_set_style_shadow_width(close_button, 0, 0);
-    lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_CLOSE, 0);
-
-    lv_obj_set_size(close_button, LV_DPX(60), LV_DPX(60));
-    lv_obj_align(close_button, LV_ALIGN_BOTTOM_RIGHT, -LV_DPX(15), -LV_DPX(15));
-
-    add_event_callback(
-        close_button, [this](lv_event_t *e)
-        { if (e->code == LV_EVENT_PRESSED) {
-             lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_OUT, 300, 0, false);
-         } },
-        LV_EVENT_PRESSED);
+    create_close_button_main(sensor_detail_screen);
 
     log_d("Sensor detail init done");
 }
@@ -298,10 +307,6 @@ void ui::settings_screen_events_callback(lv_event_t *e)
     {
         log_d("setting screen hidden");
         information_refresh_task.reset();
-    }
-    else if (event_code == LV_EVENT_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == LV_DIR_BOTTOM)
-    {
-        lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
     }
 }
 
@@ -370,6 +375,8 @@ void ui::settings_screen_screen_init(void)
         settings_screen_tab_information_table = lv_table_create(settings_screen_tab_information);
         lv_obj_set_size(settings_screen_tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
     }
+
+    create_close_button_main(settings_screen_tab);
 }
 
 void ui::load_from_sd_card()

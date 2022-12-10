@@ -79,6 +79,7 @@ private:
     void show_sensor_detail_screen(sensor_id_index index);
 
     static void set_padding_zero(lv_obj_t *obj);
+    void create_close_button_main(lv_obj_t * parent);
 
     void add_panel_callback_event(lv_obj_t *panel, sensor_id_index index);
     struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter);
