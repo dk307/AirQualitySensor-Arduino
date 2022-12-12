@@ -7,10 +7,12 @@ hardware hardware::instance;
 
 bool hardware::pre_begin()
 {
+    sensors_history = psram::make_unique<std::array<sensor_history, total_sensors>>();
     if (!sdcard::instance.pre_begin())
     {
         return false;
     }
+
     if (!display::instance.pre_begin())
     {
         return false;
@@ -28,7 +30,7 @@ void hardware::begin()
                                                                       do
                                                                       {
                                                                           log_d("Core:%d", xPortGetCoreID());                                                                       
-                                                                          sensors[0].set_value(esp_random() % 999);
+                                                                          set_sensor_value(sensor_id_index::pm_2_5, esp_random() % 999);
                                                                           sensors[1].set_value(esp_random() % 500);
                                                                           sensors[2].set_value(esp_random() % 99);
                                                                           sensors[3].set_value(esp_random() % 99);                                                

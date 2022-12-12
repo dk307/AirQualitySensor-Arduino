@@ -144,7 +144,7 @@ ui::panel_and_label ui::main_screen_create_temperature_panel(sensor_id_index ind
                                                              lv_coord_t x_ofs, lv_coord_t y_ofs)
 {
     auto panel = lv_obj_create(main_screen);
-    lv_obj_set_size(panel, 240, LV_SIZE_CONTENT);
+    lv_obj_set_size(panel, 180, LV_SIZE_CONTENT);
     lv_obj_align(panel, LV_ALIGN_BOTTOM_LEFT, x_ofs, y_ofs);
     lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(panel, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -204,7 +204,7 @@ ui::panel_and_label ui::main_screen_create_humidity_panel(sensor_id_index index,
     return {nullptr, value_label};
 }
 
-void ui::create_close_button_main(lv_obj_t *parent)
+void ui::create_close_button_to_main_screen(lv_obj_t *parent)
 {
     lv_obj_t *close_button = lv_btn_create(parent);
     lv_obj_add_flag(close_button, LV_OBJ_FLAG_FLOATING | LV_OBJ_FLAG_CLICKABLE);
@@ -261,7 +261,7 @@ void ui::sensor_detail_screen_init(void)
     lv_obj_set_style_text_opa(sensor_detail_screen_top_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(sensor_detail_screen_top_label, font_large, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    create_close_button_main(sensor_detail_screen);
+    create_close_button_to_main_screen(sensor_detail_screen);
 
     log_d("Sensor detail init done");
 }
@@ -376,7 +376,7 @@ void ui::settings_screen_screen_init(void)
         lv_obj_set_size(settings_screen_tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
     }
 
-    create_close_button_main(settings_screen_tab);
+    create_close_button_to_main_screen(settings_screen_tab);
 }
 
 void ui::load_from_sd_card()
@@ -484,7 +484,7 @@ void ui::set_label_panel_color(lv_obj_t *panel, uint64_t level)
     lv_obj_set_style_bg_grad_color(panel, lv_color_hex(color_grad), LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
-void ui::set_sensor_value(sensor_id_index id, uint16_t value, sensor_level level)
+void ui::set_sensor_value(sensor_id_index id, int16_t value, sensor_level level)
 {
     log_v("Updating sensor %d to %d", id, value);
     const auto &pair = main_screen_panel_and_label.at(static_cast<size_t>(id));
@@ -537,7 +537,7 @@ void ui::add_panel_callback_event(lv_obj_t *panel, sensor_id_index index)
         panel, [this, index](lv_event_t *e)
         { if (e->code == LV_EVENT_PRESSED) {
             show_sensor_detail_screen(index);
-         } },
+        } },
         LV_EVENT_PRESSED);
 }
 

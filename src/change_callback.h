@@ -6,7 +6,7 @@
 class change_callback
 {
 public:
-    void add_callback(const std::function<void()>& func)
+    void add_callback(const std::function<void()>& func) const
     {
         change_callbacks.push_back(func);
     }
@@ -20,5 +20,5 @@ public:
     }
 
 private:
-    std::vector<std::function<void()>> change_callbacks;
+    mutable std::vector<std::function<void()>> change_callbacks;
 };

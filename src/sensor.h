@@ -4,6 +4,8 @@
 
 #include <math.h>
 #include <atomic>
+#include <mutex>
+#include <CircularBuffer.h>
 
 #include "sensor_id.h"
 
@@ -61,25 +63,94 @@ private:
 
 extern const std::array<sensor_definition, total_sensors> sensor_definitions;
 
-class sensor_value : public change_callback
+template <class T>
+class sensor_value_t : public change_callback
 {
 public:
-    typedef int32_t value_type;
+    typedef T value_type;
 
     value_type get_value() const { return value.load(); }
 
-    template <class T>
-    void set_value(T value_)
+    template <class T1>
+    T set_value(T1 value_)
     {
         const auto new_value = static_cast<value_type>(value_);
         if (value.exchange(new_value) != new_value)
         {
             call_change_listeners();
         }
+        return new_value;
     }
 
 private:
-    std::atomic<value_type> value{0};
+    std::atomic<T> value{0};
 };
 
- 
+using sensor_value = sensor_value_t<int16_t>;
+
+template <class T>
+class sensor_history_t
+{
+public:
+    typedef struct
+    {
+        T mean;
+        T min;
+        T max;
+    } stats;
+
+    static constexpr int reads_per_minute = 2;
+    static constexpr int total_count_history = 24 * 2;
+
+    void add_value(T value)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        last_30_min_values.push(value);
+    }
+
+    std::optional<stats> last_30_min_stats() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        return last_30_min_stats_();
+    }
+
+    void add_stats_to_history()
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        const auto stats = last_30_min_stats_();
+        if (stats.has_value())
+        {
+            last_30_min_interval_stats.push(*stats);
+        }
+    }
+
+private:
+    std::mutex data_mutex;
+    CircularBuffer<T, reads_per_minute * 30> last_30_min_values;
+    CircularBuffer<stats, total_count_history> last_30_min_interval_stats;
+
+    std::optional<stats> last_30_min_stats_() const
+    {
+        const auto size = last_30_min_values.size();
+        if (size)
+        {
+            stats stats_value{0, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()};
+            double sum = 0;
+            for (auto i = 0; i < size; i++)
+            {
+                const auto value = last_30_min_values[i];
+                sum += value;
+                stats_value.max = std::max(value, stats_value.max);
+                stats_value.min = std::min(value, stats_value.min);
+            }
+            stats_value.mean = static_cast<T>(sum / size);
+            return stats_value;
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+};
+
+using sensor_history = sensor_history_t<int16_t>;
