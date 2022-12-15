@@ -7,7 +7,7 @@
 #include <WiFi.h>
 #include <esp_sntp.h>
 
-ntp_time EXT_RAM_ATTR ntp_time::instance;
+ntp_time ntp_time::instance;
 
 // US Eastern Time Zone (New York, Detroit)
 TimeChangeRule EXT_RAM_ATTR usEDT = {"EDT", Second, Sun, Mar, 2, -240}; // Eastern Daylight Time = UTC - 4 hours
@@ -82,6 +82,8 @@ void ntp_time::on_got_ip(WiFiEvent_t event, WiFiEventInfo_t info)
     log_i("Got Wifi IP");
     force_reconnect = true;
 }
+
+
 
  
 

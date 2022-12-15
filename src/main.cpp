@@ -24,13 +24,13 @@ void setup(void)
 
 	operations::instance.begin();
 	hardware::instance.begin();
-	display::instance.update_boot_message("Wifi setup");
+	hardware::instance.update_boot_message("Wifi setup");
 	wifi_manager::instance.begin();
-	display::instance.update_boot_message("Webserver setup");
+	hardware::instance.update_boot_message("Webserver setup");
 	web_server::instance.begin();
 	ntp_time::instance.begin();
-	display::instance.update_boot_message("Done");
-	display::instance.set_main_screen();
+	hardware::instance.update_boot_message("Done");
+	hardware::instance.set_main_screen();
 
 	log_i("Done on core:%d", xPortGetCoreID());
 }

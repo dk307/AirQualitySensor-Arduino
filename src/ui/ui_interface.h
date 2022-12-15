@@ -4,21 +4,17 @@
 #include <vector>
 #include <string>
 #include <psram_allocator.h>
+#include "sensor_id.h"
+#include "sensor.h"
 
 class ui_interface
 {
 public:
     typedef std::vector<std::pair<String, String>, psram::allocator<std::pair<String, String>>> information_table_type;
-    information_table_type get_information_table();
+    virtual information_table_type get_information_table() = 0;
 
-    // screen brightness
-    uint8_t get_manual_screen_brightness();
-    void set_manual_screen_brightness(uint8_t value);
-    
-    static ui_interface instance;
-
-private:
-    ui_interface() = default;
-    static String get_up_time();
-    static String network_status();
+    virtual uint8_t get_manual_screen_brightness() = 0;
+    virtual void set_manual_screen_brightness(uint8_t value) = 0;
+    virtual sensor_value::value_type get_sensor_value(sensor_id_index index) = 0;
+    virtual sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) = 0;
 };

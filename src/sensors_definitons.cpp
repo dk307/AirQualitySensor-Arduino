@@ -37,12 +37,12 @@ const std::array<sensor_definition_display, 1> humidity_definition_display{
 };
 
 const std::array<sensor_definition, total_sensors> sensor_definitions{
-    sensor_definition{"PM 2.5", "µg/m3", pm_2_5_definition_display.data(), pm_2_5_definition_display.size()},
+    sensor_definition{"PM 2.5", "µg/m³ ", pm_2_5_definition_display.data(), pm_2_5_definition_display.size()},
     sensor_definition{"VOC", "", voc_definition_display.data(), voc_definition_display.size()},
     sensor_definition{"Temperature", "°F", temperature_definition_display.data(), temperature_definition_display.size()},
     sensor_definition{"Humidity", "⁒", humidity_definition_display.data(), humidity_definition_display.size()},
     sensor_definition{"eCO2", "ppm", co2_definition_display.data(), co2_definition_display.size()},
-    sensor_definition{"PM 1", "µg/m3", temperature_definition_display.data(), temperature_definition_display.size()},
-    sensor_definition{"PM 4", "µg/m3", temperature_definition_display.data(), temperature_definition_display.size()},
-    sensor_definition{"PM 10", "µg/m3", pm_10_definition_display.data(), pm_10_definition_display.size()},
+    sensor_definition{"PM 1", "µg/m³", temperature_definition_display.data(), temperature_definition_display.size()},
+    sensor_definition{"PM 4", "µg/m³", temperature_definition_display.data(), temperature_definition_display.size()},
+    sensor_definition{"PM 10", "µg/m³", pm_10_definition_display.data(), pm_10_definition_display.size()},
 };

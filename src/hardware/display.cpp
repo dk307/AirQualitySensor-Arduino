@@ -5,18 +5,17 @@
 #include "config_manager.h"
 #include "hardware.h"
 
-display display::instance;
 
 /* Display flushing */
 void display::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
-    auto &display_device = display::instance.display_device;
-    if (display_device.getStartCount() == 0)
+    auto display_device = reinterpret_cast<LGFX*>(disp->user_data);
+    if (display_device->getStartCount() == 0)
     {
-        display_device.endWrite();
+        display_device->endWrite();
     }
 
-    display_device.pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1,
+    display_device->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1,
                                 (lgfx::swap565_t *)&color_p->full);
 
     lv_disp_flush_ready(disp); /* tell lvgl that flushing is done */
@@ -25,9 +24,9 @@ void display::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color
 /*Read the touchpad*/
 void display::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
 {
-    auto &display_device = display::instance.display_device;
+    auto display_device = reinterpret_cast<LGFX*>(indev_driver->user_data);
     uint16_t touchX, touchY;
-    const bool touched = display_device.getTouch(&touchX, &touchY);
+    const bool touched = display_device->getTouch(&touchX, &touchY);
 
     if (!touched)
     {
@@ -79,6 +78,7 @@ bool display::pre_begin()
     disp_drv.ver_res = display_device.height();
     disp_drv.flush_cb = display_flush;
     disp_drv.draw_buf = &draw_buf;
+    disp_drv.user_data = &display_device;
     lv_display = lv_disp_drv_register(&disp_drv);
 
     log_d("LVGL display initialized");
@@ -87,11 +87,12 @@ bool display::pre_begin()
     lv_indev_drv_init(&indev_drv);
     indev_drv.type = LV_INDEV_TYPE_POINTER;
     indev_drv.read_cb = touchpad_read;
+    indev_drv.user_data = &display_device;
     lv_indev_drv_register(&indev_drv);
 
     log_d("LVGL input device driver initialized");
 
-    ui::instance.init();
+    ui_instance.init();
 
     log_i("Done");
     return true;
@@ -105,10 +106,10 @@ void display::begin()
         hardware::instance.get_sensor(id).add_callback([id, this]
                                                                    {
             const auto& sensor =  hardware::instance.get_sensor(id);
-            const auto value = sensor.get_value();
-            const auto level = sensor_definitions[static_cast<uint8_t>(id)].calculate_level(value);
+            const auto value = sensor.get_value();          
             std::lock_guard<std::mutex> lock(lgvl_mutex);
-            ui::instance.set_sensor_value(id, value, level); });
+            ui_instance.set_sensor_value(id, value);
+        });
     }
 
     auto brightness = config::instance.data.get_manual_screen_brightness();
@@ -123,17 +124,17 @@ void display::loop()
     lv_timer_handler();
 }
 
-void display::update_boot_message(const std::string &message)
+void display::update_boot_message(const String &message)
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
-    ui::instance.update_boot_message(message);
+    ui_instance.update_boot_message(message);
 }
 
 void display::set_main_screen()
 {
     std::lock_guard<std::mutex> lock(lgvl_mutex);
     log_i("Switching to main screen");
-    ui::instance.set_main_screen();
+    ui_instance.set_main_screen();
 }
 
 uint8_t display::get_brightness()

@@ -3,8 +3,10 @@
 #include "sensor.h"
 #include "task_wrapper.h"
 #include "psram_allocator.h"
+#include "hardware/display.h"
+#include "ui/ui_interface.h"
 
-class hardware
+class hardware final : ui_interface
 {
 public:
     bool pre_begin();
@@ -23,8 +25,26 @@ public:
         return (*sensors_history)[static_cast<uint8_t>(index)];
     }
 
+    void update_boot_message(const String &message)
+    {
+        display_instance.update_boot_message(message);
+    }
+    void set_main_screen()
+    {
+        display_instance.set_main_screen();
+    }
+
+    // ui_interface
+    information_table_type get_information_table() override;
+    uint8_t get_manual_screen_brightness() override;
+    void set_manual_screen_brightness(uint8_t value) override;
+    sensor_value::value_type get_sensor_value(sensor_id_index index) override;
+    sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) override;
+
 private:
     hardware() = default;
+
+    display display_instance{*this};
 
     // same index as sensor_id_index
     std::array<sensor_value, total_sensors> sensors;
@@ -38,4 +58,7 @@ private:
         const auto new_value = sensors[static_cast<size_t>(index)].set_value(value);
         (*sensors_history)[static_cast<size_t>(index)].add_value(new_value);
     }
+
+    static String get_up_time();
+    static String network_status();
 };

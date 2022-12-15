@@ -2,25 +2,27 @@
 
 #include "lgfxdevice.h"
 #include <mutex>
+#include "ui\ui2.h"
+#include "ui\ui_interface.h"
 
 class display
 {
 public:
+    display(ui_interface &ui_interface_) : ui_instance(ui_interface_)
+    {
+    }
+
     bool pre_begin();
     void begin();
     void loop();
 
-    static display instance;
-
-    void update_boot_message(const std::string& message);
+    void update_boot_message(const String &message);
     void set_main_screen();
-    
+
     uint8_t get_brightness();
     void set_brightness(uint8_t value);
 
 private:
-    display() = default;
-
     LGFX display_device;
     std::mutex lgvl_mutex;
 
@@ -30,6 +32,7 @@ private:
     lv_disp_t *lv_display{};
     lv_color_t *disp_draw_buf{};
     lv_color_t *disp_draw_buf2{};
+    ui ui_instance;
 
     static void display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p);
     static void touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data);

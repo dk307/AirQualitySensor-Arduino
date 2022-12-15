@@ -56,7 +56,7 @@ const static static_files_map staticFilesMap[] PROGMEM = {
 	{MdbCssUrl, mdb_min_css_gz, mdb_min_css_gz_len, CssMediaType, true},
 };
 
-web_server EXT_RAM_ATTR web_server::instance;
+web_server web_server::instance;
 
 String create_hash(const String &user, const String &password, const String &ipAddress)
 {
@@ -213,7 +213,7 @@ void web_server::information_get(AsyncWebServerRequest *request)
 	auto response = new AsyncJsonResponse(true, 1024);
 	auto arr = response->getRoot();
 
-	const auto data = ui_interface::instance.get_information_table();
+	const auto data = hardware::instance.get_information_table();
 
 	for (auto &&[key, value] : data)
 	{
@@ -392,11 +392,11 @@ void web_server::other_settings_update(AsyncWebServerRequest *request)
 		config::instance.data.set_host_name(request->arg(hostName));
 	}
 
-		if (request->hasArg(ntpServer))
+	if (request->hasArg(ntpServer))
 	{
 		config::instance.data.set_ntp_server(request->arg(ntpServer));
 	}
- 
+
 	if (request->hasArg(ntpServerRefreshInterval))
 	{
 		config::instance.data.set_ntp_server_refresh_interval(request->arg(ntpServerRefreshInterval).toInt() * 1000);

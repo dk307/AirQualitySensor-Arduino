@@ -99,6 +99,13 @@ public:
         T max;
     } stats;
 
+    typedef struct
+    {
+        std::optional<stats> last_30_min_stats;
+        std::vector<T> last_30_min_values;
+
+    } sensor_history_snapshot;
+
     static constexpr int reads_per_minute = 2;
     static constexpr int total_count_history = 24 * 2;
 
@@ -108,16 +115,16 @@ public:
         last_30_min_values.push(value);
     }
 
-    std::optional<stats> last_30_min_stats() const
+    sensor_history_snapshot get_snapshot() const
     {
         std::lock_guard<std::mutex> lock(data_mutex);
-        return last_30_min_stats_();
+        return {get_last_30_min_stats_(), get_last_30_min_values_()};
     }
 
     void add_stats_to_history()
     {
         std::lock_guard<std::mutex> lock(data_mutex);
-        const auto stats = last_30_min_stats_();
+        const auto stats = get_last_30_min_stats_();
         if (stats.has_value())
         {
             last_30_min_interval_stats.push(*stats);
@@ -125,11 +132,11 @@ public:
     }
 
 private:
-    std::mutex data_mutex;
+    mutable std::mutex data_mutex;
     CircularBuffer<T, reads_per_minute * 30> last_30_min_values;
     CircularBuffer<stats, total_count_history> last_30_min_interval_stats;
 
-    std::optional<stats> last_30_min_stats_() const
+    std::optional<stats> get_last_30_min_stats_() const
     {
         const auto size = last_30_min_values.size();
         if (size)
@@ -151,6 +158,19 @@ private:
             return std::nullopt;
         }
     }
+
+    std::vector<T> get_last_30_min_values_() const
+    {
+        std::vector<T> return_values;
+        return_values.reserve(last_30_min_values.size());
+
+        for (auto i = 0; i < last_30_min_values.size(); i++)
+        {
+            return_values.push_back(last_30_min_values[i]);
+        }
+
+        return return_values;
+    }
 };
 
-using sensor_history = sensor_history_t<int16_t>;
+using sensor_history = sensor_history_t<sensor_value::value_type>;
