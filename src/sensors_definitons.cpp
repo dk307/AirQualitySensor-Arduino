@@ -32,12 +32,15 @@ const std::array<sensor_definition_display, 1> temperature_definition_display{
     sensor_definition_display{-99, 99, 0},
 };
 
-const std::array<sensor_definition_display, 1> humidity_definition_display{
-    sensor_definition_display{-99, 99, 0},
+const std::array<sensor_definition_display, 4> humidity_definition_display{
+    sensor_definition_display{0, 20, 1},
+    sensor_definition_display{20, 60, 0},
+    sensor_definition_display{60, 80, 1},
+    sensor_definition_display{80, 100, 2},
 };
 
 const std::array<sensor_definition, total_sensors> sensor_definitions{
-    sensor_definition{"PM 2.5", "µg/m³ ", pm_2_5_definition_display.data(), pm_2_5_definition_display.size()},
+    sensor_definition{"PM 2.5", "µg/m³", pm_2_5_definition_display.data(), pm_2_5_definition_display.size()},
     sensor_definition{"VOC", "", voc_definition_display.data(), voc_definition_display.size()},
     sensor_definition{"Temperature", "°F", temperature_definition_display.data(), temperature_definition_display.size()},
     sensor_definition{"Humidity", "⁒", humidity_definition_display.data(), humidity_definition_display.size()},

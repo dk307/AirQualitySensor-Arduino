@@ -126,9 +126,10 @@ ui_interface::information_table_type hardware::get_information_table()
     };
 }
 
-sensor_value::value_type hardware::get_sensor_value(sensor_id_index index)
+std::optional<sensor_value::value_type> hardware::get_sensor_value(sensor_id_index index) const
 {
-    return get_sensor(index).get_value();
+    auto && sensor = get_sensor(index);
+    return sensor.get_value();
 }
 
 sensor_history::sensor_history_snapshot hardware::get_sensor_detail_info(sensor_id_index index)
@@ -161,14 +162,9 @@ void hardware::begin()
                                                                       do
                                                                       {
                                                                           log_d("Core:%d", xPortGetCoreID());                                                                       
-                                                                          set_sensor_value(sensor_id_index::pm_2_5, esp_random() % 999);
-                                                                          sensors[1].set_value(esp_random() % 500);
-                                                                          sensors[2].set_value(esp_random() % 99);
-                                                                          sensors[3].set_value(esp_random() % 99);                                                
-                                                                          sensors[4].set_value(esp_random() % 2000);
-                                                                          sensors[5].set_value(esp_random() % 999);
-                                                                          sensors[6].set_value(esp_random() % 999);
-                                                                          sensors[7].set_value(esp_random() % 999);
+                                                                          set_sensor_value(sensor_id_index::pm_2_5, esp_random() % 250);
+                                                                          set_sensor_value(sensor_id_index::temperatureF, esp_random() % 99);
+                                                                          set_sensor_value(sensor_id_index::humidity, esp_random() % 99);                                                                      
                                                                           vTaskDelay(5000);
                                                                       } while(true); });
 

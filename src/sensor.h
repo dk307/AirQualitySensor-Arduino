@@ -69,21 +69,36 @@ class sensor_value_t : public change_callback
 public:
     typedef T value_type;
 
-    value_type get_value() const { return value.load(); }
+    std::optional<value_type> get_value() const
+    {
+        std::unique_lock<std::mutex> lock(data_mutex);
+        return value;
+    }
 
     template <class T1>
-    T set_value(T1 value_)
+    void set_value(T1 value_)
     {
         const auto new_value = static_cast<value_type>(value_);
-        if (value.exchange(new_value) != new_value)
+        std::unique_lock<std::mutex> lock(data_mutex);
+        if (value != new_value)
         {
+            value = value_;
+            lock.unlock();
             call_change_listeners();
         }
-        return new_value;
+    }
+
+    void set_invalid_value()
+    {
+        std::unique_lock<std::mutex> lock(data_mutex);
+        value = std::nullopt;
+        lock.unlock();
+        call_change_listeners();
     }
 
 private:
-    std::atomic<T> value{0};
+    mutable std::mutex data_mutex;
+    std::optional<T> value;
 };
 
 using sensor_value = sensor_value_t<int16_t>;
@@ -141,7 +156,7 @@ private:
         const auto size = last_30_min_values.size();
         if (size)
         {
-            stats stats_value{0, std::numeric_limits<T>::min(), std::numeric_limits<T>::max()};
+            stats stats_value{0, std::numeric_limits<T>::max(), std::numeric_limits<T>::min()};
             double sum = 0;
             for (auto i = 0; i < size; i++)
             {

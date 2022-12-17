@@ -8,6 +8,13 @@
 
 LV_IMG_DECLARE(ui_img_logo);
 
+const int screen_width = 480;
+const int screen_height = 320;
+const auto off_black_color = lv_color_hex(0x1E1E1E);
+const auto black_color = lv_color_hex(0);
+const auto white_color = lv_color_hex(0xFFFFFF);
+const auto no_value_label = std::numeric_limits<uint8_t>::max();
+
 template <void (ui::*ftn)(lv_event_t *)>
 void event_callback(lv_event_t *e)
 {
@@ -47,7 +54,7 @@ void ui::boot_screen_screen_init(void)
     boot_screen = lv_obj_create(NULL);
     lv_obj_clear_flag(boot_screen, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scrollbar_mode(boot_screen, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_style_bg_color(boot_screen, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(boot_screen, black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(boot_screen, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     boot_logo = lv_img_create(boot_screen);
@@ -71,8 +78,6 @@ ui::panel_and_label ui::main_screen_create_big_panel(sensor_id_index index,
     lv_obj_align(panel, LV_ALIGN_TOP_LEFT, x_ofs, y_ofs);
     lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    set_label_panel_color(panel, 0);
-
     lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -86,7 +91,7 @@ ui::panel_and_label ui::main_screen_create_big_panel(sensor_id_index index,
     lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, extra_y);
     lv_label_set_text(label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
-    lv_obj_set_style_text_color(label, lv_color_hex(0x1E1E1E), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(label, off_black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(label, font_large, LV_PART_MAIN | LV_STATE_DEFAULT);
     set_padding_zero(label);
@@ -97,13 +102,15 @@ ui::panel_and_label ui::main_screen_create_big_panel(sensor_id_index index,
     lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
     lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(value_label, font_montserrat_light_numbers_112, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_label_set_text(value_label, "-");
+    lv_obj_set_style_text_color(value_label, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     const auto param = new std::pair<ui *, sensor_id_index>(this, index);
     add_panel_callback_event(panel, index);
 
-    return {panel, value_label};
+    panel_and_label pair{panel, value_label};
+    set_default_value_in_panel(pair);
+
+    return pair;
 }
 
 ui::panel_and_label ui::main_screen_create_small_panel(sensor_id_index index,
@@ -113,8 +120,6 @@ ui::panel_and_label ui::main_screen_create_small_panel(sensor_id_index index,
     lv_obj_set_size(panel, w, h);
     lv_obj_align(panel, LV_ALIGN_TOP_LEFT, x_ofs, y_ofs);
     lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    set_label_panel_color(panel, 0);
 
     lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -129,21 +134,24 @@ ui::panel_and_label ui::main_screen_create_small_panel(sensor_id_index index,
     lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, extra_y);
     lv_label_set_text(label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
-    lv_obj_set_style_text_color(label, lv_color_hex(0x1E1E1E), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(label, off_black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(label, font_normal, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(label, font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     auto value_label = lv_label_create(panel);
     lv_obj_set_size(value_label, lv_pct(100), LV_SIZE_CONTENT);
     lv_obj_align(value_label, LV_ALIGN_TOP_MID, 0, extra_y + 20);
     lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
     lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(value_label, font_montserrat_light_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_label_set_text(value_label, "-");
+    lv_obj_set_style_text_font(value_label, font_montserrat_regular_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(value_label, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     add_panel_callback_event(panel, index);
-    return {panel, value_label};
+
+    panel_and_label pair{panel, value_label};
+    set_default_value_in_panel(pair);
+
+    return pair;
 }
 
 ui::panel_and_label ui::main_screen_create_temperature_panel(sensor_id_index index,
@@ -153,7 +161,7 @@ ui::panel_and_label ui::main_screen_create_temperature_panel(sensor_id_index ind
     lv_obj_set_size(panel, 180, LV_SIZE_CONTENT);
     lv_obj_align(panel, LV_ALIGN_BOTTOM_LEFT, x_ofs, y_ofs);
     lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(panel, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(panel, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -169,9 +177,9 @@ ui::panel_and_label ui::main_screen_create_temperature_panel(sensor_id_index ind
     lv_obj_align(value_label, LV_ALIGN_BOTTOM_LEFT, 48, 0);
     lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
     lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(value_label, font_montserrat_bold_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(value_label, font_montserrat_medium_48, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(value_label, lv_color_hex(0x0), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(value_label, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_text_fmt(value_label, "- %s", sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
     add_panel_callback_event(panel, index);
@@ -185,7 +193,7 @@ ui::panel_and_label ui::main_screen_create_humidity_panel(sensor_id_index index,
     lv_obj_set_size(panel, 240, LV_SIZE_CONTENT);
     lv_obj_align(panel, LV_ALIGN_BOTTOM_RIGHT, x_ofs, y_ofs);
     lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(panel, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(panel, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -201,9 +209,9 @@ ui::panel_and_label ui::main_screen_create_humidity_panel(sensor_id_index index,
     lv_obj_align(value_label, LV_ALIGN_BOTTOM_RIGHT, -48, 0);
     lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
     lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(value_label, font_montserrat_bold_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(value_label, font_montserrat_medium_48, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(value_label, lv_color_hex(0x0), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(value_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(value_label, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_text_fmt(value_label, "- %s", sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
     add_panel_callback_event(panel, index);
@@ -236,12 +244,9 @@ void ui::main_screen_screen_init(void)
 {
     main_screen = lv_obj_create(NULL);
     lv_obj_clear_flag(main_screen, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(main_screen, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(main_screen, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    const int screen_width = 480;
-    const int screen_height = 320;
-
-    const int x_pad = 10;
+    const int x_pad = 9;
     const int y_pad = 10;
     const int big_panel_w = (screen_width - x_pad * 3) / 2;
     const int big_panel_h = 150;
@@ -271,37 +276,94 @@ void ui::main_screen_screen_init(void)
     log_d("Main screen init done");
 }
 
-lv_obj_t *ui::create_sensor_detail_screen_label(lv_obj_t *parent, const lv_font_t *font)
+lv_obj_t *ui::create_sensor_detail_screen_label(lv_obj_t *parent, const lv_font_t *font, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, lv_color_t color)
 {
     auto *label = lv_label_create(parent);
     lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(label, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_align(label, align, x_ofs, y_ofs);
     lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(label, font, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(label, lv_color_hex(0), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     return label;
 }
 
+lv_coord_t ui::get_label_height(lv_obj_t *label)
+{
+    return lv_obj_get_style_text_font(label, LV_PART_MAIN | LV_STATE_DEFAULT)->line_height;
+}
+
+ui::panel_and_label ui::create_detail_screen_panel(const char *label_text,
+                                                   lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs,
+                                                   lv_coord_t w, lv_coord_t h)
+{
+    auto panel = lv_obj_create(sensor_detail_screen);
+    lv_obj_set_size(panel, w, h);
+    lv_obj_align(panel, align, x_ofs, y_ofs);
+    lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_radius(panel, 17, LV_PART_MAIN | LV_STATE_DEFAULT);
+    set_padding_zero(panel);
+
+    auto current_static_label =
+        create_sensor_detail_screen_label(panel, font_montserrat_medium_14, LV_ALIGN_TOP_MID, 0, 3, black_color);
+    lv_label_set_text(current_static_label, label_text);
+
+    auto value_label =
+        create_sensor_detail_screen_label(panel, font_montserrat_regular_numbers_48, LV_ALIGN_TOP_MID,
+                                          0, get_label_height(current_static_label), white_color);
+    lv_label_set_text(value_label, "-");
+
+    return {panel, value_label};
+}
+
 void ui::sensor_detail_screen_init(void)
 {
-    static const lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
-    static const lv_coord_t grid_main_col_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
+    const auto x_pad = 6;
+    const auto y_pad = 4;
 
     sensor_detail_screen = lv_obj_create(NULL);
     lv_obj_clear_flag(sensor_detail_screen, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(sensor_detail_screen, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_grid_dsc_array(sensor_detail_screen, grid_main_col_dsc, grid_main_row_dsc);
+    lv_obj_set_style_bg_color(sensor_detail_screen, white_color, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    sensor_detail_screen_top_label = create_sensor_detail_screen_label(sensor_detail_screen, font_large);
-    lv_obj_set_grid_cell(sensor_detail_screen_top_label, LV_GRID_ALIGN_START, 1, 3, LV_GRID_ALIGN_CENTER, 1, 1);
+    sensor_detail_screen_top_label =
+        create_sensor_detail_screen_label(sensor_detail_screen, font_montserrat_medium_48, LV_ALIGN_TOP_MID, 0, y_pad, black_color);
 
-    sensor_detail_screen_current_value_label = create_sensor_detail_screen_label(sensor_detail_screen, font_montserrat_light_numbers_48);
-    lv_obj_set_grid_cell(sensor_detail_screen_top_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_STRETCH, 2, 1);
+    sensor_detail_screen_top_label_units =
+        create_sensor_detail_screen_label(sensor_detail_screen, font_montserrat_regular_16, LV_ALIGN_TOP_RIGHT, -2 * x_pad, y_pad + 10, off_black_color);
 
-    sensor_detail_screen_current_value_unit_label = create_sensor_detail_screen_label(sensor_detail_screen, font_large);
-    lv_obj_set_grid_cell(sensor_detail_screen_top_label, LV_GRID_ALIGN_START, 2, 2, LV_GRID_ALIGN_STRETCH, 2, 1);
+    lv_obj_set_style_text_align(sensor_detail_screen_top_label_units, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    const auto top_x_margin = get_label_height(sensor_detail_screen_top_label) + 2;
+
+    const auto panel_w = (screen_width - x_pad * 2) / 3.3333;
+    const auto panel_h = (screen_height - 2 * y_pad) / 4.44444;
+
+    sensor_detail_screen_label_and_unit_labels[label_and_unit_label_current_index] =
+        create_detail_screen_panel("Current",
+                                   LV_ALIGN_TOP_LEFT, x_pad, y_pad + top_x_margin,
+                                   panel_w, panel_h);
+
+    sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index] =
+        create_detail_screen_panel("Average 30 min",
+                                   LV_ALIGN_TOP_LEFT, x_pad * 2 + panel_w, y_pad + top_x_margin,
+                                   panel_w, panel_h);
+
+    sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index] =
+        create_detail_screen_panel("Min 30 min",
+                                   LV_ALIGN_TOP_LEFT, x_pad, y_pad * 2 + panel_h + top_x_margin,
+                                   panel_w, panel_h);
+
+    sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index] =
+        create_detail_screen_panel("Max 30 min",
+                                   LV_ALIGN_TOP_LEFT, x_pad * 2 + panel_w, y_pad * 2 + panel_h + top_x_margin,
+                                   panel_w, panel_h);
 
     create_close_button_to_main_screen(sensor_detail_screen);
 
@@ -367,7 +429,7 @@ void ui::settings_screen_screen_init(void)
     settings_screen = lv_obj_create(NULL);
 
     auto settings_screen_tab = lv_tabview_create(settings_screen, LV_DIR_TOP, 45);
-    lv_obj_set_style_text_font(settings_screen, font_normal, 0);
+    lv_obj_set_style_text_font(settings_screen, font_montserrat_regular_16, 0);
 
     lv_obj_add_event_cb(settings_screen, event_callback<&ui::settings_screen_events_callback>, LV_EVENT_ALL, this);
 
@@ -388,7 +450,7 @@ void ui::settings_screen_screen_init(void)
             auto brightness_panel_label = lv_label_create(brightness_panel);
 
             lv_label_set_text(brightness_panel_label, "Screen Brightness");
-            lv_obj_add_style(brightness_panel_label, &style_title, 0);
+            lv_obj_set_style_text_font(brightness_panel_label, font_large, 0);
             lv_obj_set_grid_cell(brightness_panel_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 1);
 
             // auto switch
@@ -396,7 +458,7 @@ void ui::settings_screen_screen_init(void)
 
             auto auto_brightness_switch_label = lv_label_create(brightness_panel);
             lv_label_set_text(auto_brightness_switch_label, "Auto");
-            lv_obj_add_style(auto_brightness_switch_label, &style_label_default, 0);
+            lv_obj_set_style_text_font(auto_brightness_switch_label, font_montserrat_regular_16, 0);
             lv_obj_set_grid_cell(auto_brightness_switch, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
             lv_obj_set_grid_cell(auto_brightness_switch_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
@@ -433,13 +495,17 @@ void ui::load_from_sd_card()
     }
 
     log_d("1");
-    font_montserrat_light_numbers_48 = lv_font_load("S:display/font/montserrat/ui_font_m48.bin");
+    font_montserrat_regular_numbers_48 = lv_font_load("S:display/font/montserrat/ui_font_m48regularnumbers.bin");
     log_d("2");
-    font_montserrat_light_numbers_96 = lv_font_load("S:display/font/montserrat/ui_font_m96.bin");
+    font_montserrat__regular_numbers_96 = lv_font_load("S:display/font/montserrat/ui_font_m96regularnumbers.bin");
     log_d("3");
-    font_montserrat_light_numbers_112 = lv_font_load("S:display/font/montserrat/ui_font_m112.bin");
+    font_montserrat_light_numbers_112 = lv_font_load("S:display/font/montserrat/ui_font_m112lightnumbers.bin");
     log_d("4");
-    font_montserrat_bold_numbers_48 = lv_font_load("S:display/font/montserrat/ui_font_boldm48.bin");
+    font_montserrat_medium_48 = lv_font_load("S:display/font/montserrat/ui_font_m48medium.bin");
+    log_d("5");
+    font_montserrat_regular_16 = lv_font_load("S:display/font/montserrat/ui_font_m16regular.bin");
+    log_d("6");
+    font_montserrat_medium_14 = lv_font_load("S:display/font/montserrat/ui_font_m14medium.bin");
 
     log_d("Loaded From SD Card");
 }
@@ -449,15 +515,6 @@ void ui::init()
     lv_disp_t *dispp = lv_disp_get_default();
     lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_LIGHT_BLUE), lv_palette_main(LV_PALETTE_RED),
                                               false, LV_FONT_DEFAULT);
-
-    lv_style_init(&style_text_muted);
-    lv_style_set_text_opa(&style_text_muted, LV_OPA_50);
-
-    lv_style_init(&style_title);
-    lv_style_set_text_font(&style_title, font_large);
-
-    lv_style_init(&style_label_default);
-    lv_style_set_text_font(&style_label_default, font_normal);
 
     lv_disp_set_theme(dispp, theme);
     boot_screen_screen_init();
@@ -488,13 +545,14 @@ void ui::inline_loop(uint64_t maxWait)
     }
 }
 
-void ui::set_label_panel_color(lv_obj_t *panel, uint64_t level)
+void ui::set_label_panel_color(lv_obj_t *panel, uint8_t level)
 {
     uint32_t color;
     uint32_t color_grad;
 
     switch (level)
     {
+    default:
     case 0:
         color = 0x4BD175; // green
         color_grad = 0x228D44;
@@ -515,10 +573,13 @@ void ui::set_label_panel_color(lv_obj_t *panel, uint64_t level)
         color = 0x710193; // purple
         color_grad = 0xA32CC4;
         break;
-    default:
     case 5:
         color = 0x940606; // Maroon
         color_grad = 0xc30808;
+        break;
+    case no_value_label:
+        color = 0xC0C0C0; // Silver
+        color_grad = 0x696969;
         break;
     }
 
@@ -526,16 +587,12 @@ void ui::set_label_panel_color(lv_obj_t *panel, uint64_t level)
     lv_obj_set_style_bg_grad_color(panel, lv_color_hex(color_grad), LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
-void ui::set_sensor_value(sensor_id_index index, sensor_value::value_type value)
+void ui::set_value_in_panel(const panel_and_label &pair, sensor_id_index index, const std::optional<sensor_value::value_type> &value)
 {
-    log_v("Updating sensor %d to %d", index, value);
-
-    auto active_screen = lv_scr_act();
-
-    if (active_screen == main_screen)
+    if (value.has_value())
     {
-        const auto level = sensor_definitions[static_cast<uint8_t>(index)].calculate_level(value);
-        const auto &pair = main_screen_panel_and_label.at(static_cast<size_t>(index));
+        const auto final_value = value.value();
+        const auto level = sensor_definitions[static_cast<uint8_t>(index)].calculate_level(final_value);
         if (pair.panel)
         {
             set_label_panel_color(pair.panel, level);
@@ -545,19 +602,48 @@ void ui::set_sensor_value(sensor_id_index index, sensor_value::value_type value)
         {
             if (!pair.panel)
             {
-                lv_label_set_text_fmt(pair.label, "%d%s", value, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+                lv_label_set_text_fmt(pair.label, "%d%s", final_value, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
             }
             else
             {
-                lv_label_set_text_fmt(pair.label, "%d", value);
+                lv_label_set_text_fmt(pair.label, "%d", final_value);
             }
         }
     }
+    else
+    {
+        set_default_value_in_panel(pair);
+    }
+}
+
+void ui::set_default_value_in_panel(const panel_and_label &pair)
+{
+    if (pair.panel)
+    {
+        set_label_panel_color(pair.panel, no_value_label);
+    }
+
+    if (pair.label)
+    {
+        lv_label_set_text_fmt(pair.label, "-");
+    }
+}
+
+void ui::set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
+{
+    auto active_screen = lv_scr_act();
+
+    if (active_screen == main_screen)
+    {
+        log_d("Updating sensor %d to %d in main screen", index, value);
+        const auto &pair = main_screen_panel_and_label.at(static_cast<size_t>(index));
+        set_value_in_panel(pair, index, value);
+    }
     else if (active_screen == sensor_detail_screen)
     {
-        log_d("sss %p, %d", lv_obj_get_user_data(sensor_detail_screen), index);
         if (lv_obj_get_user_data(sensor_detail_screen) == reinterpret_cast<void *>(index))
         {
+            log_d("Updating sensor %d to %d in details screen", index, value);
             detail_screen_current_values(index, value);
         }
     }
@@ -598,9 +684,26 @@ void ui::add_panel_callback_event(lv_obj_t *panel, sensor_id_index index)
         LV_EVENT_PRESSED);
 }
 
-void ui::detail_screen_current_values(sensor_id_index index, sensor_value::value_type value)
+void ui::detail_screen_current_values(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
 {
-    lv_label_set_text_fmt(sensor_detail_screen_current_value_label, "%d", value, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+    set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_current_index], index, value);
+
+    const auto sensor_info = ui_interface_instance.get_sensor_detail_info(index);
+    if (sensor_info.last_30_min_stats.has_value())
+    {
+        auto &&stats = sensor_info.last_30_min_stats.value();
+
+        set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index], index, stats.mean);
+        set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index], index, stats.min);
+        set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index], index, stats.max);
+    }
+    else
+    {
+        log_d("No stats for %d", index);
+        set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index]);
+        set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index]);
+        set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index]);
+    }
 }
 
 void ui::show_sensor_detail_screen(sensor_id_index index)
@@ -608,7 +711,7 @@ void ui::show_sensor_detail_screen(sensor_id_index index)
     log_i("Panel pressed for sensor index:%d", index);
 
     lv_label_set_text(sensor_detail_screen_top_label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
-    lv_label_set_text_fmt(sensor_detail_screen_current_value_unit_label, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+    lv_label_set_text(sensor_detail_screen_top_label_units, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
     const auto value = ui_interface_instance.get_sensor_value(index);
     detail_screen_current_values(index, value);

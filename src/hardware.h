@@ -15,12 +15,12 @@ public:
 
     static hardware instance;
 
-    const sensor_value &get_sensor(sensor_id_index index)
+    const sensor_value &get_sensor(sensor_id_index index) const
     {
         return sensors[static_cast<uint8_t>(index)];
     }
 
-    const sensor_history &get_sensor_history(sensor_id_index index)
+    const sensor_history &get_sensor_history(sensor_id_index index) const
     {
         return (*sensors_history)[static_cast<uint8_t>(index)];
     }
@@ -38,7 +38,7 @@ public:
     information_table_type get_information_table() override;
     uint8_t get_manual_screen_brightness() override;
     void set_manual_screen_brightness(uint8_t value) override;
-    sensor_value::value_type get_sensor_value(sensor_id_index index) override;
+    std::optional<sensor_value::value_type> get_sensor_value(sensor_id_index index) const override;
     sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) override;
 
 private:
@@ -54,9 +54,10 @@ private:
 
     template <class T>
     void set_sensor_value(sensor_id_index index, T value)
-    {
-        const auto new_value = sensors[static_cast<size_t>(index)].set_value(value);
-        (*sensors_history)[static_cast<size_t>(index)].add_value(new_value);
+    {  
+        const auto i = static_cast<size_t>(index);
+        (*sensors_history)[i].add_value(value);
+        sensors[i].set_value(value);
     }
 
     static String get_up_time();

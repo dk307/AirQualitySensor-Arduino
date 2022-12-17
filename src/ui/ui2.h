@@ -16,7 +16,7 @@ public:
     }
     void init();
     void update_boot_message(const String &message);
-    void set_sensor_value(sensor_id_index id, sensor_value::value_type value);
+    void set_sensor_value(sensor_id_index id, const std::optional<sensor_value::value_type>& value);
     void set_main_screen();
 
 private:
@@ -41,8 +41,13 @@ private:
     // sensor detail screen
     lv_obj_t *sensor_detail_screen;
     lv_obj_t *sensor_detail_screen_top_label;
-    lv_obj_t *sensor_detail_screen_current_value_label;
-    lv_obj_t *sensor_detail_screen_current_value_unit_label;
+    lv_obj_t *sensor_detail_screen_top_label_units;
+
+    std::array<panel_and_label, 4> sensor_detail_screen_label_and_unit_labels;
+    const size_t label_and_unit_label_current_index = 0;
+    const size_t label_and_unit_label_average_index = 1;
+    const size_t label_and_unit_label_min_index = 2;
+    const size_t label_and_unit_label_max_index = 3;
 
     // settings screen
     lv_obj_t *settings_screen;
@@ -50,22 +55,19 @@ private:
     lv_obj_t *settings_screen_tab_settings_brightness_slider;
 
     const lv_font_t *font_large = &lv_font_montserrat_24;
-    const lv_font_t *font_normal = &lv_font_montserrat_14;
 
     // loaded from sd card
-    lv_font_t *font_montserrat_light_numbers_48;
-    lv_font_t *font_montserrat_light_numbers_96;
+    lv_font_t *font_montserrat_regular_numbers_48;
+    lv_font_t *font_montserrat__regular_numbers_96;
     lv_font_t *font_montserrat_light_numbers_112;
-    lv_font_t *font_montserrat_bold_numbers_48;
-
-    lv_style_t style_text_muted;
-    lv_style_t style_title;
-    lv_style_t style_label_default;
+    lv_font_t *font_montserrat_medium_48;
+    lv_font_t *font_montserrat_regular_16;
+    lv_font_t *font_montserrat_medium_14;
 
     std::unique_ptr<task_wrapper> information_refresh_task;
 
     void inline_loop(uint64_t maxWait);
-    void set_label_panel_color(lv_obj_t *panel, uint64_t level);
+    static void set_label_panel_color(lv_obj_t *panel, uint8_t level);
     void event_main_screen(lv_event_t *e);
     void bootscreen_screen_init(void);
     panel_and_label main_screen_create_big_panel(sensor_id_index index,
@@ -83,11 +85,20 @@ private:
     void settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e);
     void load_from_sd_card();
     void show_sensor_detail_screen(sensor_id_index index);
-    void detail_screen_current_values(sensor_id_index index, sensor_value::value_type value);
+    void detail_screen_current_values(sensor_id_index index, const std::optional<sensor_value::value_type>& value);
 
     static void set_padding_zero(lv_obj_t *obj);
     void create_close_button_to_main_screen(lv_obj_t *parent);
-    static lv_obj_t *create_sensor_detail_screen_label(lv_obj_t *parent, const lv_font_t *font);
+    static lv_obj_t *create_sensor_detail_screen_label(lv_obj_t *parent, const lv_font_t *font,
+                                                       lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs,
+                                                       lv_color_t color);
+    static lv_coord_t get_label_height(lv_obj_t *label);
+    panel_and_label create_detail_screen_panel(const char *label_text,
+                                               lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs,
+                                               lv_coord_t w, lv_coord_t h);
+
+    static void set_value_in_panel(const panel_and_label &pair, sensor_id_index index, const std::optional<sensor_value::value_type>& value);
+    static void set_default_value_in_panel(const panel_and_label &pair);
 
     void add_panel_callback_event(lv_obj_t *panel, sensor_id_index index);
     struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter);
