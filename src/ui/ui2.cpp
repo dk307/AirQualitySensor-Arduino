@@ -230,7 +230,7 @@ void ui::create_close_button_to_main_screen(lv_obj_t *parent)
     lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_CLOSE, 0);
 
     lv_obj_set_size(close_button, LV_DPX(60), LV_DPX(60));
-    lv_obj_align(close_button, LV_ALIGN_BOTTOM_RIGHT, -LV_DPX(15), -LV_DPX(15));
+    lv_obj_align(close_button, LV_ALIGN_BOTTOM_LEFT, LV_DPX(15), -LV_DPX(15));
 
     add_event_callback(
         close_button, [this](lv_event_t *e)
@@ -316,9 +316,8 @@ ui::panel_and_label ui::create_detail_screen_panel(const char *label_text,
     lv_label_set_text(current_static_label, label_text);
 
     auto value_label =
-        create_sensor_detail_screen_label(panel, font_montserrat_regular_numbers_48, LV_ALIGN_TOP_MID,
+        create_sensor_detail_screen_label(panel, font_large, LV_ALIGN_TOP_MID,
                                           0, get_label_height(current_static_label), white_color);
-    lv_label_set_text(value_label, "-");
 
     return {panel, value_label};
 }
@@ -340,30 +339,45 @@ void ui::sensor_detail_screen_init(void)
 
     lv_obj_set_style_text_align(sensor_detail_screen_top_label_units, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    const auto top_x_margin = get_label_height(sensor_detail_screen_top_label) + 2;
+    const auto top_y_margin = get_label_height(sensor_detail_screen_top_label) + y_pad + 2;
 
-    const auto panel_w = (screen_width - x_pad * 2) / 3.3333;
-    const auto panel_h = (screen_height - 2 * y_pad) / 4.44444;
+    const auto panel_w = (screen_width - x_pad * 2) / 5;
+    const auto panel_h = (screen_height - y_pad * 4 - top_y_margin) / 4;
 
+    // first label is up by y_pad
     sensor_detail_screen_label_and_unit_labels[label_and_unit_label_current_index] =
         create_detail_screen_panel("Current",
-                                   LV_ALIGN_TOP_LEFT, x_pad, y_pad + top_x_margin,
+                                   LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin,
                                    panel_w, panel_h);
 
     sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index] =
-        create_detail_screen_panel("Average 30 min",
-                                   LV_ALIGN_TOP_LEFT, x_pad * 2 + panel_w, y_pad + top_x_margin,
+        create_detail_screen_panel("Average",
+                                   LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + y_pad + panel_h,
                                    panel_w, panel_h);
 
     sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index] =
-        create_detail_screen_panel("Min 30 min",
-                                   LV_ALIGN_TOP_LEFT, x_pad, y_pad * 2 + panel_h + top_x_margin,
+        create_detail_screen_panel("Minimum",
+                                   LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + (y_pad + panel_h) * 2,
                                    panel_w, panel_h);
 
     sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index] =
-        create_detail_screen_panel("Max 30 min",
-                                   LV_ALIGN_TOP_LEFT, x_pad * 2 + panel_w, y_pad * 2 + panel_h + top_x_margin,
+        create_detail_screen_panel("Maximum",
+                                   LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + (y_pad + panel_h) * 3,
                                    panel_w, panel_h);
+
+    {
+        const auto extra_chart_x = 30;
+        sensor_detail_screen_x_min_chart = lv_chart_create(sensor_detail_screen);
+        lv_obj_set_size(sensor_detail_screen_x_min_chart,
+                        screen_width - panel_w - x_pad * 2 - extra_chart_x * 2,
+                        screen_height - top_y_margin - 2 * y_pad - 20);
+        lv_obj_align(sensor_detail_screen_x_min_chart, LV_ALIGN_TOP_LEFT, x_pad + extra_chart_x, y_pad + top_y_margin);
+        lv_chart_set_type(sensor_detail_screen_x_min_chart, LV_CHART_TYPE_LINE);
+        lv_obj_set_style_size(sensor_detail_screen_x_min_chart, 0, LV_PART_INDICATOR);
+        sensor_detail_screen_x_min_chart_series =
+            lv_chart_add_series(sensor_detail_screen_x_min_chart, lv_palette_lighten(LV_PALETTE_GREEN, 2), LV_CHART_AXIS_PRIMARY_Y);
+        lv_obj_set_style_text_font(sensor_detail_screen_x_min_chart, font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
 
     create_close_button_to_main_screen(sensor_detail_screen);
 
@@ -635,7 +649,7 @@ void ui::set_sensor_value(sensor_id_index index, const std::optional<sensor_valu
 
     if (active_screen == main_screen)
     {
-        log_d("Updating sensor %d to %d in main screen", index, value);
+        // log_d("Updating sensor %d to %d in main screen", index, value);
         const auto &pair = main_screen_panel_and_label.at(static_cast<size_t>(index));
         set_value_in_panel(pair, index, value);
     }
@@ -643,7 +657,7 @@ void ui::set_sensor_value(sensor_id_index index, const std::optional<sensor_valu
     {
         if (lv_obj_get_user_data(sensor_detail_screen) == reinterpret_cast<void *>(index))
         {
-            log_d("Updating sensor %d to %d in details screen", index, value);
+            // log_d("Updating sensor %d to %d in details screen", index, value);
             detail_screen_current_values(index, value);
         }
     }
@@ -688,14 +702,26 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
 {
     set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_current_index], index, value);
 
-    const auto sensor_info = ui_interface_instance.get_sensor_detail_info(index);
-    if (sensor_info.last_30_min_stats.has_value())
+    auto &&sensor_info = ui_interface_instance.get_sensor_detail_info(index);
+    if (sensor_info.last_x_min_stats.has_value())
     {
-        auto &&stats = sensor_info.last_30_min_stats.value();
+        auto &&stats = sensor_info.last_x_min_stats.value();
 
         set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index], index, stats.mean);
         set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index], index, stats.min);
         set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index], index, stats.max);
+
+        auto &&values = sensor_info.last_x_min_values;
+        lv_chart_set_point_count(sensor_detail_screen_x_min_chart, values.size());
+        lv_chart_set_range(sensor_detail_screen_x_min_chart, LV_CHART_AXIS_PRIMARY_Y, stats.min, stats.max);
+
+        const auto range = std::max((stats.max - stats.min) / 2, 1);
+        lv_chart_set_axis_tick(sensor_detail_screen_x_min_chart, LV_CHART_AXIS_PRIMARY_Y, 20, 5, 3, 1, true, 50);
+
+        sensor_detail_screen_x_min_chart_series_data = std::move(values);
+
+        lv_chart_set_ext_y_array(sensor_detail_screen_x_min_chart, sensor_detail_screen_x_min_chart_series,
+                                 sensor_detail_screen_x_min_chart_series_data.data());
     }
     else
     {
@@ -710,12 +736,13 @@ void ui::show_sensor_detail_screen(sensor_id_index index)
 {
     log_i("Panel pressed for sensor index:%d", index);
 
+    lv_obj_set_user_data(sensor_detail_screen, reinterpret_cast<void *>(index));
+
     lv_label_set_text(sensor_detail_screen_top_label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
     lv_label_set_text(sensor_detail_screen_top_label_units, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
     const auto value = ui_interface_instance.get_sensor_value(index);
     detail_screen_current_values(index, value);
 
-    lv_obj_set_user_data(sensor_detail_screen, reinterpret_cast<void *>(index));
     lv_scr_load_anim(sensor_detail_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
 }

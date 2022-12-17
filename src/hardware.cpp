@@ -165,6 +165,7 @@ void hardware::begin()
                                                                           set_sensor_value(sensor_id_index::pm_2_5, esp_random() % 250);
                                                                           set_sensor_value(sensor_id_index::temperatureF, esp_random() % 99);
                                                                           set_sensor_value(sensor_id_index::humidity, esp_random() % 99);                                                                      
+                                                                          set_sensor_value(sensor_id_index::eCO2, esp_random() % 1999);                                                                      
                                                                           vTaskDelay(5000);
                                                                       } while(true); });
 

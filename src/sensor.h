@@ -116,8 +116,8 @@ public:
 
     typedef struct
     {
-        std::optional<stats> last_30_min_stats;
-        std::vector<T> last_30_min_values;
+        std::optional<stats> last_x_min_stats;
+        std::vector<T> last_x_min_values;
 
     } sensor_history_snapshot;
 

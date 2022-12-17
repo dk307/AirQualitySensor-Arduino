@@ -42,6 +42,9 @@ private:
     lv_obj_t *sensor_detail_screen;
     lv_obj_t *sensor_detail_screen_top_label;
     lv_obj_t *sensor_detail_screen_top_label_units;
+    lv_obj_t *sensor_detail_screen_x_min_chart;
+    lv_chart_series_t * sensor_detail_screen_x_min_chart_series;
+    std::vector<sensor_value::value_type> sensor_detail_screen_x_min_chart_series_data;
 
     std::array<panel_and_label, 4> sensor_detail_screen_label_and_unit_labels;
     const size_t label_and_unit_label_current_index = 0;
