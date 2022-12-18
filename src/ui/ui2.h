@@ -16,7 +16,7 @@ public:
     }
     void init();
     void update_boot_message(const String &message);
-    void set_sensor_value(sensor_id_index id, const std::optional<sensor_value::value_type>& value);
+    void set_sensor_value(sensor_id_index id, const std::optional<sensor_value::value_type> &value);
     void set_main_screen();
 
 private:
@@ -42,9 +42,10 @@ private:
     lv_obj_t *sensor_detail_screen;
     lv_obj_t *sensor_detail_screen_top_label;
     lv_obj_t *sensor_detail_screen_top_label_units;
-    lv_obj_t *sensor_detail_screen_x_min_chart;
-    lv_chart_series_t * sensor_detail_screen_x_min_chart_series;
-    std::vector<sensor_value::value_type> sensor_detail_screen_x_min_chart_series_data;
+    lv_obj_t *sensor_detail_screen_chart;
+    lv_chart_series_t *sensor_detail_screen_chart_series;
+    std::vector<sensor_value::value_type, psram::allocator<sensor_value::value_type>> sensor_detail_screen_chart_series_data;
+    std::optional<time_t> sensor_detail_screen_chart_series_data_time;
 
     std::array<panel_and_label, 4> sensor_detail_screen_label_and_unit_labels;
     const size_t label_and_unit_label_current_index = 0;
@@ -61,7 +62,7 @@ private:
 
     // loaded from sd card
     lv_font_t *font_montserrat_regular_numbers_48;
-    lv_font_t *font_montserrat__regular_numbers_96;
+    lv_font_t *font_montserrat_regular_numbers_40;
     lv_font_t *font_montserrat_light_numbers_112;
     lv_font_t *font_montserrat_medium_48;
     lv_font_t *font_montserrat_regular_16;
@@ -88,7 +89,7 @@ private:
     void settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e);
     void load_from_sd_card();
     void show_sensor_detail_screen(sensor_id_index index);
-    void detail_screen_current_values(sensor_id_index index, const std::optional<sensor_value::value_type>& value);
+    void detail_screen_current_values(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
 
     static void set_padding_zero(lv_obj_t *obj);
     void create_close_button_to_main_screen(lv_obj_t *parent);
@@ -100,9 +101,10 @@ private:
                                                lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs,
                                                lv_coord_t w, lv_coord_t h);
 
-    static void set_value_in_panel(const panel_and_label &pair, sensor_id_index index, const std::optional<sensor_value::value_type>& value);
+    static void set_value_in_panel(const panel_and_label &pair, sensor_id_index index, const std::optional<sensor_value::value_type> &value);
     static void set_default_value_in_panel(const panel_and_label &pair);
 
     void add_panel_callback_event(lv_obj_t *panel, sensor_id_index index);
     struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter);
+    void chart_draw_event_cb(lv_event_t *e);
 };

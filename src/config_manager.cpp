@@ -12,7 +12,9 @@ static const char WebUserNameId[] PROGMEM = "webusername";
 static const char WebPasswordId[] PROGMEM = "webpassword";
 static const char SsidId[] PROGMEM = "ssid";
 static const char SsidPasswordId[] PROGMEM = "ssidpassword";
-
+static const char NtpServerId[] PROGMEM = "ntpserver";
+static const char NtpServerRefreshIntervalId[] PROGMEM = "ntpserverrefreshinterval";
+static const char TimeZoneId[] PROGMEM = "timezone";
 static const char ScreenBrightnessId[] PROGMEM = "screenbrightness";
 
 config config::instance;
@@ -86,6 +88,9 @@ bool config::pre_begin()
     data.set_web_password(json_document[FPSTR(WebPasswordId)].as<String>());
     data.set_wifi_ssid(json_document[FPSTR(SsidId)].as<String>());
     data.set_wifi_password(json_document[FPSTR(SsidPasswordId)].as<String>());
+    data.set_ntp_server(json_document[FPSTR(NtpServerId)].as<String>());
+    data.set_timezone(static_cast<TimeZoneSupported>(json_document[FPSTR(TimeZoneId)].as<uint64_t>()));
+    data.set_ntp_server_refresh_interval(json_document[FPSTR(NtpServerRefreshIntervalId)].as<uint64_t>());
 
     const auto screen_brightness = json_document[FPSTR(ScreenBrightnessId)].as<uint8_t>();
     data.set_manual_screen_brightness(screen_brightness ? std::optional<uint8_t>(screen_brightness) : std::nullopt);
@@ -98,6 +103,9 @@ bool config::pre_begin()
     log_i("Wifi ssid:%s", data.get_wifi_ssid().c_str());
     log_i("Wifi ssid password:%s", data.get_wifi_password().c_str());
     log_i("Manual screen brightness:%d", data.get_manual_screen_brightness().value_or(0));
+    log_i("Ntp Server:%s", data.get_ntp_server().c_str());
+    log_i("Ntp Server Refresh Interval:%d ms", data.get_ntp_server_refresh_interval());
+    log_i("Time zone:%d", data.get_timezone());
 
     return true;
 }
@@ -120,6 +128,9 @@ void config::save()
     json_document[FPSTR(SsidId)] = data.get_wifi_ssid();
     json_document[FPSTR(SsidPasswordId)] = data.get_wifi_password();
     json_document[FPSTR(ScreenBrightnessId)] = data.get_manual_screen_brightness().value_or(0);
+    json_document[FPSTR(NtpServerId)] = data.get_ntp_server();
+    json_document[FPSTR(NtpServerRefreshIntervalId)] = data.get_ntp_server_refresh_interval();
+    json_document[FPSTR(TimeZoneId)] = static_cast<uint64_t>(data.get_timezone());
 
     String json;
     serializeJson(json_document, json);

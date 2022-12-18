@@ -8,7 +8,7 @@ public:
     void begin();
     void loop();
 
-    // std::optional<DisplayTime> getDisplayTime() const;
+    std::optional<time_t> get_local_time() const;
 
     static ntp_time instance;
 

@@ -1,6 +1,7 @@
 #include "ui2.h"
 #include "ui_interface.h"
 #include "sensor.h"
+#include "ntp_time.h"
 #include <task_wrapper.h>
 
 #include <tuple>
@@ -14,6 +15,7 @@ const auto off_black_color = lv_color_hex(0x1E1E1E);
 const auto black_color = lv_color_hex(0);
 const auto white_color = lv_color_hex(0xFFFFFF);
 const auto no_value_label = std::numeric_limits<uint8_t>::max();
+const auto chart_total_x_ticks = 4;
 
 template <void (ui::*ftn)(lv_event_t *)>
 void event_callback(lv_event_t *e)
@@ -316,10 +318,121 @@ ui::panel_and_label ui::create_detail_screen_panel(const char *label_text,
     lv_label_set_text(current_static_label, label_text);
 
     auto value_label =
-        create_sensor_detail_screen_label(panel, font_large, LV_ALIGN_TOP_MID,
+        create_sensor_detail_screen_label(panel, font_montserrat_regular_numbers_40, LV_ALIGN_TOP_MID,
                                           0, get_label_height(current_static_label), white_color);
 
     return {panel, value_label};
+}
+
+void ui::chart_draw_event_cb(lv_event_t *e)
+{
+    lv_obj_t *obj = lv_event_get_target(e);
+
+    /*Add the faded area before the lines are drawn*/
+    lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
+    if (dsc->part == LV_PART_ITEMS)
+    {
+        if (!dsc->p1 || !dsc->p2)
+            return;
+
+        /*Add a line mask that keeps the area below the line*/
+        lv_draw_mask_line_param_t line_mask_param;
+        lv_draw_mask_line_points_init(&line_mask_param, dsc->p1->x, dsc->p1->y, dsc->p2->x, dsc->p2->y,
+                                      LV_DRAW_MASK_LINE_SIDE_BOTTOM);
+        int16_t line_mask_id = lv_draw_mask_add(&line_mask_param, NULL);
+
+        /*Add a fade effect: transparent bottom covering top*/
+        lv_coord_t h = lv_obj_get_height(obj);
+        lv_draw_mask_fade_param_t fade_mask_param;
+        lv_draw_mask_fade_init(&fade_mask_param, &obj->coords, LV_OPA_COVER, obj->coords.y1 + h / 8, LV_OPA_TRANSP,
+                               obj->coords.y2);
+        int16_t fade_mask_id = lv_draw_mask_add(&fade_mask_param, NULL);
+
+        /*Draw a rectangle that will be affected by the mask*/
+        lv_draw_rect_dsc_t draw_rect_dsc;
+        lv_draw_rect_dsc_init(&draw_rect_dsc);
+        draw_rect_dsc.bg_opa = LV_OPA_80;
+        draw_rect_dsc.bg_color = dsc->line_dsc->color;
+
+        lv_area_t a;
+        a.x1 = dsc->p1->x;
+        a.x2 = dsc->p2->x - 1;
+        a.y1 = LV_MIN(dsc->p1->y, dsc->p2->y);
+        a.y2 = obj->coords.y2;
+        lv_draw_rect(dsc->draw_ctx, &draw_rect_dsc, &a);
+
+        /*Remove the masks*/
+        lv_draw_mask_free_param(&line_mask_param);
+        lv_draw_mask_free_param(&fade_mask_param);
+        lv_draw_mask_remove_id(line_mask_id);
+        lv_draw_mask_remove_id(fade_mask_id);
+    }
+    /*Hook the division lines too*/
+    else if (dsc->part == LV_PART_MAIN)
+    {
+        if (dsc->line_dsc == NULL || dsc->p1 == NULL || dsc->p2 == NULL)
+            return;
+
+        /*Vertical line*/
+        if (dsc->p1->x == dsc->p2->x)
+        {
+            dsc->line_dsc->color = lv_palette_lighten(LV_PALETTE_GREY, 1);
+            if (dsc->id == 3)
+            {
+                dsc->line_dsc->width = 2;
+                dsc->line_dsc->dash_gap = 0;
+                dsc->line_dsc->dash_width = 0;
+            }
+            else
+            {
+                dsc->line_dsc->width = 1;
+                dsc->line_dsc->dash_gap = 6;
+                dsc->line_dsc->dash_width = 6;
+            }
+        }
+        /*Horizontal line*/
+        else
+        {
+            if (dsc->id == 2)
+            {
+                dsc->line_dsc->width = 2;
+                dsc->line_dsc->dash_gap = 0;
+                dsc->line_dsc->dash_width = 0;
+            }
+            else
+            {
+                dsc->line_dsc->width = 2;
+                dsc->line_dsc->dash_gap = 6;
+                dsc->line_dsc->dash_width = 6;
+            }
+
+            if (dsc->id == 1 || dsc->id == 3)
+            {
+                dsc->line_dsc->color = lv_palette_main(LV_PALETTE_GREEN);
+            }
+            else
+            {
+                dsc->line_dsc->color = lv_palette_lighten(LV_PALETTE_GREY, 1);
+            }
+        }
+    }
+    else if (dsc->part == LV_PART_TICKS && dsc->id == LV_CHART_AXIS_PRIMARY_X)
+    {
+        if (sensor_detail_screen_chart_series_data_time.has_value() && sensor_detail_screen_chart_series_data.size())
+        {
+            const auto data_interval_seconds = (sensor_detail_screen_chart_series_data.size() * 60) / sensor_history::reads_per_minute;
+            const time_t tick_time = sensor_detail_screen_chart_series_data_time.value() -
+                                     (data_interval_seconds * (chart_total_x_ticks - dsc->value)) / chart_total_x_ticks;
+
+            tm t{};
+            localtime_r(&tick_time, &t);
+            strftime(dsc->text, 32, "%I:%M%p", &t);
+        }
+        else
+        {
+            strcpy(dsc->text, "-");
+        }
+    }
 }
 
 void ui::sensor_detail_screen_init(void)
@@ -366,17 +479,23 @@ void ui::sensor_detail_screen_init(void)
                                    panel_w, panel_h);
 
     {
-        const auto extra_chart_x = 30;
-        sensor_detail_screen_x_min_chart = lv_chart_create(sensor_detail_screen);
-        lv_obj_set_size(sensor_detail_screen_x_min_chart,
-                        screen_width - panel_w - x_pad * 2 - extra_chart_x * 2,
-                        screen_height - top_y_margin - 2 * y_pad - 20);
-        lv_obj_align(sensor_detail_screen_x_min_chart, LV_ALIGN_TOP_LEFT, x_pad + extra_chart_x, y_pad + top_y_margin);
-        lv_chart_set_type(sensor_detail_screen_x_min_chart, LV_CHART_TYPE_LINE);
-        lv_obj_set_style_size(sensor_detail_screen_x_min_chart, 0, LV_PART_INDICATOR);
-        sensor_detail_screen_x_min_chart_series =
-            lv_chart_add_series(sensor_detail_screen_x_min_chart, lv_palette_lighten(LV_PALETTE_GREEN, 2), LV_CHART_AXIS_PRIMARY_Y);
-        lv_obj_set_style_text_font(sensor_detail_screen_x_min_chart, font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+        const auto extra_chart_x = 45;
+        sensor_detail_screen_chart = lv_chart_create(sensor_detail_screen);
+        lv_obj_set_size(sensor_detail_screen_chart,
+                        screen_width - panel_w - x_pad * 3 - extra_chart_x - 10,
+                        screen_height - top_y_margin - 3 * y_pad - 20);
+        lv_obj_align(sensor_detail_screen_chart, LV_ALIGN_TOP_LEFT, x_pad + extra_chart_x, y_pad + top_y_margin);
+        lv_chart_set_type(sensor_detail_screen_chart, LV_CHART_TYPE_LINE);
+        lv_obj_set_style_size(sensor_detail_screen_chart, 0, LV_PART_INDICATOR);
+        sensor_detail_screen_chart_series =
+            lv_chart_add_series(sensor_detail_screen_chart, lv_palette_lighten(LV_PALETTE_GREEN, 2), LV_CHART_AXIS_PRIMARY_Y);
+        lv_obj_set_style_text_font(sensor_detail_screen_chart, font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_chart_set_axis_tick(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_Y, 5, 1, 3, 1, true, 200);
+        lv_chart_set_axis_tick(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_X, 10, 5, chart_total_x_ticks, 1, true, 50);
+
+        lv_chart_set_div_line_count(sensor_detail_screen_chart, 3, 3);
+        lv_obj_set_style_border_width(sensor_detail_screen_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_event_cb(sensor_detail_screen_chart, event_callback<&ui::chart_draw_event_cb>, LV_EVENT_DRAW_PART_BEGIN, this);
     }
 
     create_close_button_to_main_screen(sensor_detail_screen);
@@ -511,7 +630,7 @@ void ui::load_from_sd_card()
     log_d("1");
     font_montserrat_regular_numbers_48 = lv_font_load("S:display/font/montserrat/ui_font_m48regularnumbers.bin");
     log_d("2");
-    font_montserrat__regular_numbers_96 = lv_font_load("S:display/font/montserrat/ui_font_m96regularnumbers.bin");
+    font_montserrat_regular_numbers_40 = lv_font_load("S:display/font/montserrat/ui_font_m40regularnumbers.bin");
     log_d("3");
     font_montserrat_light_numbers_112 = lv_font_load("S:display/font/montserrat/ui_font_m112lightnumbers.bin");
     log_d("4");
@@ -702,6 +821,12 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
 {
     set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_current_index], index, value);
 
+    sensor_detail_screen_chart_series_data_time = ntp_time::instance.get_local_time();
+
+    time_t t = sensor_detail_screen_chart_series_data_time.value_or((time_t)0);
+    log_i("UTC:       %s", asctime(gmtime(&t)));
+    log_i("local:     %s", asctime(localtime(&t)));
+
     auto &&sensor_info = ui_interface_instance.get_sensor_detail_info(index);
     if (sensor_info.last_x_min_stats.has_value())
     {
@@ -712,16 +837,13 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
         set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index], index, stats.max);
 
         auto &&values = sensor_info.last_x_min_values;
-        lv_chart_set_point_count(sensor_detail_screen_x_min_chart, values.size());
-        lv_chart_set_range(sensor_detail_screen_x_min_chart, LV_CHART_AXIS_PRIMARY_Y, stats.min, stats.max);
+        lv_chart_set_point_count(sensor_detail_screen_chart, values.size());
+        lv_chart_set_range(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_Y, stats.min, stats.max);
 
-        const auto range = std::max((stats.max - stats.min) / 2, 1);
-        lv_chart_set_axis_tick(sensor_detail_screen_x_min_chart, LV_CHART_AXIS_PRIMARY_Y, 20, 5, 3, 1, true, 50);
+        sensor_detail_screen_chart_series_data = std::move(values);
 
-        sensor_detail_screen_x_min_chart_series_data = std::move(values);
-
-        lv_chart_set_ext_y_array(sensor_detail_screen_x_min_chart, sensor_detail_screen_x_min_chart_series,
-                                 sensor_detail_screen_x_min_chart_series_data.data());
+        lv_chart_set_ext_y_array(sensor_detail_screen_chart, sensor_detail_screen_chart_series,
+                                 sensor_detail_screen_chart_series_data.data());
     }
     else
     {
