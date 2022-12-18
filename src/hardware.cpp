@@ -128,13 +128,13 @@ ui_interface::information_table_type hardware::get_information_table()
 
 std::optional<sensor_value::value_type> hardware::get_sensor_value(sensor_id_index index) const
 {
-    auto && sensor = get_sensor(index);
+    auto &&sensor = get_sensor(index);
     return sensor.get_value();
 }
 
 sensor_history::sensor_history_snapshot hardware::get_sensor_detail_info(sensor_id_index index)
 {
-   return (*sensors_history)[static_cast<size_t>(index)].get_snapshot();
+    return (*sensors_history)[static_cast<size_t>(index)].get_snapshot();
 }
 
 bool hardware::pre_begin()
@@ -161,12 +161,14 @@ void hardware::begin()
                                                       {
                                                                       do
                                                                       {
-                                                                          log_d("Core:%d", xPortGetCoreID());                                                                       
-                                                                          set_sensor_value(sensor_id_index::pm_2_5, esp_random() % 250);
-                                                                          set_sensor_value(sensor_id_index::temperatureF, esp_random() % 99);
-                                                                          set_sensor_value(sensor_id_index::humidity, esp_random() % 99);                                                                      
-                                                                          set_sensor_value(sensor_id_index::eCO2, esp_random() % 1999);                                                                      
-                                                                          vTaskDelay(5000);
+                                                                          log_d("Core:%d", xPortGetCoreID());   
+
+                                                                          int plus = esp_random() %2 == 1 ?  -1 : 1;
+
+                                                                          set_sensor_value(sensor_id_index::pm_2_5, (get_sensor_value(sensor_id_index::pm_2_5).value_or(0) + plus*  esp_random() % 25) % 250);
+                                                                          set_sensor_value(sensor_id_index::temperatureF, (get_sensor_value(sensor_id_index::temperatureF).value_or(0) +  plus *  esp_random() %3) % 120);
+                                                                          set_sensor_value(sensor_id_index::humidity, (get_sensor_value(sensor_id_index::humidity).value_or(0) - plus *  esp_random() %3) % 99);
+                                                                          vTaskDelay(500);
                                                                       } while(true); });
 
     sensor_read_task->spawn_pinned("sensor read task", 8192, 1, 0);

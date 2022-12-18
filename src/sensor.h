@@ -162,4 +162,4 @@ private:
     CircularBuffer<T, reads_per_minute * Count> last_x_min_values;
 };
 
-using sensor_history = sensor_history_t<sensor_value::value_type, 60>;
+using sensor_history = sensor_history_t<sensor_value::value_type, 120>;

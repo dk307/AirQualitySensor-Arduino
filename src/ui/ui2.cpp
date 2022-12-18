@@ -421,8 +421,9 @@ void ui::chart_draw_event_cb(lv_event_t *e)
         if (sensor_detail_screen_chart_series_data_time.has_value() && sensor_detail_screen_chart_series_data.size())
         {
             const auto data_interval_seconds = (sensor_detail_screen_chart_series_data.size() * 60) / sensor_history::reads_per_minute;
-            const time_t tick_time = sensor_detail_screen_chart_series_data_time.value() -
-                                     (data_interval_seconds * (chart_total_x_ticks - dsc->value)) / chart_total_x_ticks;
+            const float interval = float(chart_total_x_ticks - 1 - dsc->value) / (chart_total_x_ticks - 1);
+            log_i("total seconds :%d,  Series length: %d,  %f", data_interval_seconds, sensor_detail_screen_chart_series_data.size(), interval);
+            const time_t tick_time = sensor_detail_screen_chart_series_data_time.value() - (data_interval_seconds * interval);
 
             tm t{};
             localtime_r(&tick_time, &t);
@@ -824,8 +825,6 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
     sensor_detail_screen_chart_series_data_time = ntp_time::instance.get_local_time();
 
     time_t t = sensor_detail_screen_chart_series_data_time.value_or((time_t)0);
-    log_i("UTC:       %s", asctime(gmtime(&t)));
-    log_i("local:     %s", asctime(localtime(&t)));
 
     auto &&sensor_info = ui_interface_instance.get_sensor_detail_info(index);
     if (sensor_info.last_x_min_stats.has_value())
@@ -844,6 +843,7 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
 
         lv_chart_set_ext_y_array(sensor_detail_screen_chart, sensor_detail_screen_chart_series,
                                  sensor_detail_screen_chart_series_data.data());
+        (sensor_detail_screen_chart, 256);
     }
     else
     {
