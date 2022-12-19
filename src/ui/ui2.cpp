@@ -239,7 +239,7 @@ void ui::create_close_button_to_main_screen(lv_obj_t *parent)
 
     add_event_callback(
         close_button, [this](lv_event_t *e)
-        { if (e->code == LV_EVENT_PRESSED) {
+        { if (e->code == LV_EVENT_CLICKED) {
              lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_OUT, 200, 0, false);
          } },
         LV_EVENT_PRESSED);
@@ -490,7 +490,6 @@ void ui::sensor_detail_screen_init(void)
                         screen_width - panel_w - x_pad * 3 - extra_chart_x - 10,
                         screen_height - top_y_margin - 3 * y_pad - 20);
         lv_obj_align(sensor_detail_screen_chart, LV_ALIGN_TOP_LEFT, x_pad + extra_chart_x, y_pad + top_y_margin);
-        lv_chart_set_type(sensor_detail_screen_chart, LV_CHART_TYPE_LINE);
         lv_obj_set_style_size(sensor_detail_screen_chart, 0, LV_PART_INDICATOR);
         sensor_detail_screen_chart_series =
             lv_chart_add_series(sensor_detail_screen_chart, lv_palette_lighten(LV_PALETTE_GREEN, 2), LV_CHART_AXIS_PRIMARY_Y);
@@ -510,7 +509,7 @@ void ui::sensor_detail_screen_init(void)
 
 void ui::load_information()
 {
-    log_d("updating info table");
+    log_v("updating info table");
     const auto data = ui_interface_instance.get_information_table();
 
     lv_table_set_col_cnt(settings_screen_tab_information_table, 2);
@@ -551,22 +550,12 @@ void ui::settings_screen_events_callback(lv_event_t *e)
     }
 }
 
-void ui::settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e)
-{
-    lv_event_code_t event_code = lv_event_get_code(e);
-    if (event_code == LV_EVENT_VALUE_CHANGED)
-    {
-        const auto value = lv_slider_get_value(settings_screen_tab_settings_brightness_slider);
-        ui_interface_instance.set_manual_screen_brightness(value);
-    }
-}
-
-void ui::settings_screen_screen_host_name_event_cb(lv_event_t *e)
+bool ui::settings_screen_screen_key_board_event_cb(lv_event_t *e)
 {
     const lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t *ta = lv_event_get_target(e);
 
-    if (code == LV_EVENT_FOCUSED)
+    if ((code == LV_EVENT_FOCUSED) || (code == LV_EVENT_CLICKED))
     {
         lv_obj_move_foreground(settings_screen_tab_settings_kb);
         lv_keyboard_set_textarea(settings_screen_tab_settings_kb, ta);
@@ -576,8 +565,10 @@ void ui::settings_screen_screen_host_name_event_cb(lv_event_t *e)
     {
         lv_keyboard_set_textarea(settings_screen_tab_settings_kb, NULL);
         lv_obj_add_flag(settings_screen_tab_settings_kb, LV_OBJ_FLAG_HIDDEN);
-        log_i("Ready, current text: %s", lv_textarea_get_text(ta));
+
+        return true;
     }
+    return false;
 }
 
 void ui::settings_screen_screen_init(void)
@@ -616,7 +607,14 @@ void ui::settings_screen_screen_init(void)
                 host_name_text_area = lv_textarea_create(other_settings_panel);
                 lv_textarea_set_one_line(host_name_text_area, true);
                 lv_obj_set_width(host_name_text_area, lv_pct(100));
-                lv_obj_add_event_cb(host_name_text_area, event_callback<&ui::settings_screen_screen_host_name_event_cb>, LV_EVENT_ALL, this);
+
+                add_event_callback(host_name_text_area, [this](lv_event_t *e)
+                                   {
+                    if (settings_screen_screen_key_board_event_cb(e)) {
+                        lv_obj_t *ta = lv_event_get_target(e);
+                        config::instance.data.set_host_name(lv_textarea_get_text(ta));
+                        config::instance.save();
+                    } });
 
                 lv_obj_set_style_text_font(host_name_text_area_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_obj_align_to(host_name_text_area, host_name_text_area_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
@@ -634,6 +632,14 @@ void ui::settings_screen_screen_init(void)
                 lv_textarea_set_one_line(ntp_server_text_area, true);
                 lv_obj_set_width(ntp_server_text_area, lv_pct(100));
 
+                add_event_callback(ntp_server_text_area, [this](lv_event_t *e)
+                                   {
+                    if (settings_screen_screen_key_board_event_cb(e)) {
+                        lv_obj_t *ta = lv_event_get_target(e);
+                        config::instance.data.set_ntp_server(lv_textarea_get_text(ta));
+                        config::instance.save();
+                    } });
+
                 lv_obj_align_to(ntp_server_text_area_label, last_obj, LV_ALIGN_OUT_BOTTOM_LEFT, 0, y_pad);
                 lv_obj_align_to(ntp_server_text_area, ntp_server_text_area_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
                 last_obj = ntp_server_text_area;
@@ -649,10 +655,19 @@ void ui::settings_screen_screen_init(void)
                 ntp_server_refresh_interval_label_spinbox = lv_spinbox_create(other_settings_panel);
                 lv_spinbox_set_range(ntp_server_refresh_interval_label_spinbox, 0, 3600);
                 lv_spinbox_set_digit_format(ntp_server_refresh_interval_label_spinbox, 4, 0);
-                lv_spinbox_set_cursor_pos(ntp_server_refresh_interval_label_spinbox, 0);
 
                 lv_spinbox_step_prev(ntp_server_refresh_interval_label_spinbox);
                 lv_obj_set_width(ntp_server_refresh_interval_label_spinbox, 150);
+
+                add_event_callback(ntp_server_refresh_interval_label_spinbox, [this](lv_event_t *e)
+                                   {
+                                       const lv_event_code_t code = lv_event_get_code(e);
+                                       if (code == LV_EVENT_VALUE_CHANGED)
+                                       {
+                                           const auto value = lv_spinbox_get_value(ntp_server_refresh_interval_label_spinbox);
+                                           config::instance.data.set_ntp_server_refresh_interval(value * 1000);
+                                           config::instance.save();
+                                       } });
 
                 const auto spin_box_height = lv_obj_get_height(ntp_server_refresh_interval_label_spinbox);
 
@@ -702,14 +717,23 @@ void ui::settings_screen_screen_init(void)
                 settings_screen_tab_settings_brightness_slider = lv_slider_create(other_settings_panel);
                 lv_obj_set_width(settings_screen_tab_settings_brightness_slider, lv_pct(66));
                 lv_slider_set_range(settings_screen_tab_settings_brightness_slider, 1, 255);
-                lv_obj_add_event_cb(settings_screen_tab_settings_brightness_slider,
-                                    event_callback<&ui::settings_screen_tab_settings_brightness_slider_event_cb>, LV_EVENT_VALUE_CHANGED, this);
                 lv_obj_refresh_ext_draw_size(settings_screen_tab_settings_brightness_slider);
 
                 lv_obj_align_to(brightness_panel_label, last_obj, LV_ALIGN_OUT_BOTTOM_LEFT, 0, y_pad);
                 lv_obj_align_to(auto_brightness_switch_label, brightness_panel_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 13);
                 lv_obj_align_to(auto_brightness_switch, auto_brightness_switch_label, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
                 lv_obj_align_to(settings_screen_tab_settings_brightness_slider, auto_brightness_switch, LV_ALIGN_OUT_RIGHT_MID, 15, 0);
+
+                add_event_callback(settings_screen_tab_settings_brightness_slider, [this](lv_event_t *e)
+                                   {
+                                       const lv_event_code_t code = lv_event_get_code(e);
+                                       if (code == LV_EVENT_VALUE_CHANGED)
+                                       {
+                                           const auto value = lv_slider_get_value(settings_screen_tab_settings_brightness_slider);
+                                           ui_interface_instance.set_screen_brightness(value);
+                                           config::instance.data.set_manual_screen_brightness(value);
+                                           config::instance.save();
+                                       } });
                 last_obj = auto_brightness_switch_label;
             }
         }
@@ -928,7 +952,7 @@ void ui::add_panel_callback_event(lv_obj_t *panel, sensor_id_index index)
 {
     add_event_callback(
         panel, [this, index](lv_event_t *e)
-        { if (e->code == LV_EVENT_PRESSED) {
+        { if (e->code == LV_EVENT_CLICKED) {
             show_sensor_detail_screen(index);
         } },
         LV_EVENT_PRESSED);
@@ -946,6 +970,8 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
     if (sensor_info.last_x_min_stats.has_value())
     {
         auto &&stats = sensor_info.last_x_min_stats.value();
+
+        lv_chart_set_type(sensor_detail_screen_chart, LV_CHART_TYPE_LINE);
 
         set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index], index, stats.mean);
         set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index], index, stats.min);
@@ -969,6 +995,7 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
         set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index]);
 
         sensor_detail_screen_chart_series_data.clear();
+        lv_chart_set_type(sensor_detail_screen_chart, LV_CHART_TYPE_NONE);
     }
 }
 

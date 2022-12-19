@@ -98,18 +98,10 @@ String hardware::network_status()
     return stream;
 }
 
-uint8_t hardware::get_manual_screen_brightness()
-{
-    return display_instance.get_brightness();
-}
-
-void hardware::set_manual_screen_brightness(uint8_t value)
+void hardware::set_screen_brightness(uint8_t value)
 {
     log_i("Setting display brightness to %d", value);
     display_instance.set_brightness(value);
-
-    config::instance.data.set_manual_screen_brightness(value);
-    config::instance.save();
 }
 
 ui_interface::information_table_type hardware::get_information_table()
@@ -161,7 +153,7 @@ void hardware::begin()
                                                       {
                                                                       do
                                                                       {
-                                                                          log_d("Core:%d", xPortGetCoreID());   
+                                                                         
 
                                                                           int plus = esp_random() %2 == 1 ?  -1 : 1;
 

@@ -41,8 +41,11 @@ void ntp_time::begin()
 
     const auto ftn = [this]
     {
-        log_d("Config reset, get time again");
-        force_reconnect = true;
+        if (ntp_server != config::instance.data.get_ntp_server())
+        {
+            log_d("Ntp server reset, get time again");
+            force_reconnect = true;
+        }
     };
 
     config::instance.add_callback(ftn);

@@ -92,7 +92,6 @@ private:
     void load_information();
     void settings_screen_events_callback(lv_event_t *e);
     void settings_screen_screen_init(void);
-    void settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e);
     void load_from_sd_card();
     void show_sensor_detail_screen(sensor_id_index index);
     void detail_screen_current_values(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
@@ -111,6 +110,6 @@ private:
     void add_panel_callback_event(lv_obj_t *panel, sensor_id_index index);
     struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter = LV_EVENT_ALL);
     void chart_draw_event_cb(lv_event_t *e);
-    void settings_screen_screen_host_name_event_cb(lv_event_t *e);
+    bool settings_screen_screen_key_board_event_cb(lv_event_t *e);
     void update_configuration();
 };
