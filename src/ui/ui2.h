@@ -55,20 +55,26 @@ private:
 
     // settings screen
     lv_obj_t *settings_screen;
+    lv_obj_t *settings_screen_tab_settings_kb;
     lv_obj_t *settings_screen_tab_information_table;
+    lv_obj_t *host_name_text_area;
+    lv_obj_t *ntp_server_text_area;
+    lv_obj_t *ntp_server_refresh_interval_label_spinbox;
     lv_obj_t *settings_screen_tab_settings_brightness_slider;
+
+    std::unique_ptr<task_wrapper> information_refresh_task;
 
     const lv_font_t *font_large = &lv_font_montserrat_24;
 
-    // loaded from sd card
-    lv_font_t *font_montserrat_regular_numbers_48;
-    lv_font_t *font_montserrat_regular_numbers_40;
-    lv_font_t *font_montserrat_light_numbers_112;
-    lv_font_t *font_montserrat_medium_48;
-    lv_font_t *font_montserrat_regular_16;
-    lv_font_t *font_montserrat_medium_14;
+    // fonts loaded from sd card - bpp4
+    lv_font_t *font_montserrat_light_numbers_112;  // 0x20,0,1,2,3,4,5,6,7,8,9,-
+    lv_font_t *font_montserrat_regular_numbers_48; // 0x20,0,1,2,3,4,5,6,7,8,9,-
+    lv_font_t *font_montserrat_regular_numbers_40; // 0x20,0,1,2,3,4,5,6,7,8,9,-
+    lv_font_t *font_montserrat_medium_48;          // 0x20-0x7F,0,1,2,3,4,5,6,7,8,9,F,µ,g,/,m,³,°,F,⁒,p,-
+    lv_font_t *font_montserrat_medium_units_18;    // 0x20,F,µ,g,/,m,³,°,F,⁒,p,-
+    lv_font_t *font_montserrat_medium_14;          // 0x20-0x7F,0,1,2,3,4,5,6,7,8,9,F,µ,g,/,m,³,°,F,⁒,p,-
 
-    std::unique_ptr<task_wrapper> information_refresh_task;
+    
 
     void inline_loop(uint64_t maxWait);
     static void set_label_panel_color(lv_obj_t *panel, uint8_t level);
@@ -90,7 +96,6 @@ private:
     void load_from_sd_card();
     void show_sensor_detail_screen(sensor_id_index index);
     void detail_screen_current_values(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
-
     static void set_padding_zero(lv_obj_t *obj);
     void create_close_button_to_main_screen(lv_obj_t *parent);
     static lv_obj_t *create_sensor_detail_screen_label(lv_obj_t *parent, const lv_font_t *font,
@@ -103,8 +108,9 @@ private:
 
     static void set_value_in_panel(const panel_and_label &pair, sensor_id_index index, const std::optional<sensor_value::value_type> &value);
     static void set_default_value_in_panel(const panel_and_label &pair);
-
     void add_panel_callback_event(lv_obj_t *panel, sensor_id_index index);
-    struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter);
+    struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter = LV_EVENT_ALL);
     void chart_draw_event_cb(lv_event_t *e);
+    void settings_screen_screen_host_name_event_cb(lv_event_t *e);
+    void update_configuration();
 };

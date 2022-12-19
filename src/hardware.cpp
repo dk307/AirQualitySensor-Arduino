@@ -165,7 +165,8 @@ void hardware::begin()
 
                                                                           int plus = esp_random() %2 == 1 ?  -1 : 1;
 
-                                                                          set_sensor_value(sensor_id_index::pm_2_5, (get_sensor_value(sensor_id_index::pm_2_5).value_or(0) + plus*  esp_random() % 25) % 250);
+                                                                          set_sensor_value(sensor_id_index::pm_2_5, (get_sensor_value(sensor_id_index::pm_2_5).value_or(0) + plus*  esp_random() % 2) % 250);
+                                                                          set_sensor_value(sensor_id_index::eCO2, (get_sensor_value(sensor_id_index::eCO2).value_or(0) + plus*  esp_random() % 10) % 1999);
                                                                           set_sensor_value(sensor_id_index::temperatureF, (get_sensor_value(sensor_id_index::temperatureF).value_or(0) +  plus *  esp_random() %3) % 120);
                                                                           set_sensor_value(sensor_id_index::humidity, (get_sensor_value(sensor_id_index::humidity).value_or(0) - plus *  esp_random() %3) % 99);
                                                                           vTaskDelay(500);

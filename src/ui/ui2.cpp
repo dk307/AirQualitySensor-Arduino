@@ -1,5 +1,6 @@
 #include "ui2.h"
 #include "ui_interface.h"
+#include "config_manager.h"
 #include "sensor.h"
 #include "ntp_time.h"
 #include <task_wrapper.h>
@@ -88,19 +89,17 @@ ui::panel_and_label ui::main_screen_create_big_panel(sensor_id_index index,
     lv_obj_set_style_radius(panel, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
     set_padding_zero(panel);
 
-    const uint8_t extra_y = 5;
     auto label = lv_label_create(panel);
     lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, extra_y);
-    lv_label_set_text(label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
+
+    lv_label_set_text_static(label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
     lv_obj_set_style_text_color(label, off_black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(label, font_large, LV_PART_MAIN | LV_STATE_DEFAULT);
-    set_padding_zero(label);
 
     auto value_label = lv_label_create(panel);
-    lv_obj_set_size(value_label, lv_pct(100), LV_SIZE_CONTENT);
-    lv_obj_align(value_label, LV_ALIGN_TOP_MID, 0, extra_y + 20);
+    lv_obj_set_size(value_label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+
     lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
     lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(value_label, font_montserrat_light_numbers_112, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -108,6 +107,9 @@ ui::panel_and_label ui::main_screen_create_big_panel(sensor_id_index index,
 
     const auto param = new std::pair<ui *, sensor_id_index>(this, index);
     add_panel_callback_event(panel, index);
+
+    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 9);
+    lv_obj_align(value_label, LV_ALIGN_BOTTOM_MID, 0, -9);
 
     panel_and_label pair{panel, value_label};
     set_default_value_in_panel(pair);
@@ -131,10 +133,8 @@ ui::panel_and_label ui::main_screen_create_small_panel(sensor_id_index index,
     lv_obj_set_style_radius(panel, 13, LV_PART_MAIN | LV_STATE_DEFAULT);
     set_padding_zero(panel);
 
-    const uint8_t extra_y = 6;
     auto label = lv_label_create(panel);
     lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, extra_y);
     lv_label_set_text(label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
     lv_obj_set_style_text_color(label, off_black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -142,7 +142,7 @@ ui::panel_and_label ui::main_screen_create_small_panel(sensor_id_index index,
 
     auto value_label = lv_label_create(panel);
     lv_obj_set_size(value_label, lv_pct(100), LV_SIZE_CONTENT);
-    lv_obj_align(value_label, LV_ALIGN_TOP_MID, 0, extra_y + 20);
+
     lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
     lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(value_label, font_montserrat_regular_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -152,6 +152,9 @@ ui::panel_and_label ui::main_screen_create_small_panel(sensor_id_index index,
 
     panel_and_label pair{panel, value_label};
     set_default_value_in_panel(pair);
+
+    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 5);
+    lv_obj_align(value_label, LV_ALIGN_BOTTOM_MID, 0, -5);
 
     return pair;
 }
@@ -229,7 +232,7 @@ void ui::create_close_button_to_main_screen(lv_obj_t *parent)
     lv_obj_set_style_radius(close_button, LV_RADIUS_CIRCLE, 0);
 
     lv_obj_set_style_shadow_width(close_button, 0, 0);
-    lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_CLOSE, 0);
+    lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_HOME, 0);
 
     lv_obj_set_size(close_button, LV_DPX(60), LV_DPX(60));
     lv_obj_align(close_button, LV_ALIGN_BOTTOM_LEFT, LV_DPX(15), -LV_DPX(15));
@@ -310,16 +313,17 @@ ui::panel_and_label ui::create_detail_screen_panel(const char *label_text,
     lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_set_style_radius(panel, 17, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(panel, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
     set_padding_zero(panel);
 
     auto current_static_label =
         create_sensor_detail_screen_label(panel, font_montserrat_medium_14, LV_ALIGN_TOP_MID, 0, 3, black_color);
-    lv_label_set_text(current_static_label, label_text);
+
+    lv_label_set_text_static(current_static_label, label_text);
 
     auto value_label =
-        create_sensor_detail_screen_label(panel, font_montserrat_regular_numbers_40, LV_ALIGN_TOP_MID,
-                                          0, get_label_height(current_static_label), white_color);
+        create_sensor_detail_screen_label(panel, font_montserrat_regular_numbers_40, LV_ALIGN_BOTTOM_MID,
+                                          0, -3, white_color);
 
     return {panel, value_label};
 }
@@ -422,7 +426,7 @@ void ui::chart_draw_event_cb(lv_event_t *e)
         {
             const auto data_interval_seconds = (sensor_detail_screen_chart_series_data.size() * 60) / sensor_history::reads_per_minute;
             const float interval = float(chart_total_x_ticks - 1 - dsc->value) / (chart_total_x_ticks - 1);
-            log_i("total seconds :%d,  Series length: %d,  %f", data_interval_seconds, sensor_detail_screen_chart_series_data.size(), interval);
+            // log_i("total seconds :%d,  Series length: %d,  %f", data_interval_seconds, sensor_detail_screen_chart_series_data.size(), interval);
             const time_t tick_time = sensor_detail_screen_chart_series_data_time.value() - (data_interval_seconds * interval);
 
             tm t{};
@@ -449,7 +453,7 @@ void ui::sensor_detail_screen_init(void)
         create_sensor_detail_screen_label(sensor_detail_screen, font_montserrat_medium_48, LV_ALIGN_TOP_MID, 0, y_pad, black_color);
 
     sensor_detail_screen_top_label_units =
-        create_sensor_detail_screen_label(sensor_detail_screen, font_montserrat_regular_16, LV_ALIGN_TOP_RIGHT, -2 * x_pad, y_pad + 10, off_black_color);
+        create_sensor_detail_screen_label(sensor_detail_screen, font_montserrat_medium_units_18, LV_ALIGN_TOP_RIGHT, -2 * x_pad, y_pad + 10, off_black_color);
 
     lv_obj_set_style_text_align(sensor_detail_screen_top_label_units, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -520,8 +524,6 @@ void ui::load_information()
         lv_table_set_cell_value(settings_screen_tab_information_table, i, 0, std::get<0>(data[i]).c_str());
         lv_table_set_cell_value(settings_screen_tab_information_table, i, 1, std::get<1>(data[i]).c_str());
     }
-
-    lv_slider_set_value(settings_screen_tab_settings_brightness_slider, ui_interface_instance.get_manual_screen_brightness(), LV_ANIM_OFF);
 }
 
 void ui::settings_screen_events_callback(lv_event_t *e)
@@ -531,6 +533,7 @@ void ui::settings_screen_events_callback(lv_event_t *e)
     {
         log_d("setting screen shown");
         load_information();
+        update_configuration();
         information_refresh_task = std::make_unique<task_wrapper>([this]
                                                                   {
                                                                       do
@@ -558,52 +561,157 @@ void ui::settings_screen_tab_settings_brightness_slider_event_cb(lv_event_t *e)
     }
 }
 
+void ui::settings_screen_screen_host_name_event_cb(lv_event_t *e)
+{
+    const lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t *ta = lv_event_get_target(e);
+
+    if (code == LV_EVENT_FOCUSED)
+    {
+        lv_obj_move_foreground(settings_screen_tab_settings_kb);
+        lv_keyboard_set_textarea(settings_screen_tab_settings_kb, ta);
+        lv_obj_clear_flag(settings_screen_tab_settings_kb, LV_OBJ_FLAG_HIDDEN);
+    }
+    else if ((code == LV_EVENT_DEFOCUSED) || (code == LV_EVENT_READY))
+    {
+        lv_keyboard_set_textarea(settings_screen_tab_settings_kb, NULL);
+        lv_obj_add_flag(settings_screen_tab_settings_kb, LV_OBJ_FLAG_HIDDEN);
+        log_i("Ready, current text: %s", lv_textarea_get_text(ta));
+    }
+}
+
 void ui::settings_screen_screen_init(void)
 {
+    const auto lv_title_font = &lv_font_montserrat_16;
     settings_screen = lv_obj_create(NULL);
 
     auto settings_screen_tab = lv_tabview_create(settings_screen, LV_DIR_TOP, 45);
-    lv_obj_set_style_text_font(settings_screen, font_montserrat_regular_16, 0);
+    lv_obj_set_style_text_font(settings_screen, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     lv_obj_add_event_cb(settings_screen, event_callback<&ui::settings_screen_events_callback>, LV_EVENT_ALL, this);
 
     // Settings tab
     {
-        auto settings_screen_tab_settings = lv_tabview_add_tab(settings_screen_tab, "Settings");
+        auto settings_screen_tab_settings = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_SETTINGS " Settings");
 
-        // Settings - Brightness panel
+        settings_screen_tab_settings_kb = lv_keyboard_create(settings_screen);
+        lv_obj_set_size(settings_screen_tab_settings_kb, screen_width, screen_height / 2);
+        lv_obj_set_style_text_font(settings_screen_tab_settings_kb, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_flag(settings_screen_tab_settings_kb, LV_OBJ_FLAG_HIDDEN);
+
+        // Settings - other panel
         {
-            static const lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
-            static const lv_coord_t grid_main_col_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
+            const int y_pad = 15;
 
-            auto brightness_panel = lv_obj_create(settings_screen_tab_settings);
-            lv_obj_set_size(brightness_panel, lv_pct(100), LV_SIZE_CONTENT);
-            lv_obj_set_grid_dsc_array(brightness_panel, grid_main_col_dsc, grid_main_row_dsc);
+            auto other_settings_panel = lv_obj_create(settings_screen_tab_settings);
+            lv_obj_set_size(other_settings_panel, lv_pct(100), LV_SIZE_CONTENT);
 
-            // label
-            auto brightness_panel_label = lv_label_create(brightness_panel);
+            lv_obj_t *last_obj = nullptr;
+            {
+                // hostname label
+                auto host_name_text_area_label = lv_label_create(other_settings_panel);
+                lv_label_set_text(host_name_text_area_label, "Hostname:");
 
-            lv_label_set_text(brightness_panel_label, "Screen Brightness");
-            lv_obj_set_style_text_font(brightness_panel_label, font_large, 0);
-            lv_obj_set_grid_cell(brightness_panel_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 1);
+                // hostname text area
+                host_name_text_area = lv_textarea_create(other_settings_panel);
+                lv_textarea_set_one_line(host_name_text_area, true);
+                lv_obj_set_width(host_name_text_area, lv_pct(100));
+                lv_obj_add_event_cb(host_name_text_area, event_callback<&ui::settings_screen_screen_host_name_event_cb>, LV_EVENT_ALL, this);
 
-            // auto switch
-            auto auto_brightness_switch = lv_switch_create(brightness_panel);
+                lv_obj_set_style_text_font(host_name_text_area_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_align_to(host_name_text_area, host_name_text_area_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
+                last_obj = host_name_text_area;
+            }
 
-            auto auto_brightness_switch_label = lv_label_create(brightness_panel);
-            lv_label_set_text(auto_brightness_switch_label, "Auto");
-            lv_obj_set_style_text_font(auto_brightness_switch_label, font_montserrat_regular_16, 0);
-            lv_obj_set_grid_cell(auto_brightness_switch, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-            lv_obj_set_grid_cell(auto_brightness_switch_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+            {
+                // ntp server label
+                auto ntp_server_text_area_label = lv_label_create(other_settings_panel);
+                lv_label_set_text(ntp_server_text_area_label, "NTP Server:");
+                lv_obj_set_style_text_font(ntp_server_text_area_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-            // slider
-            settings_screen_tab_settings_brightness_slider = lv_slider_create(brightness_panel);
-            lv_obj_set_width(settings_screen_tab_settings_brightness_slider, lv_pct(97));
-            lv_slider_set_range(settings_screen_tab_settings_brightness_slider, 1, 255);
-            lv_obj_add_event_cb(settings_screen_tab_settings_brightness_slider,
-                                event_callback<&ui::settings_screen_tab_settings_brightness_slider_event_cb>, LV_EVENT_VALUE_CHANGED, this);
-            lv_obj_refresh_ext_draw_size(settings_screen_tab_settings_brightness_slider);
-            lv_obj_set_grid_cell(settings_screen_tab_settings_brightness_slider, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+                // ntp server text area
+                ntp_server_text_area = lv_textarea_create(other_settings_panel);
+                lv_textarea_set_one_line(ntp_server_text_area, true);
+                lv_obj_set_width(ntp_server_text_area, lv_pct(100));
+
+                lv_obj_align_to(ntp_server_text_area_label, last_obj, LV_ALIGN_OUT_BOTTOM_LEFT, 0, y_pad);
+                lv_obj_align_to(ntp_server_text_area, ntp_server_text_area_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
+                last_obj = ntp_server_text_area;
+            }
+
+            {
+                // ntp server refresh interval label
+                auto ntp_server_refresh_interval_label = lv_label_create(other_settings_panel);
+                lv_label_set_text(ntp_server_refresh_interval_label, "NTP Server sync interval (seconds):");
+                lv_obj_set_style_text_font(ntp_server_refresh_interval_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+                // ntp server refresh interval spin box
+                ntp_server_refresh_interval_label_spinbox = lv_spinbox_create(other_settings_panel);
+                lv_spinbox_set_range(ntp_server_refresh_interval_label_spinbox, 0, 3600);
+                lv_spinbox_set_digit_format(ntp_server_refresh_interval_label_spinbox, 4, 0);
+                lv_spinbox_set_cursor_pos(ntp_server_refresh_interval_label_spinbox, 0);
+
+                lv_spinbox_step_prev(ntp_server_refresh_interval_label_spinbox);
+                lv_obj_set_width(ntp_server_refresh_interval_label_spinbox, 150);
+
+                const auto spin_box_height = lv_obj_get_height(ntp_server_refresh_interval_label_spinbox);
+
+                auto btn_inc = lv_btn_create(other_settings_panel);
+                lv_obj_set_size(btn_inc, spin_box_height, spin_box_height);
+
+                lv_obj_set_style_bg_img_src(btn_inc, LV_SYMBOL_PLUS, 0);
+
+                auto btn_dec = lv_btn_create(other_settings_panel);
+                lv_obj_set_size(btn_dec, spin_box_height, spin_box_height);
+                lv_obj_set_style_bg_img_src(btn_dec, LV_SYMBOL_MINUS, 0);
+
+                add_event_callback(btn_inc, [this](lv_event_t *e)
+                                   {
+                    lv_event_code_t code = lv_event_get_code(e);
+                    if(code == LV_EVENT_SHORT_CLICKED || code  == LV_EVENT_LONG_PRESSED_REPEAT) {
+                        lv_spinbox_increment(ntp_server_refresh_interval_label_spinbox);
+                    } });
+
+                add_event_callback(btn_dec, [this](lv_event_t *e)
+                                   {
+                    lv_event_code_t code = lv_event_get_code(e);
+                    if(code == LV_EVENT_SHORT_CLICKED || code  == LV_EVENT_LONG_PRESSED_REPEAT) {
+                        lv_spinbox_decrement(ntp_server_refresh_interval_label_spinbox);
+                    } });
+
+                lv_obj_align_to(ntp_server_refresh_interval_label, last_obj, LV_ALIGN_OUT_BOTTOM_LEFT, 0, y_pad);
+                lv_obj_align_to(btn_inc, ntp_server_refresh_interval_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
+                lv_obj_align_to(ntp_server_refresh_interval_label_spinbox, btn_inc, LV_ALIGN_OUT_RIGHT_MID, 5, 0);
+                lv_obj_align_to(btn_dec, ntp_server_refresh_interval_label_spinbox, LV_ALIGN_OUT_RIGHT_MID, 5, 0);
+                last_obj = btn_inc;
+            }
+
+            {
+                //  brightness label
+                auto brightness_panel_label = lv_label_create(other_settings_panel);
+                lv_label_set_text(brightness_panel_label, "Screen Brightness");
+                lv_obj_set_style_text_font(brightness_panel_label, lv_title_font, 0);
+
+                //  brightness label switch label
+                auto auto_brightness_switch_label = lv_label_create(other_settings_panel);
+                lv_label_set_text(auto_brightness_switch_label, "Auto");
+
+                auto auto_brightness_switch = lv_switch_create(other_settings_panel);
+
+                // brightness slider
+                settings_screen_tab_settings_brightness_slider = lv_slider_create(other_settings_panel);
+                lv_obj_set_width(settings_screen_tab_settings_brightness_slider, lv_pct(66));
+                lv_slider_set_range(settings_screen_tab_settings_brightness_slider, 1, 255);
+                lv_obj_add_event_cb(settings_screen_tab_settings_brightness_slider,
+                                    event_callback<&ui::settings_screen_tab_settings_brightness_slider_event_cb>, LV_EVENT_VALUE_CHANGED, this);
+                lv_obj_refresh_ext_draw_size(settings_screen_tab_settings_brightness_slider);
+
+                lv_obj_align_to(brightness_panel_label, last_obj, LV_ALIGN_OUT_BOTTOM_LEFT, 0, y_pad);
+                lv_obj_align_to(auto_brightness_switch_label, brightness_panel_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 13);
+                lv_obj_align_to(auto_brightness_switch, auto_brightness_switch_label, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
+                lv_obj_align_to(settings_screen_tab_settings_brightness_slider, auto_brightness_switch, LV_ALIGN_OUT_RIGHT_MID, 15, 0);
+                last_obj = auto_brightness_switch_label;
+            }
         }
     }
 
@@ -637,9 +745,9 @@ void ui::load_from_sd_card()
     log_d("4");
     font_montserrat_medium_48 = lv_font_load("S:display/font/montserrat/ui_font_m48medium.bin");
     log_d("5");
-    font_montserrat_regular_16 = lv_font_load("S:display/font/montserrat/ui_font_m16regular.bin");
-    log_d("6");
     font_montserrat_medium_14 = lv_font_load("S:display/font/montserrat/ui_font_m14medium.bin");
+    log_d("6");
+    font_montserrat_medium_units_18 = lv_font_load("S:display/font/montserrat/ui_font_m18unitsmedium.bin");
 
     log_d("Loaded From SD Card");
 }
@@ -759,13 +867,13 @@ void ui::set_default_value_in_panel(const panel_and_label &pair)
 
     if (pair.label)
     {
-        lv_label_set_text_fmt(pair.label, "-");
+        lv_label_set_text_static(pair.label, "-");
     }
 }
 
 void ui::set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
 {
-    auto active_screen = lv_scr_act();
+    const auto active_screen = lv_scr_act();
 
     if (active_screen == main_screen)
     {
@@ -781,6 +889,14 @@ void ui::set_sensor_value(sensor_id_index index, const std::optional<sensor_valu
             detail_screen_current_values(index, value);
         }
     }
+}
+
+void ui::update_configuration()
+{
+    lv_textarea_set_text(host_name_text_area, config::instance.data.get_host_name().c_str());
+    lv_textarea_set_text(ntp_server_text_area, config::instance.data.get_ntp_server().c_str());
+    lv_spinbox_set_value(ntp_server_refresh_interval_label_spinbox, config::instance.data.get_ntp_server_refresh_interval() / 1000);
+    lv_slider_set_value(settings_screen_tab_settings_brightness_slider, config::instance.data.get_manual_screen_brightness().value_or(0), LV_ANIM_OFF);
 }
 
 void ui::update_boot_message(const String &message)
@@ -851,6 +967,8 @@ void ui::detail_screen_current_values(sensor_id_index index, const std::optional
         set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index]);
         set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index]);
         set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index]);
+
+        sensor_detail_screen_chart_series_data.clear();
     }
 }
 
@@ -861,7 +979,7 @@ void ui::show_sensor_detail_screen(sensor_id_index index)
     lv_obj_set_user_data(sensor_detail_screen, reinterpret_cast<void *>(index));
 
     lv_label_set_text(sensor_detail_screen_top_label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
-    lv_label_set_text(sensor_detail_screen_top_label_units, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+    lv_label_set_text_static(sensor_detail_screen_top_label_units, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
     const auto value = ui_interface_instance.get_sensor_value(index);
     detail_screen_current_values(index, value);

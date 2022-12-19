@@ -3,6 +3,7 @@
 #include "change_callback.h"
 #include <ArduinoJson.h>
 #include <mutex>
+#include <atomic>
 
 enum class TimeZoneSupported
 {
@@ -183,5 +184,5 @@ private:
     template <class T>
     bool deserialize_to_json(const T &data, DynamicJsonDocument &jsonDocument);
 
-    bool request_save{false};
+    std::atomic_bool request_save{false};
 };
