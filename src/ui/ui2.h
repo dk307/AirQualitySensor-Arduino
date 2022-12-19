@@ -17,8 +17,8 @@ public:
     void init();
     void update_boot_message(const String &message);
     void set_sensor_value(sensor_id_index id, const std::optional<sensor_value::value_type> &value);
+    void update_configuration();
     void set_main_screen();
-
 private:
     ui_interface &ui_interface_instance;
 
@@ -111,5 +111,5 @@ private:
     struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter = LV_EVENT_ALL);
     void chart_draw_event_cb(lv_event_t *e);
     bool settings_screen_screen_key_board_event_cb(lv_event_t *e);
-    void update_configuration();
+    
 };

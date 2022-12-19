@@ -608,15 +608,18 @@ void ui::settings_screen_screen_init(void)
                 lv_textarea_set_one_line(host_name_text_area, true);
                 lv_obj_set_width(host_name_text_area, lv_pct(100));
 
+                lv_obj_set_style_text_font(host_name_text_area_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+
                 add_event_callback(host_name_text_area, [this](lv_event_t *e)
                                    {
                     if (settings_screen_screen_key_board_event_cb(e)) {
                         lv_obj_t *ta = lv_event_get_target(e);
-                        config::instance.data.set_host_name(lv_textarea_get_text(ta));
-                        config::instance.save();
+                        const auto value = lv_textarea_get_text(ta);
+                        if (!config::instance.data.get_host_name().equals(value)) {
+                            config::instance.data.set_host_name(value);
+                            config::instance.save();
+                        }
                     } });
-
-                lv_obj_set_style_text_font(host_name_text_area_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_obj_align_to(host_name_text_area, host_name_text_area_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
                 last_obj = host_name_text_area;
             }
@@ -636,8 +639,11 @@ void ui::settings_screen_screen_init(void)
                                    {
                     if (settings_screen_screen_key_board_event_cb(e)) {
                         lv_obj_t *ta = lv_event_get_target(e);
-                        config::instance.data.set_ntp_server(lv_textarea_get_text(ta));
+                        const auto value = lv_textarea_get_text(ta);
+                        if (!config::instance.data.get_host_name().equals(value)) {
+                        config::instance.data.set_ntp_server(value);
                         config::instance.save();
+                        }
                     } });
 
                 lv_obj_align_to(ntp_server_text_area_label, last_obj, LV_ALIGN_OUT_BOTTOM_LEFT, 0, y_pad);
@@ -664,9 +670,11 @@ void ui::settings_screen_screen_init(void)
                                        const lv_event_code_t code = lv_event_get_code(e);
                                        if (code == LV_EVENT_VALUE_CHANGED)
                                        {
-                                           const auto value = lv_spinbox_get_value(ntp_server_refresh_interval_label_spinbox);
-                                           config::instance.data.set_ntp_server_refresh_interval(value * 1000);
+                                           const auto value = lv_spinbox_get_value(ntp_server_refresh_interval_label_spinbox) * 1000;
+                                           if (config::instance.data.get_ntp_server_refresh_interval() != value) {
+                                           config::instance.data.set_ntp_server_refresh_interval(value);
                                            config::instance.save();
+                                           }
                                        } });
 
                 const auto spin_box_height = lv_obj_get_height(ntp_server_refresh_interval_label_spinbox);
@@ -730,9 +738,12 @@ void ui::settings_screen_screen_init(void)
                                        if (code == LV_EVENT_VALUE_CHANGED)
                                        {
                                            const auto value = lv_slider_get_value(settings_screen_tab_settings_brightness_slider);
+
+                                           if (value != config::instance.data.get_manual_screen_brightness()) {
                                            ui_interface_instance.set_screen_brightness(value);
-                                           config::instance.data.set_manual_screen_brightness(value);
-                                           config::instance.save();
+                                                config::instance.data.set_manual_screen_brightness(value);
+                                                config::instance.save();
+                                           }
                                        } });
                 last_obj = auto_brightness_switch_label;
             }

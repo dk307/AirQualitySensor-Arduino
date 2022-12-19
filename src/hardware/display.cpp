@@ -5,18 +5,17 @@
 #include "config_manager.h"
 #include "hardware.h"
 
-
 /* Display flushing */
 void display::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
-    auto display_device = reinterpret_cast<LGFX*>(disp->user_data);
+    auto display_device = reinterpret_cast<LGFX *>(disp->user_data);
     if (display_device->getStartCount() == 0)
     {
         display_device->endWrite();
     }
 
     display_device->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1,
-                                (lgfx::swap565_t *)&color_p->full);
+                                 (lgfx::swap565_t *)&color_p->full);
 
     lv_disp_flush_ready(disp); /* tell lvgl that flushing is done */
 }
@@ -24,7 +23,7 @@ void display::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color
 /*Read the touchpad*/
 void display::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
 {
-    auto display_device = reinterpret_cast<LGFX*>(indev_driver->user_data);
+    auto display_device = reinterpret_cast<LGFX *>(indev_driver->user_data);
     uint16_t touchX, touchY;
     const bool touched = display_device->getTouch(&touchX, &touchY);
 
@@ -104,13 +103,17 @@ void display::begin()
     {
         const auto id = static_cast<sensor_id_index>(i);
         hardware::instance.get_sensor(id).add_callback([id, this]
-                                                                   {
+                                                       {
             const auto& sensor =  hardware::instance.get_sensor(id);
             const auto value = sensor.get_value();          
             std::lock_guard<std::mutex> lock(lgvl_mutex);
-            ui_instance.set_sensor_value(id, value);
-        });
+            ui_instance.set_sensor_value(id, value); });
     }
+
+    config::instance.add_callback([this]
+                                  {
+            std::lock_guard<std::mutex> lock(lgvl_mutex);
+            ui_instance.update_configuration(); });
 
     auto brightness = config::instance.data.get_manual_screen_brightness();
     display_device.setBrightness(brightness.value_or(128));
