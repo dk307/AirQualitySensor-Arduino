@@ -112,11 +112,18 @@ bool config::pre_begin()
 
 void config::reset()
 {
+    log_i("config reset is requested");
     data.setDefaults();
-    request_save = true;
+    request_save.store(true);
 }
 
 void config::save()
+{
+    log_d("config save is requested");
+    request_save.store(true);
+}
+
+void config::save_config()
 {
     log_i("Saving configuration");
 
@@ -154,10 +161,10 @@ void config::save()
 
 void config::loop()
 {
-    if (request_save)
+    bool expected = true;
+    if (request_save.compare_exchange_strong(expected, false))
     {
-        request_save = false;
-        save();
+        save_config();
     }
 }
 

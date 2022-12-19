@@ -184,5 +184,7 @@ private:
     template <class T>
     bool deserialize_to_json(const T &data, DynamicJsonDocument &jsonDocument);
 
+    void save_config();
+
     std::atomic_bool request_save{false};
 };
