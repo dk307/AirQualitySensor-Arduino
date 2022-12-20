@@ -11,7 +11,6 @@ class hardware final : ui_interface
 public:
     bool pre_begin();
     void begin();
-    void loop();
 
     static hardware instance;
 
@@ -44,6 +43,7 @@ private:
     hardware() = default;
 
     display display_instance{*this};
+    uint64_t sensor_last_read = 0;
 
     // same index as sensor_id_index
     std::array<sensor_value, total_sensors> sensors;
@@ -61,4 +61,5 @@ private:
 
     static String get_up_time();
     static String network_status();
+    void read_sensors();
 };

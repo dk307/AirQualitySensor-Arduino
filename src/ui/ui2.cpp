@@ -912,7 +912,7 @@ void ui::set_sensor_value(sensor_id_index index, const std::optional<sensor_valu
 
     if (active_screen == main_screen)
     {
-        // log_d("Updating sensor %d to %d in main screen", index, value);
+        log_d("Updating sensor %d to %d in main screen", index, value.value_or(-1));
         const auto &pair = main_screen_panel_and_label.at(static_cast<size_t>(index));
         set_value_in_panel(pair, index, value);
     }
@@ -920,7 +920,7 @@ void ui::set_sensor_value(sensor_id_index index, const std::optional<sensor_valu
     {
         if (lv_obj_get_user_data(sensor_detail_screen) == reinterpret_cast<void *>(index))
         {
-            // log_d("Updating sensor %d to %d in details screen", index, value);
+            log_d("Updating sensor %d to %d in details screen", index, value.value_or(-1));
             detail_screen_current_values(index, value);
         }
     }

@@ -141,6 +141,7 @@ bool hardware::pre_begin()
     {
         return false;
     }
+
     return true;
 }
 
@@ -151,23 +152,30 @@ void hardware::begin()
 
     sensor_read_task = std::make_unique<task_wrapper>([this]
                                                       {
-                                                                      do
-                                                                      {
-                                                                         
+                                                            log_i("Hardware task started on Core:%d", xPortGetCoreID());
+                                                            do
+                                                            {
+                                                                display_instance.loop();
+                                                                read_sensors();                                                                    
+                                                                vTaskDelay(5);
+                                                            } while(true); });
 
-                                                                          int plus = esp_random() %2 == 1 ?  -1 : 1;
-
-                                                                          set_sensor_value(sensor_id_index::pm_2_5, (get_sensor_value(sensor_id_index::pm_2_5).value_or(0) + plus*  esp_random() % 2) % 250);
-                                                                          set_sensor_value(sensor_id_index::eCO2, (get_sensor_value(sensor_id_index::eCO2).value_or(0) + plus*  esp_random() % 10) % 1999);
-                                                                          set_sensor_value(sensor_id_index::temperatureF, (get_sensor_value(sensor_id_index::temperatureF).value_or(0) +  plus *  esp_random() %3) % 120);
-                                                                          set_sensor_value(sensor_id_index::humidity, (get_sensor_value(sensor_id_index::humidity).value_or(0) - plus *  esp_random() %3) % 99);
-                                                                          vTaskDelay(500);
-                                                                      } while(true); });
-
-    sensor_read_task->spawn_pinned("sensor read task", 8192, 1, 0);
+    // start on core 0
+    sensor_read_task->spawn_pinned("hardware task", 8192, 1, 0);
 }
 
-void hardware::loop()
+void hardware::read_sensors()
 {
-    display_instance.loop();
+    const auto sensor_interval = (60 * 1000 / sensor_history::reads_per_minute);  
+    const auto now = millis();
+    if (now - sensor_last_read >= sensor_interval)
+    {
+        sensor_last_read = now;
+        log_i("Reading sensors");
+        int plus = esp_random() % 2 == 1 ? -1 : 1;
+        set_sensor_value(sensor_id_index::pm_2_5, (get_sensor_value(sensor_id_index::pm_2_5).value_or(0) + plus * esp_random() % 10) % 250);
+        // set_sensor_value(sensor_id_index::eCO2, (get_sensor_value(sensor_id_index::eCO2).value_or(0) + plus * esp_random() % 10) % 1999);
+        set_sensor_value(sensor_id_index::temperatureF, (get_sensor_value(sensor_id_index::temperatureF).value_or(0) + plus * esp_random() % 3) % 120);
+        set_sensor_value(sensor_id_index::humidity, (get_sensor_value(sensor_id_index::humidity).value_or(0) - plus * esp_random() % 3) % 99);
+    }
 }

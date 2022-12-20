@@ -10,12 +10,14 @@
 void setup(void)
 {
 	Serial.begin(115200);
-	log_i("Start");
+	log_i("Start on Core %d", xPortGetCoreID());
 	if (!hardware::instance.pre_begin())
 	{
 		log_e("Boot Failure");
 		delay(5000);
 		ESP.restart();
+		delay(2000);
+		return;
 	}
 
 	config::instance.pre_begin();
@@ -37,7 +39,6 @@ void setup(void)
 
 void loop(void)
 {
-	hardware::instance.loop();
 	wifi_manager::instance.loop();
 	config::instance.loop();
 	ntp_time::instance.loop();

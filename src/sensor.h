@@ -80,26 +80,28 @@ public:
     void set_value(T1 value_)
     {
         const auto new_value = static_cast<value_type>(value_);
+        set_value_(new_value);
+    }
+
+    void set_invalid_value()
+    {
+        set_value(std::nullopt);
+    }
+
+private:
+    mutable std::mutex data_mutex;
+    std::optional<T> value;
+
+    void set_value_(const std::optional<value_type>& value_)
+    {
         std::unique_lock<std::mutex> lock(data_mutex);
-        if (value != new_value)
+        if (value != value_)
         {
             value = value_;
             lock.unlock();
             call_change_listeners();
         }
     }
-
-    void set_invalid_value()
-    {
-        std::unique_lock<std::mutex> lock(data_mutex);
-        value = std::nullopt;
-        lock.unlock();
-        call_change_listeners();
-    }
-
-private:
-    mutable std::mutex data_mutex;
-    std::optional<T> value;
 };
 
 using sensor_value = sensor_value_t<int16_t>;
@@ -121,7 +123,7 @@ public:
         std::vector<T, psram::allocator<T>> last_x_min_values;
     } sensor_history_snapshot;
 
-    static constexpr int reads_per_minute = 2;
+    static constexpr int reads_per_minute = 12;
 
     void add_value(T value)
     {
@@ -162,4 +164,4 @@ private:
     CircularBuffer<T, reads_per_minute * Count> last_x_min_values;
 };
 
-using sensor_history = sensor_history_t<sensor_value::value_type, 120>;
+using sensor_history = sensor_history_t<sensor_value::value_type, 5>;
