@@ -8,6 +8,8 @@
 #include "ui_interface.h"
 #include <task_wrapper.h>
 
+#include "boot_screen.h"
+
 class ui
 {
 public:
@@ -23,10 +25,8 @@ private:
     ui_interface &ui_interface_instance;
 
     // boot screen
-    lv_obj_t *boot_message;
-    lv_obj_t *boot_screen;
-    lv_obj_t *boot_logo;
-
+    ui_boot_screen  boot_screen;
+ 
     // main screen
     lv_obj_t *main_screen;
 
@@ -61,6 +61,7 @@ private:
     lv_obj_t *ntp_server_text_area;
     lv_obj_t *ntp_server_refresh_interval_label_spinbox;
     lv_obj_t *settings_screen_tab_settings_brightness_slider;
+    lv_obj_t * img_star;
 
     std::unique_ptr<task_wrapper> information_refresh_task;
 
@@ -86,7 +87,7 @@ private:
                                                    lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h);
     panel_and_label main_screen_create_temperature_panel(sensor_id_index index, lv_coord_t x_ofs, lv_coord_t y_ofs);
     panel_and_label main_screen_create_humidity_panel(sensor_id_index index, lv_coord_t x_ofs, lv_coord_t y_ofs);
-    void boot_screen_screen_init(void);
+    
     void main_screen_screen_init(void);
     void sensor_detail_screen_init(void);
     void load_information();

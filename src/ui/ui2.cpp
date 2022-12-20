@@ -8,8 +8,6 @@
 #include <tuple>
 #include <memory>
 
-LV_IMG_DECLARE(ui_img_logo);
-
 const int screen_width = 480;
 const int screen_height = 320;
 const auto off_black_color = lv_color_hex(0x1E1E1E);
@@ -35,13 +33,10 @@ void ui::event_main_screen(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t *target = lv_event_get_target(e);
-    if (event_code == LV_EVENT_GESTURE)
+
+    if (event_code == LV_EVENT_LONG_PRESSED)
     {
-        const auto gesture_dir = lv_indev_get_gesture_dir(lv_indev_get_act());
-        if ((gesture_dir == LV_DIR_BOTTOM) || (gesture_dir == LV_DIR_TOP))
-        {
-            lv_scr_load_anim(settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
-        }
+        lv_scr_load_anim(settings_screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
     }
     else if (event_code == LV_EVENT_SCREEN_LOAD_START)
     {
@@ -50,27 +45,6 @@ void ui::event_main_screen(lv_event_t *e)
             set_sensor_value(static_cast<sensor_id_index>(i), ui_interface_instance.get_sensor_value(static_cast<sensor_id_index>(i)));
         }
     }
-}
-
-void ui::boot_screen_screen_init(void)
-{
-    boot_screen = lv_obj_create(NULL);
-    lv_obj_clear_flag(boot_screen, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_scrollbar_mode(boot_screen, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_style_bg_color(boot_screen, black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(boot_screen, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    boot_logo = lv_img_create(boot_screen);
-    lv_img_set_src(boot_logo, &ui_img_logo);
-    lv_obj_set_size(boot_logo, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(boot_logo, LV_ALIGN_CENTER, 0, -20);
-
-    boot_message = lv_label_create(boot_screen);
-    lv_obj_set_size(boot_message, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_align(boot_message, LV_ALIGN_CENTER, 0, 60);
-    lv_label_set_text(boot_message, "Starting");
-    lv_obj_set_style_text_color(boot_message, lv_color_hex(0xFCFEFC), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(boot_message, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 ui::panel_and_label ui::main_screen_create_big_panel(sensor_id_index index,
@@ -239,7 +213,7 @@ void ui::create_close_button_to_main_screen(lv_obj_t *parent)
 
     add_event_callback(
         close_button, [this](lv_event_t *e)
-        { if (e->code == LV_EVENT_CLICKED) {
+        { if (e->code == LV_EVENT_SHORT_CLICKED) {
              lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_OUT, 200, 0, false);
          } },
         LV_EVENT_PRESSED);
@@ -555,7 +529,7 @@ bool ui::settings_screen_screen_key_board_event_cb(lv_event_t *e)
     const lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t *ta = lv_event_get_target(e);
 
-    if ((code == LV_EVENT_FOCUSED) || (code == LV_EVENT_CLICKED))
+    if ((code == LV_EVENT_FOCUSED) || (code == LV_EVENT_SHORT_CLICKED))
     {
         lv_obj_move_foreground(settings_screen_tab_settings_kb);
         lv_keyboard_set_textarea(settings_screen_tab_settings_kb, ta);
@@ -576,14 +550,62 @@ void ui::settings_screen_screen_init(void)
     const auto lv_title_font = &lv_font_montserrat_16;
     settings_screen = lv_obj_create(NULL);
 
-    auto settings_screen_tab = lv_tabview_create(settings_screen, LV_DIR_TOP, 45);
+    auto settings_screen_tab = lv_tabview_create(settings_screen, LV_DIR_LEFT, 80);
     lv_obj_set_style_text_font(settings_screen, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    img_star = lv_img_create(settings_screen_tab);
+    lv_img_set_src(img_star, "S:display/image/temperature.png");
+
+    auto settings_screen_tab_btns = lv_tabview_get_tab_btns(settings_screen_tab);
+
+    add_event_callback(settings_screen_tab_btns, [this](lv_event_t *e)
+                       {
+
+         lv_event_code_t code = lv_event_get_code(e);
+         lv_obj_t * obj = lv_event_get_target(e);
+ 
+       lv_obj_draw_part_dsc_t * dsc = lv_event_get_draw_part_dsc(e);
+
+   
+      if(dsc->class_p == &lv_btnmatrix_class && dsc->type == LV_BTNMATRIX_DRAW_PART_BTN) {
+           if(dsc->id == 3) {
+
+             
+    //             lv_img_header_t header;
+    //             lv_res_t res = lv_img_decoder_get_info(&img_star, &header);
+    //             if(res != LV_RES_OK) return;
+
+    //             lv_area_t a;
+    //             a.x1 = dsc->draw_area->x1 + (lv_area_get_width(dsc->draw_area) - header.w) / 2;
+    //             a.x2 = a.x1 + header.w - 1;
+    //             a.y1 = dsc->draw_area->y1 + (lv_area_get_height(dsc->draw_area) - header.h) / 2;
+    //             a.y2 = a.y1 + header.h - 1;
+
+    //             lv_draw_img_dsc_t img_draw_dsc;
+    //             lv_draw_img_dsc_init(&img_draw_dsc);
+    //             img_draw_dsc.recolor = lv_color_black();
+    //             if(lv_btnmatrix_get_selected_btn(obj) == dsc->id)  img_draw_dsc.recolor_opa = LV_OPA_30;
+
+                 //  lv_draw_img(dsc->draw_ctx, &img_draw_dsc, &a, &img_star);
+            }
+        
+                   } });
 
     lv_obj_add_event_cb(settings_screen, event_callback<&ui::settings_screen_events_callback>, LV_EVENT_ALL, this);
 
+    // Wifi tab
+    {
+        auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, "Wifi");
+    }
+
+    // Homekit tab
+    {
+        auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, "Homekit");
+    }
+
     // Settings tab
     {
-        auto settings_screen_tab_settings = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_SETTINGS " Settings");
+        auto settings_screen_tab_settings = lv_tabview_add_tab(settings_screen_tab, "Settings");
 
         settings_screen_tab_settings_kb = lv_keyboard_create(settings_screen);
         lv_obj_set_size(settings_screen_tab_settings_kb, screen_width, screen_height / 2);
@@ -794,15 +816,15 @@ void ui::init()
                                               false, LV_FONT_DEFAULT);
 
     lv_disp_set_theme(dispp, theme);
-    boot_screen_screen_init();
-
-    lv_disp_load_scr(boot_screen);
+    
+    boot_screen.init(); 
+    boot_screen.load_screen();
 
     inline_loop(100);
 
     log_i("Loaded boot screen");
 
-    lv_label_set_text(boot_message, "Loading from SD Card");
+    boot_screen.set_boot_message("Loading from SD Card");
     inline_loop(50);
 
     load_from_sd_card(); // might take some time
@@ -936,7 +958,7 @@ void ui::update_configuration()
 
 void ui::update_boot_message(const String &message)
 {
-    lv_label_set_text(boot_message, message.c_str());
+    boot_screen.set_boot_message(message);
     inline_loop(50);
 }
 
@@ -963,7 +985,7 @@ void ui::add_panel_callback_event(lv_obj_t *panel, sensor_id_index index)
 {
     add_event_callback(
         panel, [this, index](lv_event_t *e)
-        { if (e->code == LV_EVENT_CLICKED) {
+        { if (e->code == LV_EVENT_SHORT_CLICKED) {
             show_sensor_detail_screen(index);
         } },
         LV_EVENT_PRESSED);
