@@ -2,9 +2,11 @@
 
 #include "ui_screen.h"
 
-class ui_boot_screen : public ui_screen
+class ui_boot_screen final : public ui_screen
 {
 public:
+    using ui_screen::ui_screen;
+    
     void init() override
     {
         ui_screen::init();
@@ -22,7 +24,7 @@ public:
         boot_message = lv_label_create(screen);
         lv_obj_set_size(boot_message, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
         lv_obj_align(boot_message, LV_ALIGN_CENTER, 0, 60);
-        lv_label_set_text(boot_message, "Starting");
+        lv_label_set_text_static(boot_message, "Starting");
         lv_obj_set_style_text_color(boot_message, lv_color_hex(0xFCFEFC), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(boot_message, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
@@ -35,6 +37,11 @@ public:
     void set_boot_message(const char *message)
     {
         lv_label_set_text_static(boot_message, message);
+    }
+
+    void show_screen()
+    {
+        lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_NONE, 0, 0, false);
     }
 
 private:
