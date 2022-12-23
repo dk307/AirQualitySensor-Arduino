@@ -20,10 +20,10 @@ public:
         lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
 
         sensor_detail_screen_top_label =
-            create_sensor_detail_screen_label(screen, fonts->font_montserrat_medium_48, LV_ALIGN_TOP_MID, 0, y_pad, lv_color_black());
+            create_sensor_label(screen, fonts->font_montserrat_medium_48, LV_ALIGN_TOP_MID, 0, y_pad, lv_color_black());
 
         sensor_detail_screen_top_label_units =
-            create_sensor_detail_screen_label(screen, fonts->font_montserrat_medium_units_18, LV_ALIGN_TOP_RIGHT, -2 * x_pad, y_pad + 10, off_black_color);
+            create_sensor_label(screen, fonts->font_montserrat_medium_units_18, LV_ALIGN_TOP_RIGHT, -2 * x_pad, y_pad + 10, off_black_color);
 
         lv_obj_set_style_text_align(sensor_detail_screen_top_label_units, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -33,25 +33,25 @@ public:
         const auto panel_h = (screen_height - y_pad * 4 - top_y_margin) / 4;
 
         // first label is up by y_pad
-        sensor_detail_screen_label_and_unit_labels[label_and_unit_label_current_index] =
-            create_detail_screen_panel("Current",
-                                       LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin,
-                                       panel_w, panel_h);
+        panel_and_labels[label_and_unit_label_current_index] =
+            create_panel("Current",
+                         LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin,
+                         panel_w, panel_h);
 
-        sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index] =
-            create_detail_screen_panel("Average",
-                                       LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + y_pad + panel_h,
-                                       panel_w, panel_h);
+        panel_and_labels[label_and_unit_label_average_index] =
+            create_panel("Average",
+                         LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + y_pad + panel_h,
+                         panel_w, panel_h);
 
-        sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index] =
-            create_detail_screen_panel("Minimum",
-                                       LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + (y_pad + panel_h) * 2,
-                                       panel_w, panel_h);
+        panel_and_labels[label_and_unit_label_min_index] =
+            create_panel("Minimum",
+                         LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + (y_pad + panel_h) * 2,
+                         panel_w, panel_h);
 
-        sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index] =
-            create_detail_screen_panel("Maximum",
-                                       LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + (y_pad + panel_h) * 3,
-                                       panel_w, panel_h);
+        panel_and_labels[label_and_unit_label_max_index] =
+            create_panel("Maximum",
+                         LV_ALIGN_TOP_RIGHT, -x_pad, top_y_margin + (y_pad + panel_h) * 3,
+                         panel_w, panel_h);
 
         {
             const auto extra_chart_x = 45;
@@ -62,7 +62,9 @@ public:
             lv_obj_align(sensor_detail_screen_chart, LV_ALIGN_TOP_LEFT, x_pad + extra_chart_x, y_pad + top_y_margin);
             lv_obj_set_style_size(sensor_detail_screen_chart, 0, LV_PART_INDICATOR);
             sensor_detail_screen_chart_series =
-                lv_chart_add_series(sensor_detail_screen_chart, lv_palette_lighten(LV_PALETTE_GREEN, 2), LV_CHART_AXIS_PRIMARY_Y);
+                lv_chart_add_series(sensor_detail_screen_chart,
+                                    lv_color_darken(lv_theme_get_color_primary(sensor_detail_screen_chart), LV_OPA_50),
+                                    LV_CHART_AXIS_PRIMARY_Y);
             lv_obj_set_style_text_font(sensor_detail_screen_chart, fonts->font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_chart_set_axis_tick(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_Y, 5, 1, 3, 1, true, 200);
             lv_chart_set_axis_tick(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_X, 10, 5, chart_total_x_ticks, 1, true, 50);
@@ -86,7 +88,7 @@ public:
             if (lv_obj_get_user_data(screen) == reinterpret_cast<void *>(index))
             {
                 log_d("Updating sensor %d to %d in details screen", index, value.value_or(-1));
-                detail_screen_current_values(index, value);
+                set_current_values(index, value);
             }
         }
     }
@@ -100,7 +102,7 @@ public:
         lv_label_set_text_static(sensor_detail_screen_top_label_units, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
 
         const auto value = ui_interface_instance.get_sensor_value(index);
-        detail_screen_current_values(index, value);
+        set_current_values(index, value);
 
         lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
     }
@@ -114,15 +116,15 @@ private:
     std::optional<time_t> sensor_detail_screen_chart_series_data_time;
     const static uint8_t chart_total_x_ticks = 4;
 
-    std::array<panel_and_label, 4> sensor_detail_screen_label_and_unit_labels;
+    std::array<panel_and_label, 4> panel_and_labels;
     const size_t label_and_unit_label_current_index = 0;
     const size_t label_and_unit_label_average_index = 1;
     const size_t label_and_unit_label_min_index = 2;
     const size_t label_and_unit_label_max_index = 3;
 
-    panel_and_label create_detail_screen_panel(const char *label_text,
-                                               lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs,
-                                               lv_coord_t w, lv_coord_t h)
+    panel_and_label create_panel(const char *label_text,
+                                 lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs,
+                                 lv_coord_t w, lv_coord_t h)
     {
         auto panel = lv_obj_create(screen);
         lv_obj_set_size(panel, w, h);
@@ -138,19 +140,19 @@ private:
         set_padding_zero(panel);
 
         auto current_static_label =
-            create_sensor_detail_screen_label(panel, fonts->font_montserrat_medium_14, LV_ALIGN_TOP_MID, 0, 3, lv_color_black());
+            create_sensor_label(panel, fonts->font_montserrat_medium_14, LV_ALIGN_TOP_MID, 0, 3, lv_color_black());
 
         lv_label_set_text_static(current_static_label, label_text);
 
         auto value_label =
-            create_sensor_detail_screen_label(panel, fonts->font_montserrat_regular_numbers_40, LV_ALIGN_BOTTOM_MID,
-                                              0, -3, lv_color_white());
+            create_sensor_label(panel, fonts->font_montserrat_regular_numbers_40, LV_ALIGN_BOTTOM_MID,
+                                0, -3, lv_color_white());
 
         return {panel, value_label};
     }
 
-    static lv_obj_t *create_sensor_detail_screen_label(lv_obj_t *parent, const lv_font_t *font,
-                                                       lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, lv_color_t color)
+    static lv_obj_t *create_sensor_label(lv_obj_t *parent, const lv_font_t *font,
+                                         lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs, lv_color_t color)
     {
         auto *label = lv_label_create(parent);
         lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -234,7 +236,7 @@ private:
             {
                 if (dsc->id == 2)
                 {
-                    dsc->line_dsc->width = 2;
+                    dsc->line_dsc->width = 3;
                     dsc->line_dsc->dash_gap = 0;
                     dsc->line_dsc->dash_width = 0;
                 }
@@ -247,7 +249,7 @@ private:
 
                 if (dsc->id == 1 || dsc->id == 3)
                 {
-                    dsc->line_dsc->color = lv_palette_main(LV_PALETTE_GREEN);
+                    dsc->line_dsc->color = lv_color_darken(lv_theme_get_color_primary(sensor_detail_screen_chart), LV_OPA_20);
                 }
                 else
                 {
@@ -275,9 +277,9 @@ private:
         }
     }
 
-    void detail_screen_current_values(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
+    void set_current_values(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
     {
-        set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_current_index], index, value);
+        set_value_in_panel(panel_and_labels[label_and_unit_label_current_index], index, value);
 
         sensor_detail_screen_chart_series_data_time = ntp_time::instance.get_local_time();
 
@@ -290,9 +292,9 @@ private:
 
             lv_chart_set_type(sensor_detail_screen_chart, LV_CHART_TYPE_LINE);
 
-            set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index], index, stats.mean);
-            set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index], index, stats.min);
-            set_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index], index, stats.max);
+            set_value_in_panel(panel_and_labels[label_and_unit_label_average_index], index, stats.mean);
+            set_value_in_panel(panel_and_labels[label_and_unit_label_min_index], index, stats.min);
+            set_value_in_panel(panel_and_labels[label_and_unit_label_max_index], index, stats.max);
 
             auto &&values = sensor_info.last_x_min_values;
             lv_chart_set_point_count(sensor_detail_screen_chart, values.size());
@@ -307,9 +309,9 @@ private:
         else
         {
             log_d("No stats for %d", index);
-            set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_average_index]);
-            set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_min_index]);
-            set_default_value_in_panel(sensor_detail_screen_label_and_unit_labels[label_and_unit_label_max_index]);
+            set_default_value_in_panel(panel_and_labels[label_and_unit_label_average_index]);
+            set_default_value_in_panel(panel_and_labels[label_and_unit_label_min_index]);
+            set_default_value_in_panel(panel_and_labels[label_and_unit_label_max_index]);
 
             sensor_detail_screen_chart_series_data.clear();
             lv_chart_set_type(sensor_detail_screen_chart, LV_CHART_TYPE_NONE);

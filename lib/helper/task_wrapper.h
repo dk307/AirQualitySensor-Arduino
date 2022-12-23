@@ -36,6 +36,11 @@ public:
         return spawn_pinned(name, stack_depth, priority, 1);
     }
 
+    esp_err_t spawn_arduino_other_core(const char *name, uint32_t stack_depth = 8192, uint32_t priority = 1)
+    {
+        return spawn_pinned(name, stack_depth, priority, 0);
+    }
+
     /// Starts the task on the specified CPU.
     esp_err_t spawn_pinned(const char *name, uint32_t stack_depth, uint32_t priority, BaseType_t cpu)
     {

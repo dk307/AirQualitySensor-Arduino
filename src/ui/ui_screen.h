@@ -29,6 +29,11 @@ public:
         screen = lv_obj_create(NULL);
     }
 
+    bool is_active()
+    {
+        return lv_scr_act() == screen;
+    }
+
 protected:
     const static int screen_width = 480;
     const static int screen_height = 320;
@@ -52,6 +57,13 @@ protected:
     {
         auto p_this = reinterpret_cast<T *>(lv_event_get_user_data(e));
         (p_this->*ftn)(e);
+    }    
+    
+    template <class T, void (T::*ftn)(lv_timer_t *)>
+    static void timer_callback(lv_timer_t  *e)
+    {
+        auto p_this = reinterpret_cast<T *>(e->user_data);
+        (p_this->*ftn)(e);
     }
 
     static struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter = LV_EVENT_ALL)
@@ -70,7 +82,6 @@ protected:
 
         lv_obj_set_style_shadow_width(close_button, 0, 0);
         lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_HOME, 0);
-        // lv_img_set_src(close_button, "S:display/image/humidity.png");
 
         lv_obj_set_size(close_button, LV_DPX(45), LV_DPX(45));
         lv_obj_align(close_button, align, x_ofs, y_ofs);
