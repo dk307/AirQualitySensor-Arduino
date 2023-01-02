@@ -11,6 +11,7 @@ wifi_manager wifi_manager::instance;
 void wifi_manager::begin()
 {
     wifi_start();
+    WiFi.onEvent(std::bind(&wifi_manager::wifi_event, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void wifi_manager::wifi_start()
@@ -91,7 +92,6 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
         const bool connected = connect_wifi(newSSID, newPass);
         if (!connected)
         {
-
             log_e("New connection unsuccessful");
             if (!in_captive_portal)
             {
@@ -111,7 +111,6 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
                 stop_captive_portal();
             }
 
-            log_i("New connection successful with %s", WiFi.localIP().toString().c_str());
             config::instance.data.set_wifi_ssid(newSSID);
             config::instance.data.set_wifi_password(newPass);
             config::instance.save();
@@ -138,6 +137,7 @@ void wifi_manager::start_captive_portal()
 
     captive_portal_start = millis();
     in_captive_portal = true;
+    call_change_listeners();
 }
 
 void wifi_manager::stop_captive_portal()
@@ -154,7 +154,7 @@ bool wifi_manager::is_captive_portal()
 }
 
 // return current SSID
-IPAddress wifi_manager::LocalIP()
+IPAddress wifi_manager::get_local_ip()
 {
     return WiFi.localIP();
 }
@@ -237,4 +237,40 @@ String wifi_manager::get_rfc_name()
     }
 
     return get_rfc_952_host_name(rfc_name);
+}
+
+void wifi_manager::wifi_event(arduino_event_id_t event, arduino_event_info_t info)
+{
+    switch (event)
+    {
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
+    case ARDUINO_EVENT_WIFI_STA_LOST_IP:
+        call_change_listeners();
+        break;
+
+    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+        call_change_listeners();
+        wifi_start();
+        break;
+    }
+}
+
+bool wifi_manager::is_wifi_connected()
+{
+    log_d("Captive Portal:%d", in_captive_portal);
+    log_d("Mode:%d", WiFi.getMode());
+    log_d("SSID:%s", WiFi.SSID().c_str());
+    log_d("Status:%d", WiFi.status());
+    log_d("IP:%s", WiFi.localIP().toString().c_str());
+
+    if (!in_captive_portal)
+    {
+        if (WiFi.getMode() == WIFI_MODE_STA)
+        {
+            return (WiFi.status() == WL_CONNECTED) &&
+                 static_cast<uint32_t>(WiFi.localIP()) != 0;
+        }
+    }
+    return false;
 }

@@ -11,7 +11,7 @@ public:
 
     void init() override
     {
-        ui_screen::init();
+        ui_screen_with_sensor_panel::init();
 
         lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);

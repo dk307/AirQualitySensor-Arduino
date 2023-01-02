@@ -11,7 +11,7 @@ public:
 
     void init() override
     {
-        ui_screen::init();
+        ui_screen_with_sensor_panel::init();
 
         const auto x_pad = 6;
         const auto y_pad = 4;

@@ -89,7 +89,7 @@ String hardware::network_status()
     }
     break;
     case WIFI_MODE_AP:
-        stream.print("AP Mode");
+        stream.printf("Access Point with SSID");
         break;
     case WIFI_MODE_APSTA:
         stream.print("AP+STA Mode");
@@ -129,6 +129,11 @@ sensor_history::sensor_history_snapshot hardware::get_sensor_detail_info(sensor_
     return (*sensors_history)[static_cast<size_t>(index)].get_snapshot();
 }
 
+bool hardware::is_wifi_connected()
+{
+    return wifi_manager::instance.is_wifi_connected();
+}
+
 bool hardware::pre_begin()
 {
     sensors_history = psram::make_unique<std::array<sensor_history, total_sensors>>();
@@ -166,7 +171,7 @@ void hardware::begin()
 
 void hardware::read_sensors()
 {
-    const auto sensor_interval = (60 * 1000 / sensor_history::reads_per_minute);  
+    const auto sensor_interval = (60 * 1000 / sensor_history::reads_per_minute);
     const auto now = millis();
     if (now - sensor_last_read >= sensor_interval)
     {

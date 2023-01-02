@@ -2,6 +2,7 @@
 #define WIFI_H
 
 #include <Arduino.h>
+#include <WiFi.h>
 #include <DNSServer.h>
 #include <memory>
 #include <psram_allocator.h>
@@ -18,7 +19,9 @@ public:
     bool is_captive_portal();
     void set_new_wifi(const String &newSSID, const String &newPass);
 
-    static IPAddress LocalIP();
+    bool is_wifi_connected();
+
+    static IPAddress get_local_ip();
     static String SSID();
     static int8_t RSSI();
     static wifi_manager instance;
@@ -42,5 +45,6 @@ private:
 
     static String get_rfc_name();
     static String get_rfc_952_host_name(const String &name);
+    void wifi_event(arduino_event_id_t event, arduino_event_info_t info);
 };
 #endif

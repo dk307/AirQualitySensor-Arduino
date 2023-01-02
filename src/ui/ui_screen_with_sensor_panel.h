@@ -14,6 +14,11 @@ public:
         lv_obj_t *label{nullptr};
     } panel_and_label;
 
+    void init() override
+    {
+        ui_screen::init();
+    }
+
 protected:
     const static uint8_t no_value_label = std::numeric_limits<uint8_t>::max();
 

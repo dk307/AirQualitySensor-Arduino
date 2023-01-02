@@ -16,4 +16,5 @@ public:
     virtual void set_screen_brightness(uint8_t value) = 0;
     virtual std::optional<sensor_value::value_type> get_sensor_value(sensor_id_index index) const = 0;
     virtual sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) = 0;
+    virtual bool is_wifi_connected() = 0;
 };

@@ -38,22 +38,23 @@ public:
     void set_screen_brightness(uint8_t value) override;
     std::optional<sensor_value::value_type> get_sensor_value(sensor_id_index index) const override;
     sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) override;
+    bool is_wifi_connected() override;
 
 private:
     hardware() = default;
 
     display display_instance{*this};
-    uint64_t sensor_last_read = 0;
 
     // same index as sensor_id_index
     std::array<sensor_value, total_sensors> sensors;
     std::unique_ptr<std::array<sensor_history, total_sensors>, psram::deleter> sensors_history;
+    uint64_t sensor_last_read = 0;
 
     std::unique_ptr<task_wrapper> sensor_read_task;
 
     template <class T>
     void set_sensor_value(sensor_id_index index, T value)
-    {  
+    {
         const auto i = static_cast<size_t>(index);
         (*sensors_history)[i].add_value(value);
         sensors[i].set_value(value);

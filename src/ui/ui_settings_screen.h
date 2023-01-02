@@ -22,11 +22,30 @@ public:
         auto settings_screen_tab = lv_tabview_create(screen, LV_DIR_LEFT, 64);
         lv_obj_set_style_text_font(screen, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-        lv_obj_add_event_cb(screen, event_callback<ui_settings_screen, &ui_settings_screen::settings_screen_events_callback>, LV_EVENT_ALL, this);
+        lv_obj_add_event_cb(screen, event_callback<ui_settings_screen, &ui_settings_screen::screen_events_callback>, LV_EVENT_ALL, this);
 
         // Wifi tab
         {
-            auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_WIFI);
+            auto tab_wifi = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_WIFI);
+
+            const int y_pad = 15;
+
+            auto panel = lv_obj_create(tab_wifi);
+            lv_obj_set_size(panel, lv_pct(100), LV_SIZE_CONTENT);
+
+            auto wifi_credential_label = lv_label_create(panel);
+            lv_label_set_text_static(wifi_credential_label, "Wifi Network:");
+            lv_obj_set_style_text_font(wifi_credential_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+            auto wifi_network = lv_label_create(panel);
+            lv_obj_set_style_text_font(wifi_credential_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+            auto wifi_credential_button = lv_btn_create(panel);
+            lv_obj_set_style_bg_img_src(wifi_credential_button, LV_SYMBOL_EDIT, 0);
+            lv_obj_set_size(wifi_credential_button, 15, 15);         
+
+            lv_obj_align_to(wifi_network, wifi_credential_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
+            lv_obj_align_to(wifi_credential_button, wifi_network, LV_ALIGN_OUT_RIGHT_MID, 5, 0);
         }
 
         // Homekit tab
@@ -36,7 +55,7 @@ public:
 
         // Settings tab
         {
-            auto settings_screen_tab_settings = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_SETTINGS);
+            auto tab_settings = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_SETTINGS);
 
             settings_screen_tab_settings_kb = lv_keyboard_create(screen);
             lv_obj_set_size(settings_screen_tab_settings_kb, screen_width, screen_height / 2);
@@ -47,17 +66,17 @@ public:
             {
                 const int y_pad = 15;
 
-                auto other_settings_panel = lv_obj_create(settings_screen_tab_settings);
-                lv_obj_set_size(other_settings_panel, lv_pct(100), LV_SIZE_CONTENT);
+                auto panel = lv_obj_create(tab_settings);
+                lv_obj_set_size(panel, lv_pct(100), LV_SIZE_CONTENT);
 
                 lv_obj_t *last_obj = nullptr;
                 {
                     // hostname label
-                    auto host_name_text_area_label = lv_label_create(other_settings_panel);
+                    auto host_name_text_area_label = lv_label_create(panel);
                     lv_label_set_text_static(host_name_text_area_label, "Hostname:");
 
                     // hostname text area
-                    host_name_text_area = lv_textarea_create(other_settings_panel);
+                    host_name_text_area = lv_textarea_create(panel);
                     lv_textarea_set_one_line(host_name_text_area, true);
                     lv_obj_set_width(host_name_text_area, lv_pct(100));
 
@@ -65,7 +84,7 @@ public:
 
                     add_event_callback(host_name_text_area, [this](lv_event_t *e)
                                        {
-                    if (settings_screen_screen_key_board_event_cb(e)) {
+                    if (settings_key_board_event_cb(e)) {
                         lv_obj_t *ta = lv_event_get_target(e);
                         const auto value = lv_textarea_get_text(ta);
                         if (!config::instance.data.get_host_name().equals(value)) {
@@ -79,18 +98,18 @@ public:
 
                 {
                     // ntp server label
-                    auto ntp_server_text_area_label = lv_label_create(other_settings_panel);
+                    auto ntp_server_text_area_label = lv_label_create(panel);
                     lv_label_set_text_static(ntp_server_text_area_label, "NTP Server:");
                     lv_obj_set_style_text_font(ntp_server_text_area_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
 
                     // ntp server text area
-                    ntp_server_text_area = lv_textarea_create(other_settings_panel);
+                    ntp_server_text_area = lv_textarea_create(panel);
                     lv_textarea_set_one_line(ntp_server_text_area, true);
                     lv_obj_set_width(ntp_server_text_area, lv_pct(100));
 
                     add_event_callback(ntp_server_text_area, [this](lv_event_t *e)
                                        {
-                    if (settings_screen_screen_key_board_event_cb(e)) {
+                    if (settings_key_board_event_cb(e)) {
                         lv_obj_t *ta = lv_event_get_target(e);
                         const auto value = lv_textarea_get_text(ta);
                         if (!config::instance.data.get_host_name().equals(value)) {
@@ -106,12 +125,12 @@ public:
 
                 {
                     // ntp server refresh interval label
-                    auto ntp_server_refresh_interval_label = lv_label_create(other_settings_panel);
+                    auto ntp_server_refresh_interval_label = lv_label_create(panel);
                     lv_label_set_text_static(ntp_server_refresh_interval_label, "NTP Server sync interval (seconds):");
                     lv_obj_set_style_text_font(ntp_server_refresh_interval_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
 
                     // ntp server refresh interval spin box
-                    ntp_server_refresh_interval_label_spinbox = lv_spinbox_create(other_settings_panel);
+                    ntp_server_refresh_interval_label_spinbox = lv_spinbox_create(panel);
                     lv_spinbox_set_range(ntp_server_refresh_interval_label_spinbox, 0, 3600);
                     lv_spinbox_set_digit_format(ntp_server_refresh_interval_label_spinbox, 4, 0);
 
@@ -132,12 +151,12 @@ public:
 
                     const auto spin_box_height = lv_obj_get_height(ntp_server_refresh_interval_label_spinbox);
 
-                    auto btn_inc = lv_btn_create(other_settings_panel);
+                    auto btn_inc = lv_btn_create(panel);
                     lv_obj_set_size(btn_inc, spin_box_height, spin_box_height);
 
                     lv_obj_set_style_bg_img_src(btn_inc, LV_SYMBOL_PLUS, 0);
 
-                    auto btn_dec = lv_btn_create(other_settings_panel);
+                    auto btn_dec = lv_btn_create(panel);
                     lv_obj_set_size(btn_dec, spin_box_height, spin_box_height);
                     lv_obj_set_style_bg_img_src(btn_dec, LV_SYMBOL_MINUS, 0);
 
@@ -163,11 +182,11 @@ public:
                 }
 
                 {
-                    auto timezone_label = lv_label_create(other_settings_panel);
+                    auto timezone_label = lv_label_create(panel);
                     lv_label_set_text_static(timezone_label, "Timezone");
                     lv_obj_set_style_text_font(timezone_label, lv_title_font, 0);
 
-                    timezone_drop_down = lv_roller_create(other_settings_panel);
+                    timezone_drop_down = lv_roller_create(panel);
                     lv_roller_set_options(timezone_drop_down, "USA Eastern\n"
                                                               "USA Central\n"
                                                               "USA Mountain time\n"
@@ -200,34 +219,34 @@ public:
 
                 {
                     //  brightness label
-                    auto brightness_panel_label = lv_label_create(other_settings_panel);
+                    auto brightness_panel_label = lv_label_create(panel);
                     lv_label_set_text_static(brightness_panel_label, "Screen Brightness");
                     lv_obj_set_style_text_font(brightness_panel_label, lv_title_font, 0);
 
                     //  brightness label switch label
-                    auto auto_brightness_switch_label = lv_label_create(other_settings_panel);
+                    auto auto_brightness_switch_label = lv_label_create(panel);
                     lv_label_set_text(auto_brightness_switch_label, "Auto");
 
-                    auto auto_brightness_switch = lv_switch_create(other_settings_panel);
+                    auto auto_brightness_switch = lv_switch_create(panel);
 
                     // brightness slider
-                    settings_screen_tab_settings_brightness_slider = lv_slider_create(other_settings_panel);
-                    lv_obj_set_width(settings_screen_tab_settings_brightness_slider, lv_pct(66));
-                    lv_slider_set_range(settings_screen_tab_settings_brightness_slider, 1, 255);
-                    lv_obj_refresh_ext_draw_size(settings_screen_tab_settings_brightness_slider);
+                    brightness_slider = lv_slider_create(panel);
+                    lv_obj_set_width(brightness_slider, lv_pct(66));
+                    lv_slider_set_range(brightness_slider, 1, 255);
+                    lv_obj_refresh_ext_draw_size(brightness_slider);
 
                     lv_obj_align_to(brightness_panel_label, last_obj, LV_ALIGN_OUT_BOTTOM_LEFT, 0, y_pad);
                     lv_obj_align_to(auto_brightness_switch_label, brightness_panel_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 13);
                     lv_obj_align_to(auto_brightness_switch, auto_brightness_switch_label, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
-                    lv_obj_align_to(settings_screen_tab_settings_brightness_slider, auto_brightness_switch, LV_ALIGN_OUT_RIGHT_MID, 15, 0);
+                    lv_obj_align_to(brightness_slider, auto_brightness_switch, LV_ALIGN_OUT_RIGHT_MID, 15, 0);
 
                     add_event_callback(
-                        settings_screen_tab_settings_brightness_slider, [this](lv_event_t *e)
+                        brightness_slider, [this](lv_event_t *e)
                         {
                                        const lv_event_code_t code = lv_event_get_code(e);
                                        if (code == LV_EVENT_VALUE_CHANGED)
                                        {
-                                           const auto value = lv_slider_get_value(settings_screen_tab_settings_brightness_slider);
+                                           const auto value = lv_slider_get_value(brightness_slider);
 
                                            if (value != config::instance.data.get_manual_screen_brightness()) {
                                            ui_interface_instance.set_screen_brightness(value);
@@ -244,8 +263,8 @@ public:
         // Information tab
         {
             auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_LIST);
-            settings_screen_tab_information_table = lv_table_create(settings_screen_tab_information);
-            lv_obj_set_size(settings_screen_tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
+            tab_information_table = lv_table_create(settings_screen_tab_information);
+            lv_obj_set_size(tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
         }
 
         auto settings_screen_tab_btns = lv_tabview_get_tab_btns(settings_screen_tab);
@@ -263,7 +282,10 @@ public:
         lv_textarea_set_text(ntp_server_text_area, config::instance.data.get_ntp_server().c_str());
         lv_spinbox_set_value(ntp_server_refresh_interval_label_spinbox, config::instance.data.get_ntp_server_refresh_interval() / 1000);
         lv_dropdown_set_selected(timezone_drop_down, static_cast<uint16_t>(config::instance.data.get_timezone()));
-        lv_slider_set_value(settings_screen_tab_settings_brightness_slider, config::instance.data.get_manual_screen_brightness().value_or(0), LV_ANIM_OFF);
+        lv_slider_set_value(brightness_slider, config::instance.data.get_manual_screen_brightness().value_or(0), LV_ANIM_OFF);
+
+        // const auto ssid = config::instance.data.get_wifi_ssid();
+        // lv_label_set_text(wifi_network, ssid.isEmpty() ? "None Set" : ssid.c_str());
     }
 
     void settings_screen_tab_btns_event_cb(lv_event_t *e)
@@ -317,20 +339,21 @@ public:
     }
 
 private:
-    // settings screen
+    lv_obj_t *wifi_network;
+
     lv_obj_t *settings_screen_tab_settings_kb;
-    lv_obj_t *settings_screen_tab_information_table;
+    lv_obj_t *tab_information_table;
     lv_obj_t *host_name_text_area;
     lv_obj_t *ntp_server_text_area;
     lv_obj_t *ntp_server_refresh_interval_label_spinbox;
     lv_obj_t *timezone_drop_down;
-    lv_obj_t *settings_screen_tab_settings_brightness_slider;
+    lv_obj_t *brightness_slider;
 
     lv_obj_t *wifi_setting_image;
 
     lv_timer_t *information_refresh_timer;
 
-    bool settings_screen_screen_key_board_event_cb(lv_event_t *e)
+    bool settings_key_board_event_cb(lv_event_t *e)
     {
         const lv_event_code_t code = lv_event_get_code(e);
         lv_obj_t *ta = lv_event_get_target(e);
@@ -351,7 +374,7 @@ private:
         return false;
     }
 
-    void settings_screen_events_callback(lv_event_t *e)
+    void screen_events_callback(lv_event_t *e)
     {
         lv_event_code_t event_code = lv_event_get_code(e);
         if (event_code == LV_EVENT_SCREEN_LOAD_START)
@@ -377,16 +400,16 @@ private:
         log_v("updating info table");
         const auto data = ui_interface_instance.get_information_table();
 
-        lv_table_set_col_cnt(settings_screen_tab_information_table, 2);
-        lv_table_set_row_cnt(settings_screen_tab_information_table, data.size());
+        lv_table_set_col_cnt(tab_information_table, 2);
+        lv_table_set_row_cnt(tab_information_table, data.size());
 
-        lv_table_set_col_width(settings_screen_tab_information_table, 0, 140);
-        lv_table_set_col_width(settings_screen_tab_information_table, 1, 430 - 140);
+        lv_table_set_col_width(tab_information_table, 0, 140);
+        lv_table_set_col_width(tab_information_table, 1, 430 - 140);
 
         for (auto i = 0; i < data.size(); i++)
         {
-            lv_table_set_cell_value(settings_screen_tab_information_table, i, 0, std::get<0>(data[i]).c_str());
-            lv_table_set_cell_value(settings_screen_tab_information_table, i, 1, std::get<1>(data[i]).c_str());
+            lv_table_set_cell_value(tab_information_table, i, 0, std::get<0>(data[i]).c_str());
+            lv_table_set_cell_value(tab_information_table, i, 1, std::get<1>(data[i]).c_str());
         }
     }
 };

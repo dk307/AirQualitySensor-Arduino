@@ -3,6 +3,7 @@
 #include <lgvl_fs_sd_card.h>
 #include "ui/ui2.h"
 #include "config_manager.h"
+#include "wifi_manager.h"
 #include "hardware.h"
 
 /* Display flushing */
@@ -114,6 +115,11 @@ void display::begin()
                                   {
             std::lock_guard<std::mutex> lock(lgvl_mutex);
             ui_instance.update_configuration(); });
+
+    wifi_manager::instance.add_callback([this]
+                                        {
+            std::lock_guard<std::mutex> lock(lgvl_mutex);
+            ui_instance.wifi_changed(); });
 
     auto brightness = config::instance.data.get_manual_screen_brightness();
     display_device.setBrightness(brightness.value_or(128));
