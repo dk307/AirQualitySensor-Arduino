@@ -19,7 +19,7 @@ public:
 
         const lv_font_t *lv_title_font = &lv_font_montserrat_16;
 
-        auto settings_screen_tab = lv_tabview_create(screen, LV_DIR_LEFT, 64);
+        settings_screen_tab = lv_tabview_create(screen, LV_DIR_LEFT, tab_width);
         lv_obj_set_style_text_font(screen, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         lv_obj_add_event_cb(screen, event_callback<ui_settings_screen, &ui_settings_screen::screen_events_callback>, LV_EVENT_ALL, this);
@@ -27,35 +27,22 @@ public:
         // Wifi tab
         {
             auto tab_wifi = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_WIFI);
+            set_padding_zero(tab_wifi);
 
-            const int y_pad = 15;
-
-            auto panel = lv_obj_create(tab_wifi);
-            lv_obj_set_size(panel, lv_pct(100), LV_SIZE_CONTENT);
-
-            auto wifi_credential_label = lv_label_create(panel);
-            lv_label_set_text_static(wifi_credential_label, "Wifi Network:");
-            lv_obj_set_style_text_font(wifi_credential_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-            auto wifi_network = lv_label_create(panel);
-            lv_obj_set_style_text_font(wifi_credential_label, lv_title_font, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-            auto wifi_credential_button = lv_btn_create(panel);
-            lv_obj_set_style_bg_img_src(wifi_credential_button, LV_SYMBOL_EDIT, 0);
-            lv_obj_set_size(wifi_credential_button, 15, 15);         
-
-            lv_obj_align_to(wifi_network, wifi_credential_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
-            lv_obj_align_to(wifi_credential_button, wifi_network, LV_ALIGN_OUT_RIGHT_MID, 5, 0);
+            tab_network_information_table = lv_table_create(tab_wifi);
+            lv_obj_set_size(tab_network_information_table, lv_pct(100), screen_width - tab_width);
         }
 
         // Homekit tab
         {
             auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_CALL);
+            set_padding_zero(settings_screen_tab_information);
         }
 
         // Settings tab
         {
             auto tab_settings = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_SETTINGS);
+            set_padding_zero(tab_settings);
 
             settings_screen_tab_settings_kb = lv_keyboard_create(screen);
             lv_obj_set_size(settings_screen_tab_settings_kb, screen_width, screen_height / 2);
@@ -263,16 +250,13 @@ public:
         // Information tab
         {
             auto settings_screen_tab_information = lv_tabview_add_tab(settings_screen_tab, LV_SYMBOL_LIST);
-            tab_information_table = lv_table_create(settings_screen_tab_information);
-            lv_obj_set_size(tab_information_table, lv_pct(100), LV_SIZE_CONTENT);
+            set_padding_zero(settings_screen_tab_information);
+            tab_system_information_table = lv_table_create(settings_screen_tab_information);
+            lv_obj_set_size(tab_system_information_table, lv_pct(100), screen_width - tab_width);
         }
 
         auto settings_screen_tab_btns = lv_tabview_get_tab_btns(settings_screen_tab);
-        // lv_obj_add_event_cb(settings_screen_tab_btns,
-        //                     event_callback<ui_settings_screen, &ui_settings_screen::settings_screen_tab_btns_event_cb>,
-        //                     LV_EVENT_ALL, this);
         lv_obj_set_style_text_font(settings_screen_tab_btns, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
-
         create_close_button_to_main_screen(screen, LV_ALIGN_TOP_RIGHT, -15, 15);
     }
 
@@ -283,54 +267,6 @@ public:
         lv_spinbox_set_value(ntp_server_refresh_interval_label_spinbox, config::instance.data.get_ntp_server_refresh_interval() / 1000);
         lv_roller_set_selected(timezone_drop_down, static_cast<uint16_t>(config::instance.data.get_timezone()), LV_ANIM_OFF);
         lv_slider_set_value(brightness_slider, config::instance.data.get_manual_screen_brightness().value_or(0), LV_ANIM_OFF);
-
-        // const auto ssid = config::instance.data.get_wifi_ssid();
-        // lv_label_set_text(wifi_network, ssid.isEmpty() ? "None Set" : ssid.c_str());
-    }
-
-    void settings_screen_tab_btns_event_cb(lv_event_t *e)
-    {
-        lv_event_code_t code = lv_event_get_code(e);
-
-        if (code == LV_EVENT_DRAW_PART_BEGIN)
-        {
-            lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
-            if (dsc->class_p == &lv_btnmatrix_class && dsc->type == LV_BTNMATRIX_DRAW_PART_BTN)
-            {
-                dsc->label_dsc->opa = LV_OPA_TRANSP; /*Hide the text if any*/
-            }
-        }
-        else if (code == LV_EVENT_DRAW_PART_END)
-        {
-            lv_obj_t *obj = lv_event_get_target(e);
-
-            lv_obj_draw_part_dsc_t *dsc = lv_event_get_draw_part_dsc(e);
-
-            if (dsc->class_p == &lv_btnmatrix_class && dsc->type == LV_BTNMATRIX_DRAW_PART_BTN)
-            {
-                log_d("%d", dsc->id);
-                {
-                    const auto w = lv_obj_get_width(wifi_setting_image);
-                    const auto h = lv_obj_get_height(wifi_setting_image);
-
-                    lv_area_t area;
-                    area.x1 = dsc->draw_area->x1 + (lv_area_get_width(dsc->draw_area) - w) / 2;
-                    area.x2 = area.x1 + w - 1;
-                    area.y1 = dsc->draw_area->y1 + (lv_area_get_height(dsc->draw_area) - h) / 2;
-                    area.y2 = area.y1 + h - 1;
-
-                    lv_draw_img_dsc_t img_draw_dsc;
-                    lv_draw_img_dsc_init(&img_draw_dsc);
-                    img_draw_dsc.recolor = lv_color_black();
-                    if (lv_btnmatrix_get_selected_btn(obj) == dsc->id)
-                    {
-                        img_draw_dsc.recolor_opa = LV_OPA_30;
-                    }
-
-                    lv_draw_img(dsc->draw_ctx, &img_draw_dsc, &area, lv_img_get_src(wifi_setting_image));
-                }
-            }
-        }
     }
 
     void show_screen()
@@ -341,8 +277,10 @@ public:
 private:
     lv_obj_t *wifi_network;
 
+    lv_obj_t *settings_screen_tab;
     lv_obj_t *settings_screen_tab_settings_kb;
-    lv_obj_t *tab_information_table;
+    lv_obj_t *tab_network_information_table;
+    lv_obj_t *tab_system_information_table;
     lv_obj_t *host_name_text_area;
     lv_obj_t *ntp_server_text_area;
     lv_obj_t *ntp_server_refresh_interval_label_spinbox;
@@ -352,6 +290,8 @@ private:
     lv_obj_t *wifi_setting_image;
 
     lv_timer_t *information_refresh_timer;
+
+    const static int tab_width = 64;
 
     bool settings_key_board_event_cb(lv_event_t *e)
     {
@@ -395,21 +335,35 @@ private:
         }
     }
 
-    void load_information(lv_timer_t *)
+    static void update_table(lv_obj_t *table, const ui_interface::information_table_type &data)
     {
-        log_v("updating info table");
-        const auto data = ui_interface_instance.get_information_table();
+        lv_table_set_col_cnt(table, 2);
+        lv_table_set_row_cnt(table, data.size());
 
-        lv_table_set_col_cnt(tab_information_table, 2);
-        lv_table_set_row_cnt(tab_information_table, data.size());
-
-        lv_table_set_col_width(tab_information_table, 0, 140);
-        lv_table_set_col_width(tab_information_table, 1, 430 - 140);
+        lv_table_set_col_width(table, 0, 140);
+        lv_table_set_col_width(table, 1, screen_width - tab_width - 140 - 5); // 5 for borders ,etc
 
         for (auto i = 0; i < data.size(); i++)
         {
-            lv_table_set_cell_value(tab_information_table, i, 0, std::get<0>(data[i]).c_str());
-            lv_table_set_cell_value(tab_information_table, i, 1, std::get<1>(data[i]).c_str());
+            lv_table_set_cell_value(table, i, 0, std::get<0>(data[i]).c_str());
+            lv_table_set_cell_value(table, i, 1, std::get<1>(data[i]).c_str());
+        }
+    }
+
+    void load_information(lv_timer_t *)
+    {
+        log_v("updating info table");
+
+        const auto current_tab = lv_tabview_get_tab_act(settings_screen_tab);
+        if (current_tab == 3)
+        {
+            const auto data = ui_interface_instance.get_information_table(ui_interface::information_type::system);
+            update_table(tab_system_information_table, data);
+        }
+        else if (current_tab == 0)
+        {
+            const auto data = ui_interface_instance.get_information_table(ui_interface::information_type::network);
+            update_table(tab_network_information_table, data);
         }
     }
 };

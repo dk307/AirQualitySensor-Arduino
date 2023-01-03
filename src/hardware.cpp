@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <Wifi.h>
 #include <esp_wifi.h>
+#include <esp_netif_types.h>
 #include <StreamString.h>
 #include <SD.h>
 
@@ -67,60 +68,66 @@ String hardware::get_up_time()
     return upTime;
 }
 
-String hardware::network_status(bool compact)
-{
-    StreamString stream;
-    switch (WiFi.getMode())
-    {
-    case WIFI_MODE_STA:
-    {
-        wifi_ap_record_t info;
-        const auto result_info = esp_wifi_sta_get_ap_info(&info);
-        if (result_info != ESP_OK)
-        {
-            stream.printf("STA Mode, failed to get info with error:%d", result_info);
-        }
-        else
-        {
-            if (compact)
-            {
-                stream.printf("Connected to %s with IP %s", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str());
-            }
-            else
-            {
-                stream.printf("Connected to %s\nIP:%s\nRSSI:%d db", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str(), info.rssi);
-            }
-        }
-    }
-    break;
-    case WIFI_MODE_AP:
-        stream.printf("Access Point with SSID:%s", WiFi.softAPSSID().c_str());
-        break;
-    case WIFI_MODE_APSTA:
-        stream.print("AP+STA Mode");
-        break;
-    }
-    return stream;
-}
-
 void hardware::set_screen_brightness(uint8_t value)
 {
     log_i("Setting display brightness to %d", value);
     display_instance.set_brightness(value);
 }
 
-ui_interface::information_table_type hardware::get_information_table()
+ui_interface::information_table_type hardware::get_information_table(information_type type)
 {
-    return {
-        {F("Chip"), to_string(ESP.getChipModel(), "\nRev: ", ESP.getChipRevision(), "\nFlash: ", stringify_size(ESP.getFlashChipSize()))},
-        {F("Heap"), to_string(stringify_size(ESP.getFreeHeap()), " free out of ", stringify_size(ESP.getHeapSize()))},
-        {F("PsRam"), to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
-        {F("Uptime"), get_up_time()},
-        {F("Mac Address"), WiFi.softAPmacAddress()},
-        {F("Captive portal"), wifi_manager::instance.is_captive_portal() ? "Yes" : "No"},
-        {F("Network"), network_status()},
-        {F("SD Card Size:"), to_string(SD.cardSize() / (1024 * 1024), " MB")},
-    };
+    switch (type)
+    {
+    case information_type::system:
+        return {
+            {F("Chip"), to_string(ESP.getChipModel(), "\nRev: ", ESP.getChipRevision(), "\nFlash: ", stringify_size(ESP.getFlashChipSize()))},
+            {F("Heap"), to_string(stringify_size(ESP.getFreeHeap()), " free out of ", stringify_size(ESP.getHeapSize()))},
+            {F("PsRam"), to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
+            {F("Uptime"), get_up_time()},
+            {F("SD Card Size:"), to_string(SD.cardSize() / (1024 * 1024), " MB")},
+        };
+
+    case information_type::network:
+    {
+        ui_interface::information_table_type table;
+        switch (WiFi.getMode())
+        {
+        case WIFI_MODE_STA:
+        {
+            table.push_back({"Mode", "STA Mode"});
+
+            wifi_ap_record_t info;
+            const auto result_info = esp_wifi_sta_get_ap_info(&info);
+            if (result_info != ESP_OK)
+            {
+                table.push_back({"Error", to_string("failed to get info with error", result_info)});
+            }
+            else
+            {
+                table.push_back({"SSID", reinterpret_cast<char *>(info.ssid)});
+                table.push_back({"Hostname", WiFi.getHostname()});
+                table.push_back({"Mac Address", WiFi.softAPmacAddress()});
+                table.push_back({"RSSI", to_string(info.rssi)});
+                table.push_back({"IP Address(wifi)", WiFi.localIP().toString()});
+                table.push_back({"Gateway Address", WiFi.gatewayIP().toString()});
+                table.push_back({"Subnet", WiFi.subnetMask().toString()});
+                table.push_back({"DNS", WiFi.dnsIP().toString()});
+            }
+        }
+        break;
+        case WIFI_MODE_AP:
+            table.push_back({"Mode", "Access Point Mode"});
+            table.push_back({"SSID", WiFi.softAPSSID()});
+            break;
+        case WIFI_MODE_APSTA:
+            table.push_back({"Mode", "AP+STA Mode"});
+            break;
+        }
+
+        return table;
+    }
+    }
+    return {}; 
 }
 
 std::optional<sensor_value::value_type> hardware::get_sensor_value(sensor_id_index index) const
@@ -141,7 +148,31 @@ bool hardware::is_wifi_connected()
 
 String hardware::get_wifi_status()
 {
-    return network_status(true);
+    StreamString stream;
+    switch (WiFi.getMode())
+    {
+    case WIFI_MODE_STA:
+    {
+        wifi_ap_record_t info;
+        const auto result_info = esp_wifi_sta_get_ap_info(&info);
+        if (result_info != ESP_OK)
+        {
+            stream.printf("STA Mode, failed to get info with error:%d", result_info);
+        }
+        else
+        {
+            stream.printf("Connected to %s with IP %s", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str());
+        }
+        break;
+    }
+    case WIFI_MODE_AP:
+        stream.printf("Access Point with SSID:%s", WiFi.softAPSSID().c_str());
+        break;
+    case WIFI_MODE_APSTA:
+        stream.print("AP+STA Mode");
+        break;
+    }
+    return stream;
 }
 
 bool hardware::pre_begin()

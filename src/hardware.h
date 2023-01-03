@@ -34,7 +34,7 @@ public:
     }
 
     // ui_interface
-    information_table_type get_information_table() override;
+    information_table_type get_information_table(information_type type) override;
     void set_screen_brightness(uint8_t value) override;
     std::optional<sensor_value::value_type> get_sensor_value(sensor_id_index index) const override;
     sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) override;
@@ -62,6 +62,5 @@ private:
     }
 
     static String get_up_time();
-    static String network_status(bool compact = false);
     void read_sensors();
 };

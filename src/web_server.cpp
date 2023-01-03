@@ -213,7 +213,7 @@ void web_server::information_get(AsyncWebServerRequest *request)
 	auto response = new AsyncJsonResponse(true, 1024);
 	auto arr = response->getRoot();
 
-	const auto data = hardware::instance.get_information_table();
+	const auto data = hardware::instance.get_information_table(ui_interface::information_type::system);
 
 	for (auto &&[key, value] : data)
 	{

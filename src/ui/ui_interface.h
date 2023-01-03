@@ -10,8 +10,14 @@
 class ui_interface
 {
 public:
+    enum class information_type
+    {
+        network,
+        system
+    };
+
     typedef std::vector<std::pair<String, String>, psram::allocator<std::pair<String, String>>> information_table_type;
-    virtual information_table_type get_information_table() = 0;
+    virtual information_table_type get_information_table(information_type type) = 0;
 
     virtual void set_screen_brightness(uint8_t value) = 0;
     virtual std::optional<sensor_value::value_type> get_sensor_value(sensor_id_index index) const = 0;
