@@ -281,7 +281,7 @@ public:
         lv_textarea_set_text(host_name_text_area, config::instance.data.get_host_name().c_str());
         lv_textarea_set_text(ntp_server_text_area, config::instance.data.get_ntp_server().c_str());
         lv_spinbox_set_value(ntp_server_refresh_interval_label_spinbox, config::instance.data.get_ntp_server_refresh_interval() / 1000);
-        lv_dropdown_set_selected(timezone_drop_down, static_cast<uint16_t>(config::instance.data.get_timezone()));
+        lv_roller_set_selected(timezone_drop_down, static_cast<uint16_t>(config::instance.data.get_timezone()), LV_ANIM_OFF);
         lv_slider_set_value(brightness_slider, config::instance.data.get_manual_screen_brightness().value_or(0), LV_ANIM_OFF);
 
         // const auto ssid = config::instance.data.get_wifi_ssid();

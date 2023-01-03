@@ -22,6 +22,7 @@ public:
     }
     void init();
     void update_boot_message(const String &message);
+    void update_top_layer_message(const String &message, uint32_t period = top_message_timer_period);
     void set_sensor_value(sensor_id_index id, const std::optional<sensor_value::value_type> &value);
     void update_configuration();
     void set_main_screen();
@@ -45,10 +46,16 @@ public:
 private:
     ui_interface &ui_interface_instance;
 
+    static const uint32_t top_message_timer_period = 10000;
+
     // top sys layer
     lv_obj_t *no_wifi_image;
     lv_style_t no_wifi_image_style;
     lv_anim_timeline_t *no_wifi_image_animation_timeline;
+
+    lv_obj_t *top_message_panel;
+    lv_obj_t *top_message_label;
+    lv_timer_t *top_message_timer;
 
     ui_common_fonts common_fonts{};
 
@@ -60,5 +67,7 @@ private:
     void inline_loop(uint64_t maxWait);
     void load_from_sd_card();
     void init_no_wifi_image();
+    void init_top_message();
     static void no_wifi_img_animation_cb(void *var, int32_t v);
+    static void top_message_timer_cb(lv_timer_t  *e);
 };
