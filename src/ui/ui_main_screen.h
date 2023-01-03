@@ -64,18 +64,7 @@ private:
     panel_and_label create_big_panel(sensor_id_index index,
                                      lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
     {
-        auto panel = lv_obj_create(screen);
-        lv_obj_set_size(panel, w, h);
-        lv_obj_align(panel, LV_ALIGN_TOP_LEFT, x_ofs, y_ofs);
-        lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        lv_obj_set_style_radius(panel, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
-        set_padding_zero(panel);
+        auto panel = create_panel(x_ofs, y_ofs, w, h, 20);
 
         auto label = lv_label_create(panel);
         lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -104,8 +93,7 @@ private:
         return pair;
     }
 
-    panel_and_label create_small_panel(sensor_id_index index,
-                                       lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
+    lv_obj_t *create_panel(lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h, lv_coord_t radius)
     {
         auto panel = lv_obj_create(screen);
         lv_obj_set_size(panel, w, h);
@@ -117,8 +105,17 @@ private:
         lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-        lv_obj_set_style_radius(panel, 13, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_radius(panel, radius, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);
+
+        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE);
+        return panel;
+    }
+
+    panel_and_label create_small_panel(sensor_id_index index,
+                                       lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
+    {
+        auto panel = create_panel(x_ofs, y_ofs, w, h, 13);
 
         auto label = lv_label_create(panel);
         lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -156,6 +153,7 @@ private:
         lv_obj_set_style_bg_color(panel, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE);
 
         lv_obj_set_style_radius(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);
@@ -188,6 +186,7 @@ private:
         lv_obj_set_style_bg_color(panel, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE);
 
         lv_obj_set_style_radius(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);

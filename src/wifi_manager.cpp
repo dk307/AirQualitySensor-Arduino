@@ -48,8 +48,8 @@ void wifi_manager::wifi_start()
 
 void wifi_manager::set_new_wifi(const String &newSSID, const String &newPass)
 {
-    newSsid = newSSID;
-    newPassword = newPass;
+    new_ssid = newSSID;
+    new_password = newPass;
     reconnect = true;
 }
 
@@ -185,39 +185,39 @@ void wifi_manager::loop()
 
     if (reconnect)
     {
-        set_wifi(newSsid, newPassword);
+        set_wifi(new_ssid, new_password);
         reconnect = false;
-        newSsid.clear();
-        newPassword.clear();
+        new_ssid.clear();
+        new_password.clear();
     }
 }
 
 String wifi_manager::get_rfc_952_host_name(const String &name)
 {
-    const int MaxLength = 24;
-    String rfc952Hostname;
-    rfc952Hostname.reserve(MaxLength);
+    const int max_length = 24;
+    String rfc_952_hostname;
+    rfc_952_hostname.reserve(max_length);
 
     for (auto &&c : name)
     {
         if (isalnum(c) || c == '-')
         {
-            rfc952Hostname += c;
+            rfc_952_hostname += c;
         }
-        if (rfc952Hostname.length() >= MaxLength)
+        if (rfc_952_hostname.length() >= max_length)
         {
             break;
         }
     }
 
     // remove last -
-    size_t i = rfc952Hostname.length() - 1;
-    while (rfc952Hostname[i] == '-' && i > 0)
+    size_t i = rfc_952_hostname.length() - 1;
+    while (rfc_952_hostname[i] == '-' && i > 0)
     {
         i--;
     }
 
-    return rfc952Hostname.substring(0, i);
+    return rfc_952_hostname.substring(0, i);
 }
 
 String wifi_manager::get_rfc_name()

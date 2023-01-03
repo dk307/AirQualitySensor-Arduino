@@ -31,8 +31,8 @@ private:
     std::unique_ptr<DNSServer, psram::deleter> dns_server;
 
     bool reconnect = false;
-    String newSsid;
-    String newPassword;
+    String new_ssid;
+    String new_password;
 
     bool in_captive_portal{false};
     uint64_t captive_portal_start{0};
