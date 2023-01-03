@@ -67,29 +67,34 @@ String hardware::get_up_time()
     return upTime;
 }
 
-String hardware::network_status()
+String hardware::network_status(bool compact)
 {
     StreamString stream;
     switch (WiFi.getMode())
     {
     case WIFI_MODE_STA:
     {
-        stream.print("STA Mode");
         wifi_ap_record_t info;
-
         const auto result_info = esp_wifi_sta_get_ap_info(&info);
         if (result_info != ESP_OK)
         {
-            stream.printf(", failed to get info with error:%d", result_info);
+            stream.printf("STA Mode, failed to get info with error:%d", result_info);
         }
         else
         {
-            stream.printf("\nSsid:%s\nIP:%s\nRSSI:%d db", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str(), info.rssi);
+            if (compact)
+            {
+                stream.printf("Connected to %s with IP %s", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str());
+            }
+            else
+            {
+                stream.printf("Connected to %s\nIP:%s\nRSSI:%d db", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str(), info.rssi);
+            }
         }
     }
     break;
     case WIFI_MODE_AP:
-        stream.printf("Access Point with SSID");
+        stream.printf("Access Point with SSID:%s", WiFi.softAPSSID().c_str());
         break;
     case WIFI_MODE_APSTA:
         stream.print("AP+STA Mode");
@@ -132,6 +137,11 @@ sensor_history::sensor_history_snapshot hardware::get_sensor_detail_info(sensor_
 bool hardware::is_wifi_connected()
 {
     return wifi_manager::instance.is_wifi_connected();
+}
+
+String hardware::get_wifi_status()
+{
+    return network_status(true);
 }
 
 bool hardware::pre_begin()
