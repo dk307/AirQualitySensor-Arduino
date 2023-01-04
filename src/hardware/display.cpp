@@ -111,11 +111,6 @@ void display::begin()
             ui_instance.set_sensor_value(id, value); });
     }
 
-    config::instance.add_callback([this]
-                                  {
-            std::lock_guard<std::mutex> lock(lgvl_mutex);
-            ui_instance.update_configuration(); });
-
     wifi_manager::instance.add_callback([this]
                                         {
             std::lock_guard<std::mutex> lock(lgvl_mutex);

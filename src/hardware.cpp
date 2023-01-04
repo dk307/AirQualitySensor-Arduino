@@ -20,6 +20,14 @@
 
 hardware hardware::instance;
 
+static const char *timezone_strings[5]{
+    "USA Eastern",
+    "USA Central",
+    "USA Mountain time",
+    "USA Arizona",
+    "USA Pacific",
+};
+
 template <class T>
 inline Print &operator<<(Print &obj, T &&arg)
 {
@@ -106,10 +114,10 @@ ui_interface::information_table_type hardware::get_information_table(information
             {
                 table.push_back({"SSID", reinterpret_cast<char *>(info.ssid)});
                 table.push_back({"Hostname", WiFi.getHostname()});
-                table.push_back({"Mac Address", WiFi.softAPmacAddress()});
-                table.push_back({"RSSI", to_string(info.rssi)});
-                table.push_back({"IP Address(wifi)", WiFi.localIP().toString()});
-                table.push_back({"Gateway Address", WiFi.gatewayIP().toString()});
+                table.push_back({"IP address(wifi)", WiFi.localIP().toString()});
+                table.push_back({"Mac address", WiFi.softAPmacAddress()});
+                table.push_back({"RSSI (db)", to_string(info.rssi)});
+                table.push_back({"Gateway address", WiFi.gatewayIP().toString()});
                 table.push_back({"Subnet", WiFi.subnetMask().toString()});
                 table.push_back({"DNS", WiFi.dnsIP().toString()});
             }
@@ -126,8 +134,18 @@ ui_interface::information_table_type hardware::get_information_table(information
 
         return table;
     }
+    case information_type::config:
+        return {
+            {"Hostname", to_string(config::instance.instance.data.get_host_name())},
+            {"NTP server", to_string(config::instance.instance.data.get_ntp_server())},
+            {"NTP server refresh interval", to_string(config::instance.instance.data.get_ntp_server_refresh_interval())},
+            {"Time zone", timezone_strings[static_cast<size_t>(config::instance.instance.data.get_timezone())]},
+            {"SSID", to_string(config::instance.instance.data.get_wifi_ssid())},
+            {"Web user name", to_string(config::instance.instance.data.get_web_user_name())},
+            {"Screen brightness (%)", to_string((100 * config::instance.instance.data.get_manual_screen_brightness().value_or(0)) / 256) },
+        };
     }
-    return {}; 
+    return {};
 }
 
 std::optional<sensor_value::value_type> hardware::get_sensor_value(sensor_id_index index) const

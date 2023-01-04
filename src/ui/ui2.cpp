@@ -176,14 +176,6 @@ void ui::set_main_screen()
     wifi_changed();
 }
 
-void ui::update_configuration()
-{
-    if (settings_screen.is_active())
-    {
-        settings_screen.update_configuration();
-    }
-}
-
 void ui::wifi_changed()
 {
     if (ui_interface_instance.is_wifi_connected())

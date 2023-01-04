@@ -13,7 +13,8 @@ public:
     enum class information_type
     {
         network,
-        system
+        system,
+        config
     };
 
     typedef std::vector<std::pair<String, String>, psram::allocator<std::pair<String, String>>> information_table_type;

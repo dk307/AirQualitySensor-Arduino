@@ -46,7 +46,7 @@ void operations::begin()
 
 void operations::reboot()
 {
-	reboot_pending = true;
+	reboot_pending.store(true);
 }
 
 bool operations::start_update(size_t length, const String &md5, String &error)

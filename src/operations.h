@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <atomic>
 
 class MultiResetDetector;
 
@@ -29,5 +30,5 @@ private:
 
     MultiResetDetector *mrd = nullptr;
 
-    bool reboot_pending{false};
+    std::atomic_bool reboot_pending{false};
 };

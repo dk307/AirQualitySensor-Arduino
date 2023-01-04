@@ -11,7 +11,7 @@
 #include "ui_boot_screen.h"
 #include "ui_main_screen.h"
 #include "ui_sensor_detail_screen.h"
-#include "ui_settings_screen.h"
+#include "ui_information_screen.h"
 #include "ui_inter_screen_interface.h"
 
 class ui : public ui_inter_screen_interface
@@ -24,7 +24,6 @@ public:
     void update_boot_message(const String &message);
     void update_top_layer_message(const String &message, uint32_t period = top_message_timer_period);
     void set_sensor_value(sensor_id_index id, const std::optional<sensor_value::value_type> &value);
-    void update_configuration();
     void set_main_screen();
     void wifi_changed();
 
@@ -62,7 +61,7 @@ private:
     ui_boot_screen boot_screen{ui_interface_instance, *this, &common_fonts};
     ui_main_screen main_screen{ui_interface_instance, *this, &common_fonts};
     ui_sensor_detail_screen sensor_detail_screen{ui_interface_instance, *this, &common_fonts};
-    ui_settings_screen settings_screen{ui_interface_instance, *this, &common_fonts};
+    ui_information_screen settings_screen{ui_interface_instance, *this, &common_fonts};
 
     void inline_loop(uint64_t maxWait);
     void load_from_sd_card();
