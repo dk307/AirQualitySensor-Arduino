@@ -17,6 +17,7 @@ public:
     void init() override
     {
         ui_screen::init();
+        set_default_screen();
     }
 
 protected:

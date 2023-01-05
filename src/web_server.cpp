@@ -434,7 +434,7 @@ void web_server::factory_reset(AsyncWebServerRequest *request)
 	}
 
 	request->send(200);
-	operations::instance.factoryReset();
+	operations::instance.factory_reset();
 }
 
 void web_server::reboot_on_upload_complete(AsyncWebServerRequest *request)

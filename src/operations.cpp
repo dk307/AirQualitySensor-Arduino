@@ -21,7 +21,7 @@
 
 operations operations::instance;
 
-void operations::factoryReset()
+void operations::factory_reset()
 {
 	log_w("Doing Factory Reset");
 	nvs_flash_erase();
@@ -36,7 +36,7 @@ void operations::begin()
 	if (mrd->detectMultiReset())
 	{
 		log_w("Detected Multi Reset Event!!!!");
-		factoryReset();
+		factory_reset();
 	}
 	else
 	{

@@ -57,18 +57,19 @@ protected:
     {
         auto p_this = reinterpret_cast<T *>(lv_event_get_user_data(e));
         (p_this->*ftn)(e);
-    }    
-    
+    }
+
     template <class T, void (T::*ftn)(lv_timer_t *)>
-    static void timer_callback(lv_timer_t  *e)
+    static void timer_callback(lv_timer_t *e)
     {
         auto p_this = reinterpret_cast<T *>(e->user_data);
         (p_this->*ftn)(e);
     }
 
-    static struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, std::function<void(lv_event_t *)> ftn, lv_event_code_t filter = LV_EVENT_ALL)
+    // do not call this in loop, only for first time init
+    static struct _lv_event_dsc_t *add_event_callback(lv_obj_t *obj, const std::function<void(lv_event_t *)> &ftn, lv_event_code_t filter = LV_EVENT_ALL)
     {
-        auto param = new std::function<void(lv_event_t *)>(ftn);
+        auto param = new std::function<void(lv_event_t *)>(ftn); // never freed
         return lv_obj_add_event_cb(obj, event_callback_ftn, filter, param);
     }
 
@@ -83,15 +84,15 @@ protected:
         lv_obj_set_style_shadow_width(close_button, 0, 0);
         lv_obj_set_style_bg_img_src(close_button, LV_SYMBOL_HOME, 0);
 
-        lv_obj_set_size(close_button, LV_DPX(45), LV_DPX(45));
+        lv_obj_set_size(close_button, LV_DPX(48), LV_DPX(48));
         lv_obj_align(close_button, align, x_ofs, y_ofs);
 
-        add_event_callback(
-            close_button, [this](lv_event_t *e)
-            { if (e->code == LV_EVENT_SHORT_CLICKED) {
-                inter_screen_interface.show_home_screen();           
-         } },
-            LV_EVENT_SHORT_CLICKED);
+        lv_obj_add_event_cb(close_button, event_callback<ui_screen, &ui_screen::close_button_callback>, LV_EVENT_SHORT_CLICKED, this);
+    }
+
+    void set_default_screen()
+    {
+        lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 
 private:
@@ -99,5 +100,13 @@ private:
     {
         auto p_ftn = reinterpret_cast<std::function<void(lv_event_t * e)> *>(lv_event_get_user_data(e));
         (*p_ftn)(e);
+    }
+
+    void close_button_callback(lv_event_t *e)
+    {
+        if (lv_event_get_code(e) == LV_EVENT_SHORT_CLICKED)
+        {
+            inter_screen_interface.show_home_screen();
+        }
     }
 };

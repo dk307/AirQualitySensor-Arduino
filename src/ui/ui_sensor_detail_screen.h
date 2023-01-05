@@ -17,7 +17,6 @@ public:
         const auto y_pad = 4;
 
         lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
-        lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
 
         sensor_detail_screen_top_label =
             create_sensor_label(screen, fonts->font_montserrat_medium_48, LV_ALIGN_TOP_MID, 0, y_pad, lv_color_black());
@@ -83,7 +82,7 @@ public:
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
     {
-        if (lv_scr_act() == screen)
+        if (is_active())
         {
             if (lv_obj_get_user_data(screen) == reinterpret_cast<void *>(index))
             {

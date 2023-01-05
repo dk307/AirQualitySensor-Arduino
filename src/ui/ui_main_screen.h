@@ -14,7 +14,6 @@ public:
         ui_screen_with_sensor_panel::init();
 
         lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
-        lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
 
         const int x_pad = 9;
         const int y_pad = 10;
@@ -42,7 +41,7 @@ public:
         panel_and_labels[static_cast<size_t>(sensor_id_index::humidity)] =
             create_humidity_panel(sensor_id_index::humidity, -10, -10);
 
-        lv_obj_add_event_cb(screen, event_callback<ui_main_screen, &ui_main_screen::event_screen>, LV_EVENT_ALL, this);
+        lv_obj_add_event_cb(screen, event_callback<ui_main_screen, &ui_main_screen::screen_callback>, LV_EVENT_ALL, this);
         log_d("Main screen init done");
     }
 
@@ -108,7 +107,7 @@ private:
         lv_obj_set_style_radius(panel, radius, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);
 
-        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_GESTURE_BUBBLE);
         return panel;
     }
 
@@ -153,7 +152,7 @@ private:
         lv_obj_set_style_bg_color(panel, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_GESTURE_BUBBLE);
 
         lv_obj_set_style_radius(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);
@@ -186,7 +185,7 @@ private:
         lv_obj_set_style_bg_color(panel, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE);
+        lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_GESTURE_BUBBLE);
 
         lv_obj_set_style_radius(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);
@@ -209,14 +208,15 @@ private:
         return {nullptr, value_label};
     }
 
-    void event_screen(lv_event_t *e)
+    void screen_callback(lv_event_t *e)
     {
         lv_event_code_t event_code = lv_event_get_code(e);
         lv_obj_t *target = lv_event_get_target(e);
 
         if (event_code == LV_EVENT_LONG_PRESSED)
         {
-            inter_screen_interface.show_setting_screen();
+            log_i("Long press detected");
+            inter_screen_interface.show_launcher_screen();
         }
         else if (event_code == LV_EVENT_SCREEN_LOAD_START)
         {

@@ -62,9 +62,10 @@ bool display::pre_begin()
     log_i("Display initialized width:%d height:%d", screenWidth, screenHeight);
 
     log_d("LV initialized");
-    const int buffer_size = 40;
+    const int buffer_size = 60;
 
     const auto display_buffer_size = screenWidth * buffer_size * sizeof(lv_color_t);
+    log_i("Display buffer size:%d", display_buffer_size);
     disp_draw_buf = (lv_color_t *)heap_caps_malloc(display_buffer_size, MALLOC_CAP_DMA);
     disp_draw_buf2 = (lv_color_t *)heap_caps_malloc(display_buffer_size, MALLOC_CAP_DMA);
 

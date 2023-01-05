@@ -13,6 +13,7 @@
 #include "ui_sensor_detail_screen.h"
 #include "ui_information_screen.h"
 #include "ui_inter_screen_interface.h"
+#include "ui_launcher_screen.h"
 
 class ui : public ui_inter_screen_interface
 {
@@ -22,7 +23,7 @@ public:
     }
     void init();
     void update_boot_message(const String &message);
-    void update_top_layer_message(const String &message, uint32_t period = top_message_timer_period);
+    void show_top_level_message(const String &message, uint32_t period = top_message_timer_period);
     void set_sensor_value(sensor_id_index id, const std::optional<sensor_value::value_type> &value);
     void set_main_screen();
     void wifi_changed();
@@ -42,6 +43,11 @@ public:
         sensor_detail_screen.show_screen(index);
     }
 
+    void show_launcher_screen() override
+    {
+        lv_obj_add_flag(top_message_panel, LV_OBJ_FLAG_HIDDEN);
+        launcher_screen.show_screen();
+    }
 private:
     ui_interface &ui_interface_instance;
 
@@ -62,11 +68,12 @@ private:
     ui_main_screen main_screen{ui_interface_instance, *this, &common_fonts};
     ui_sensor_detail_screen sensor_detail_screen{ui_interface_instance, *this, &common_fonts};
     ui_information_screen settings_screen{ui_interface_instance, *this, &common_fonts};
+    ui_launcher_screen launcher_screen{ui_interface_instance, *this, &common_fonts};
 
     void inline_loop(uint64_t maxWait);
     void load_from_sd_card();
     void init_no_wifi_image();
     void init_top_message();
     static void no_wifi_img_animation_cb(void *var, int32_t v);
-    static void top_message_timer_cb(lv_timer_t  *e);
+    static void top_message_timer_cb(lv_timer_t *e);
 };
