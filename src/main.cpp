@@ -44,5 +44,5 @@ void loop(void)
 	ntp_time::instance.loop();
 	operations::instance.loop();
 
-	delay(2);
+	delay(3);
 }

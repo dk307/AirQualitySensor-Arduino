@@ -123,7 +123,7 @@ public:
         std::vector<T, psram::allocator<T>> last_x_min_values;
     } sensor_history_snapshot;
 
-    static constexpr int reads_per_minute = 12;
+    static constexpr int reads_per_minute = 20;
 
     void add_value(T value)
     {

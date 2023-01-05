@@ -62,7 +62,7 @@ bool display::pre_begin()
     log_i("Display initialized width:%d height:%d", screenWidth, screenHeight);
 
     log_d("LV initialized");
-    const int buffer_size = 60;
+    const int buffer_size = 80;
 
     const auto display_buffer_size = screenWidth * buffer_size * sizeof(lv_color_t);
     log_i("Display buffer size:%d", display_buffer_size);

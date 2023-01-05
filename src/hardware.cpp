@@ -88,11 +88,11 @@ ui_interface::information_table_type hardware::get_information_table(information
     {
     case information_type::system:
         return {
-            {F("Chip"), to_string(ESP.getChipModel(), "\nRev: ", ESP.getChipRevision(), "\nFlash: ", stringify_size(ESP.getFlashChipSize()))},
-            {F("Heap"), to_string(stringify_size(ESP.getFreeHeap()), " free out of ", stringify_size(ESP.getHeapSize()))},
-            {F("PsRam"), to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
-            {F("Uptime"), get_up_time()},
-            {F("SD Card Size:"), to_string(SD.cardSize() / (1024 * 1024), " MB")},
+            {"Chip", to_string(ESP.getChipModel(), "\nRev: ", ESP.getChipRevision(), "\nFlash: ", stringify_size(ESP.getFlashChipSize()))},
+            {"Heap", to_string(stringify_size(ESP.getFreeHeap()), " free out of ", stringify_size(ESP.getHeapSize()))},
+            {"PsRam", to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
+            {"Uptime", get_up_time()},
+            {"SD Card Size:", to_string(SD.cardSize() / (1024 * 1024), " MB")},
         };
 
     case information_type::network:
@@ -142,7 +142,7 @@ ui_interface::information_table_type hardware::get_information_table(information
             {"Time zone", timezone_strings[static_cast<size_t>(config::instance.instance.data.get_timezone())]},
             {"SSID", to_string(config::instance.instance.data.get_wifi_ssid())},
             {"Web user name", to_string(config::instance.instance.data.get_web_user_name())},
-            {"Screen brightness (%)", to_string((100 * config::instance.instance.data.get_manual_screen_brightness().value_or(0)) / 256) },
+            {"Screen brightness (%)", to_string((100 * config::instance.instance.data.get_manual_screen_brightness().value_or(0)) / 256)},
         };
     }
     return {};
@@ -214,18 +214,18 @@ void hardware::begin()
     display_instance.begin();
     sdcard::instance.begin();
 
-    sensor_read_task = std::make_unique<task_wrapper>([this]
+    hardware_core_0_task = std::make_unique<task_wrapper>([this]
                                                       {
                                                             log_i("Hardware task started on Core:%d", xPortGetCoreID());
                                                             do
                                                             {
                                                                 display_instance.loop();
                                                                 read_sensors();                                                                    
-                                                                vTaskDelay(5);
+                                                                vTaskDelay(3);
                                                             } while(true); });
 
     // start on core 0
-    sensor_read_task->spawn_arduino_other_core("hardware task");
+    hardware_core_0_task->spawn_arduino_other_core("hardware task");
 }
 
 void hardware::read_sensors()

@@ -51,7 +51,7 @@ private:
     std::unique_ptr<std::array<sensor_history, total_sensors>, psram::deleter> sensors_history;
     uint64_t sensor_last_read = 0;
 
-    std::unique_ptr<task_wrapper> sensor_read_task;
+    std::unique_ptr<task_wrapper> hardware_core_0_task;
 
     template <class T>
     void set_sensor_value(sensor_id_index index, T value)

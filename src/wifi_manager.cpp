@@ -10,6 +10,7 @@ wifi_manager wifi_manager::instance;
 
 void wifi_manager::begin()
 {
+    //WiFi.useStaticBuffers(true);
     wifi_start();
     WiFi.onEvent(std::bind(&wifi_manager::wifi_event, this, std::placeholders::_1, std::placeholders::_2));
 }
