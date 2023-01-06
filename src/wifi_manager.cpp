@@ -3,6 +3,7 @@
 #include "operations.h"
 
 #include <WiFi.h>
+#include <StreamString.h>
 
 #include <memory>
 
@@ -10,22 +11,16 @@ wifi_manager wifi_manager::instance;
 
 void wifi_manager::begin()
 {
-    //WiFi.useStaticBuffers(true);
-    wifi_start();
+    // WiFi.useStaticBuffers(true);
+    WiFi.persistent(false);
     WiFi.onEvent(std::bind(&wifi_manager::wifi_event, this, std::placeholders::_1, std::placeholders::_2));
+    wifi_start();
 }
 
 void wifi_manager::wifi_start()
 {
-    WiFi.persistent(false);
-
     const auto ssid = config::instance.data.get_wifi_ssid();
-
-    bool connected = false;
-    if (!ssid.isEmpty())
-    {
-        connected = connect_wifi(config::instance.data.get_wifi_ssid(), config::instance.data.get_wifi_password());
-    }
+    const bool connected = connect_wifi(config::instance.data.get_wifi_ssid(), config::instance.data.get_wifi_password());
 
     if (!connected)
     {
@@ -49,20 +44,28 @@ void wifi_manager::wifi_start()
 
 void wifi_manager::set_new_wifi(const String &newSSID, const String &newPass)
 {
+    log_i("Trying up setup new wifi:%s pwd:%s", newSSID.c_str(), newPass.c_str());
     new_ssid = newSSID;
     new_password = newPass;
-    reconnect = true;
+    connect_new_ssid = true;
 }
 
 bool wifi_manager::connect_wifi(const String &ssid, const String &password)
 {
+    if (ssid.isEmpty() || password.isEmpty())
+    {
+        return false;
+    }
     const auto rfc_name = get_rfc_name();
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
     WiFi.setHostname(rfc_name.c_str());
 
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
+    WiFi.disconnect(true, true);
     delay(100);
+    WiFi.mode(WIFI_MODE_STA);
+
+    WiFi.setAutoReconnect(false);
+    log_i("wifi connection:%s pwd:%s", ssid.c_str(), password.c_str());
     WiFi.begin(ssid.c_str(), password.c_str());
 
     constexpr unsigned long timeout = 60000;
@@ -102,6 +105,10 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
                     start_captive_portal();
                 }
             }
+            else
+            {
+                start_captive_portal();
+            }
         }
         else
         {
@@ -124,10 +131,9 @@ void wifi_manager::start_captive_portal()
     const auto rfc_name = get_rfc_name();
     log_i("Opening a captive portal with AP :%s", rfc_name.c_str());
 
-    // disconnect sta, start ap
-    WiFi.disconnect(); //  this alone is not enough to stop the autoconnecter
-    WiFi.mode(WIFI_AP);
-
+    WiFi.disconnect(true, true);
+    delay(100);
+    WiFi.mode(WIFI_MODE_AP);
     WiFi.softAP(rfc_name.c_str());
 
     dns_server = psram::make_unique<DNSServer>();
@@ -143,6 +149,7 @@ void wifi_manager::start_captive_portal()
 
 void wifi_manager::stop_captive_portal()
 {
+    log_i("Stopping captive portal");
     dns_server.reset();
 
     in_captive_portal = false;
@@ -184,10 +191,10 @@ void wifi_manager::loop()
         }
     }
 
-    if (reconnect)
+    if (connect_new_ssid)
     {
         set_wifi(new_ssid, new_password);
-        reconnect = false;
+        connect_new_ssid = false;
         new_ssid.clear();
         new_password.clear();
     }
@@ -244,6 +251,8 @@ void wifi_manager::wifi_event(arduino_event_id_t event, arduino_event_info_t inf
 {
     switch (event)
     {
+    case ARDUINO_EVENT_WIFI_AP_START:
+    case ARDUINO_EVENT_WIFI_AP_STOP:
     case ARDUINO_EVENT_WIFI_STA_GOT_IP:
     case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
@@ -251,8 +260,13 @@ void wifi_manager::wifi_event(arduino_event_id_t event, arduino_event_info_t inf
         break;
 
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+    case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+        log_d("WiFi STA disconnected");
         call_change_listeners();
-        wifi_start();
+        if (!connect_new_ssid)
+        {
+            wifi_start();
+        }
         break;
     }
 }
@@ -267,11 +281,49 @@ bool wifi_manager::is_wifi_connected()
 
     if (!in_captive_portal)
     {
-        if (WiFi.getMode() == WIFI_MODE_STA)
+        const auto mode = WiFi.getMode();
+        if ((mode == WIFI_MODE_STA) || (mode == WIFI_MODE_APSTA))
         {
             return (WiFi.status() == WL_CONNECTED) &&
-                 static_cast<uint32_t>(WiFi.localIP()) != 0;
+                   static_cast<uint32_t>(WiFi.localIP()) != 0;
         }
     }
     return false;
+}
+
+String wifi_manager::get_wifi_status()
+{
+    StreamString stream;
+    if (!in_captive_portal)
+    {
+        const auto mode = WiFi.getMode();
+        if ((mode == WIFI_MODE_STA) || (mode == WIFI_MODE_APSTA))
+        {
+            if ((WiFi.status() == WL_CONNECTED) &&
+                static_cast<uint32_t>(WiFi.localIP()) != 0)
+            {
+                stream.printf("Connected to %s with IP %s", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
+            }
+            else
+            {
+                stream.printf("Not connected to Wifi");
+            }
+        }
+        else
+        {
+            stream.printf("Access Point with SSID:%s", WiFi.softAPSSID().c_str());
+        }
+    }
+    else
+    {
+        if (connect_new_ssid)
+        {
+            stream.printf("Connecting to %s", new_ssid.c_str());
+        }
+        else
+        {
+            stream.printf("Access Point with SSID:%s", WiFi.softAPSSID().c_str());
+        }
+    }
+    return stream;
 }

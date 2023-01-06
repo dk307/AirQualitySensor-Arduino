@@ -107,7 +107,7 @@ void ui::top_message_timer_cb(lv_timer_t *e)
 {
     auto p_this = reinterpret_cast<ui *>(e->user_data);
     lv_obj_add_flag(p_this->top_message_panel, LV_OBJ_FLAG_HIDDEN);
-    lv_timer_set_repeat_count(p_this->top_message_timer, 0);
+    lv_timer_pause(p_this->top_message_timer);
 }
 
 void ui::init_top_message()
@@ -131,7 +131,7 @@ void ui::init_top_message()
     lv_obj_set_style_text_color(top_message_label, lv_color_black(), LV_PART_MAIN | LV_STATE_DEFAULT);
 
     top_message_timer = lv_timer_create(top_message_timer_cb, top_message_timer_period, this);
-    lv_timer_set_repeat_count(top_message_timer, 1);
+    lv_timer_pause(top_message_timer);
 }
 
 void ui::inline_loop(uint64_t maxWait)
@@ -164,11 +164,11 @@ void ui::update_boot_message(const String &message)
 
 void ui::show_top_level_message(const String &message, uint32_t period)
 {
-    log_i("Hidding top level message");
+    log_i("Showing top level message:%s", message.c_str());
     lv_label_set_text(top_message_label, message.c_str());
     lv_obj_clear_flag(top_message_panel, LV_OBJ_FLAG_HIDDEN);
-    lv_timer_set_period(top_message_timer, period);
     lv_timer_reset(top_message_timer);
+    lv_timer_resume(top_message_timer);
 }
 
 void ui::set_main_screen()
@@ -179,18 +179,21 @@ void ui::set_main_screen()
 
 void ui::wifi_changed()
 {
-    if (ui_interface_instance.is_wifi_connected())
+    if (!boot_screen.is_active())
     {
-        log_i("Hiding No wifi icon");
-        lv_obj_add_flag(no_wifi_image, LV_OBJ_FLAG_HIDDEN);
-        lv_anim_timeline_stop(no_wifi_image_animation_timeline);
-    }
-    else
-    {
-        log_i("Showing No wifi icon");
-        lv_obj_clear_flag(no_wifi_image, LV_OBJ_FLAG_HIDDEN);
-        lv_anim_timeline_start(no_wifi_image_animation_timeline);
-    }
+        if (ui_interface_instance.is_wifi_connected())
+        {
+            log_i("Hiding No wifi icon");
+            lv_obj_add_flag(no_wifi_image, LV_OBJ_FLAG_HIDDEN);
+            lv_anim_timeline_stop(no_wifi_image_animation_timeline);
+        }
+        else
+        {
+            log_i("Showing No wifi icon");
+            lv_obj_clear_flag(no_wifi_image, LV_OBJ_FLAG_HIDDEN);
+            lv_anim_timeline_start(no_wifi_image_animation_timeline);
+        }
 
-    show_top_level_message(ui_interface_instance.get_wifi_status(), 5000);
+        show_top_level_message(ui_interface_instance.get_wifi_status(), 5000);
+    }
 }

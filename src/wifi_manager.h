@@ -20,6 +20,7 @@ public:
     void set_new_wifi(const String &newSSID, const String &newPass);
 
     bool is_wifi_connected();
+    String get_wifi_status();
 
     static IPAddress get_local_ip();
     static String SSID();
@@ -30,7 +31,7 @@ private:
     wifi_manager() = default;
     std::unique_ptr<DNSServer, psram::deleter> dns_server;
 
-    bool reconnect = false;
+    bool connect_new_ssid = false;
     String new_ssid;
     String new_password;
 

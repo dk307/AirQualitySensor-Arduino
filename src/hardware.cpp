@@ -129,6 +129,8 @@ ui_interface::information_table_type hardware::get_information_table(information
             break;
         case WIFI_MODE_APSTA:
             table.push_back({"Mode", "AP+STA Mode"});
+            table.push_back({"AP SSID", WiFi.softAPSSID()});
+            table.push_back({"STA SSID", WiFi.SSID()});
             break;
         }
 
@@ -166,31 +168,7 @@ bool hardware::is_wifi_connected()
 
 String hardware::get_wifi_status()
 {
-    StreamString stream;
-    switch (WiFi.getMode())
-    {
-    case WIFI_MODE_STA:
-    {
-        wifi_ap_record_t info;
-        const auto result_info = esp_wifi_sta_get_ap_info(&info);
-        if (result_info != ESP_OK)
-        {
-            stream.printf("STA Mode, failed to get info with error:%d", result_info);
-        }
-        else
-        {
-            stream.printf("Connected to %s with IP %s", reinterpret_cast<char *>(info.ssid), WiFi.localIP().toString().c_str());
-        }
-        break;
-    }
-    case WIFI_MODE_AP:
-        stream.printf("Access Point with SSID:%s", WiFi.softAPSSID().c_str());
-        break;
-    case WIFI_MODE_APSTA:
-        stream.print("AP+STA Mode");
-        break;
-    }
-    return stream;
+    return wifi_manager::instance.get_wifi_status();
 }
 
 bool hardware::pre_begin()
@@ -215,12 +193,12 @@ void hardware::begin()
     sdcard::instance.begin();
 
     hardware_core_0_task = std::make_unique<task_wrapper>([this]
-                                                      {
+                                                          {
                                                             log_i("Hardware task started on Core:%d", xPortGetCoreID());
                                                             do
                                                             {
                                                                 display_instance.loop();
-                                                                read_sensors();                                                                    
+                                                                // read_sensors();                                                                    
                                                                 vTaskDelay(3);
                                                             } while(true); });
 
