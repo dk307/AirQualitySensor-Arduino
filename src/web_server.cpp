@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include <StreamString.h>
+#include <SD.h>
 #include <mbedtls/md.h>
 
 #include "wifi_manager.h"
@@ -11,49 +12,52 @@
 
 #include "operations.h"
 #include "hardware.h"
-#include "web.h"
+#include "web/include/index.html.gz.h"
+#include "web/include/login.html.gz.h"
+
+enum class static_file_type
+{
+	array_zipped,
+	sdcard,
+};
 
 typedef struct
 {
-	const char *Path;
-	const unsigned char *Data;
-	const uint32_t Size;
-	const char *MediaType;
-	const uint8_t Zipped;
+	const char *path;
+	const void *data;
+	const uint32_t size;
+	const char *media_type;
+	const static_file_type type;
 } static_files_map;
 
-static const char JsonMediaType[] PROGMEM = "application/json";
-static const char JsMediaType[] PROGMEM = "text/javascript";
-static const char HtmlMediaType[] PROGMEM = "text/html";
-static const char CssMediaType[] PROGMEM = "text/css";
-static const char PngMediaType[] PROGMEM = "image/png";
-static const char TextPlainMediaType[] PROGMEM = "text/plain";
+static const char JsonMediaType[] = "application/json";
+static const char JsMediaType[] = "text/javascript";
+static const char HtmlMediaType[] = "text/html";
+static const char CssMediaType[] = "text/css";
+static const char PngMediaType[] = "image/png";
+static const char TextPlainMediaType[] = "text/plain";
 
-static const char LoginUrl[] PROGMEM = "/login.html";
-static const char IndexUrl[] PROGMEM = "/index.html";
-static const char LogoUrl[] PROGMEM = "/media/logo.png";
-static const char FaviconUrl[] PROGMEM = "/media/favicon.png";
-static const char LogoutUrl[] PROGMEM = "/media/logout.png";
-static const char SettingsUrl[] PROGMEM = "/media/settings.png";
-static const char AllJsUrl[] PROGMEM = "/js/s.js";
-// static const char JQueryJsUrl[] PROGMEM = "/js/jquery.min.js";
-// static const char MdbJsUrl[] PROGMEM = "/js/mdb.min.js";
-static const char MdbCssUrl[] PROGMEM = "/css/mdb.min.css";
+static const char LoginUrl[] = "/login.html";
+static const char IndexUrl[] = "/index.html";
+static const char LogoUrl[] = "/media/logo.png";
+static const char FaviconUrl[] = "/media/favicon.png";
+static const char LogoutUrl[] = "/media/logout.png";
+static const char SettingsUrl[] = "/media/settings.png";
+static const char AllJsUrl[] = "/js/s.js";
+static const char MdbCssUrl[] = "/css/mdb.min.css";
 
-static const char MD5Header[] PROGMEM = "md5";
-static const char CacheControlHeader[] PROGMEM = "Cache-Control";
-static const char CookieHeader[] PROGMEM = "Cookie";
-static const char AuthCookieName[] PROGMEM = "ESPSESSIONID=";
+static const char MD5Header[] = "md5";
+static const char CacheControlHeader[] = "Cache-Control";
+static const char CookieHeader[] = "Cookie";
+static const char AuthCookieName[] = "ESPSESSIONID=";
 
-const static static_files_map staticFilesMap[] PROGMEM = {
-	{IndexUrl, index_html_gz, index_html_gz_len, HtmlMediaType, true},
-	{LoginUrl, login_html_gz, login_html_gz_len, HtmlMediaType, true},
-	{LogoUrl, logo_png, logo_png_len, PngMediaType, false},
-	{FaviconUrl, logo_png, logo_png_len, PngMediaType, false},
-	{AllJsUrl, s_js_gz, s_js_gz_len, JsMediaType, true},
-	//{JQueryJsUrl, jquery_min_js_gz, jquery_min_js_gz_len, JsMediaType, true},
-	//{MdbJsUrl, mdb_min_js_gz, mdb_min_js_gz_len, JsMediaType, true},
-	{MdbCssUrl, mdb_min_css_gz, mdb_min_css_gz_len, CssMediaType, true},
+const static static_files_map static_files[] = {
+	{IndexUrl, index_html_gz, index_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
+	{LoginUrl, login_html_gz, login_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
+	{LogoUrl, "/web/logo.png", 0, PngMediaType, static_file_type::sdcard},
+	{FaviconUrl, "/web/logo.png", 0, PngMediaType, static_file_type::sdcard},
+	{AllJsUrl, "/web/s.js", 0, JsMediaType, static_file_type::sdcard},
+	{MdbCssUrl, "/web/mdb.min.css", 0, CssMediaType, static_file_type::sdcard},
 };
 
 web_server web_server::instance;
@@ -339,17 +343,17 @@ void web_server::handle_logout(AsyncWebServerRequest *request)
 {
 	log_i("Disconnection");
 	AsyncWebServerResponse *response = request->beginResponse(301); // Sends 301 redirect
-	response->addHeader(F("Location"), F("/login.html?msg=User disconnected"));
-	response->addHeader(FPSTR(CacheControlHeader), F("no-cache"));
-	response->addHeader(F("Set-Cookie"), F("ESPSESSIONID=0"));
+	response->addHeader("Location", "/login.html?msg=User disconnected");
+	response->addHeader("CacheControlHeader", "no-cache");
+	response->addHeader("Set-Cookie", "ESPSESSIONID=0");
 	request->send(response);
 	return;
 }
 
 void web_server::web_login_update(AsyncWebServerRequest *request)
 {
-	const auto webUserName = F("webUserName");
-	const auto webPassword = F("webPassword");
+	const auto webUserName = "webUserName";
+	const auto webPassword = "webPassword";
 
 	log_i("web login Update");
 
@@ -470,30 +474,49 @@ void web_server::handle_file_read(AsyncWebServerRequest *request)
 	if (!worksWithoutAuth && !is_authenticated(request))
 	{
 		log_d("Redirecting to login page");
-		path = String(FPSTR(LoginUrl));
+		path = String(LoginUrl);
 	}
 
-	for (size_t i = 0; i < sizeof(staticFilesMap) / sizeof(staticFilesMap[0]); i++)
+	for (size_t i = 0; i < sizeof(static_files) / sizeof(static_files[0]); i++)
 	{
-		const auto entryPath = FPSTR(pgm_read_ptr(&staticFilesMap[i].Path));
+		const auto entryPath = static_files[i].path;
 		if (path.equalsIgnoreCase(entryPath))
 		{
-			const auto mediaType = FPSTR(pgm_read_ptr(&staticFilesMap[i].MediaType));
-			const auto data = reinterpret_cast<const uint8_t *>(pgm_read_ptr(&staticFilesMap[i].Data));
-			const auto size = pgm_read_dword(&staticFilesMap[i].Size);
-			const auto zipped = pgm_read_byte(&staticFilesMap[i].Zipped);
-			auto response = request->beginResponse_P(200, String(mediaType), data, size);
-			if (worksWithoutAuth)
+			auto &&static_file = static_files[i];
+			const String mediaType(static_file.media_type);
+			AsyncWebServerResponse *response = nullptr;
+
+			switch (static_file.type)
 			{
-				response->addHeader(FPSTR(CacheControlHeader), F("public, max-age=31536000"));
+			case static_file_type::array_zipped:
+				response = request->beginResponse_P(200,
+												  mediaType,
+												  reinterpret_cast<const uint8_t *>(static_file.data),
+												  static_file.size);
+				response->addHeader("Content-Encoding", "gzip");
+
+				break;
+			case static_file_type::sdcard:
+				response = request->beginResponse(SD,
+												  reinterpret_cast<const char *>(static_file.data),
+												  mediaType);
 			}
-			if (zipped)
+
+			if (response)
 			{
-				response->addHeader(F("Content-Encoding"), F("gzip"));
+				if (worksWithoutAuth)
+				{
+					response->addHeader(CacheControlHeader, "public, max-age=31536000");
+				}
+
+				request->send(response);
+				log_d("Served path:%s mimeType: %s", path.c_str(), mediaType.c_str());
+				return;
 			}
-			request->send(response);
-			log_v("Served path:%s mimeType: %s size:%s", path.c_str(), FPSTR(mediaType), size);
-			return;
+			else
+			{
+				log_w("File not found path:%s mimeType: %s", path.c_str(), mediaType.c_str());
+			}
 		}
 	}
 

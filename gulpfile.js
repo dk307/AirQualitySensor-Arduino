@@ -18,6 +18,7 @@ var log = require('fancy-log');
 const baseFolder = 'src/web/static/';
 const dataFolder = 'src/web/data/';
 const staticFolder = 'src/web/include/';
+const staticSDcardFolder = 'src/sdcard/web/';
 
 var toMinifiedHtml = function(options) {
     return through.obj(function (source, encoding, callback) {
@@ -40,7 +41,7 @@ var toHeader = function(name, debug) {
         // Generate output
         var output = '';
         output += '#define ' + safename + '_len ' + source.contents.length + '\n';
-        output += 'const uint8_t ' + safename + '[] PROGMEM = {';
+        output += 'const uint8_t ' + safename + '[] = {';
         for (var i=0; i<source.contents.length; i++) {
             if (i > 0) { output += ','; }
             if (0 === (i % 20)) { output += '\n'; }
@@ -84,24 +85,21 @@ gulp.task('js', function() {
         pipe(concat("s.js")).
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
-        pipe(toHeader(null, true)).
-        pipe(gulp.dest(staticFolder));
+        pipe(gulp.dest(staticSDcardFolder));
 });
 
 gulp.task('css', function() {
     return gulp.src(baseFolder + '/css/*.css').
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
-        pipe(toHeader(null, true)).
-        pipe(gulp.dest(staticFolder));
+        pipe(gulp.dest(staticSDcardFolder));
 });
 
 gulp.task('images', function() {
     return gulp.src(baseFolder + '/media/*.png').
         pipe(imagemin()).
         pipe(gulp.dest(dataFolder)).
-        pipe(toHeader(null, true)).
-        pipe(gulp.dest(staticFolder));
+        pipe(gulp.dest(staticSDcardFolder));
 });
 
 gulp.task('default', gulp.series('html', 'js', 'css', 'images'));
