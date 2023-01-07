@@ -5,6 +5,7 @@
 #include <StreamString.h>
 #include <SD.h>
 #include <mbedtls/md.h>
+#include <psram_allocator.h>
 
 #include "wifi_manager.h"
 #include "config_manager.h"
@@ -94,7 +95,12 @@ void web_server::begin()
 	server_routing();
 	log_i("WebServer Started");
 
-	// hardware::instance.temperatureChangeCallback.addConfigSaveCallback(std::bind(&WebServer::notifySensorChange, this));
+	for (auto i = 0; i < total_sensors; i++)
+	{
+		const auto id = static_cast<sensor_id_index>(i);
+		hardware::instance.get_sensor(id).add_callback([id, this]
+													   { notifySensorChange(id); });
+	}
 }
 
 bool web_server::manage_security(AsyncWebServerRequest *request)
@@ -152,8 +158,12 @@ void web_server::on_event_connect(AsyncEventSourceClient *client)
 	else
 	{
 		log_i("Events client first time");
+
 		// send all the events
-		notifySensorChange();
+		for (auto i = 0; i < total_sensors; i++)
+		{
+			notifySensorChange(static_cast<sensor_id_index>(i));
+		}
 	}
 }
 
@@ -490,9 +500,9 @@ void web_server::handle_file_read(AsyncWebServerRequest *request)
 			{
 			case static_file_type::array_zipped:
 				response = request->beginResponse_P(200,
-												  mediaType,
-												  reinterpret_cast<const uint8_t *>(static_file.data),
-												  static_file.size);
+													mediaType,
+													reinterpret_cast<const uint8_t *>(static_file.data),
+													static_file.size);
 				response->addHeader("Content-Encoding", "gzip");
 
 				break;
@@ -717,10 +727,22 @@ void web_server::handle_early_update_disconnect()
 	operations::instance.abort_update();
 }
 
-void web_server::notifySensorChange()
+void web_server::notifySensorChange(sensor_id_index id)
 {
 	if (events.count())
 	{
-		// events.send(String(hardware::instance.getLux(), 2).c_str(), "lux", millis());
+		const auto &sensor = hardware::instance.get_sensor(id);
+		const auto value = sensor.get_value();
+		const String value_str = value.has_value() ? String(value.value(), 10) : String("-");
+
+		BasicJsonDocument<psram::psram_json_allocator> json_document(128);
+
+		json_document["value"] = value_str;
+		json_document["unit"] = sensor_definitions[static_cast<size_t>(id)].get_unit();
+		json_document["type"] = sensor_definitions[static_cast<size_t>(id)].get_name();
+
+		String json;
+		serializeJson(json_document, json);
+		events.send(json.c_str(), "sensor", millis());
 	}
 }

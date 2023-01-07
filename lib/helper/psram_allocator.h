@@ -69,4 +69,22 @@ namespace psram
         auto p = ps_malloc(sizeof(T));
         return std::unique_ptr<T, deleter>(::new (p) T(std::forward<Args>(args)...), deleter());
     }
+
+    struct psram_json_allocator
+    {
+        void *allocate(size_t size)
+        {
+            return ps_malloc(size);
+        }
+
+        void deallocate(void *pointer)
+        {
+            free(pointer);
+        }
+
+        void *reallocate(void *ptr, size_t new_size)
+        {
+            return ps_realloc(ptr, new_size);
+        }
+    };
 }

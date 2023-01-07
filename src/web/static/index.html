@@ -12,13 +12,6 @@
     <link rel="shortcut icon" href="media/favicon.png" type="image/x-icon">
     <link rel="icon" href="media/favicon.png" type="image/x-icon">
     <title>Main</title>
-    <style>
-        .logs {
-            white-space: -moz-pre-wrap;
-            white-space: -o-pre-wrap;
-            word-wrap: break-word;
-        }
-    </style>
 </head>
 
 <body>
@@ -29,7 +22,7 @@
             <!-- Navbar brand -->
             <a class="navbar-brand mt-2 mt-sm-0" href="#">
                 <img src="media/logo.png" height="35" alt="Logo" loading="lazy" />
-                <span id="navHostName">Clock</span>
+                <span id="navHostName">Air Quality Sensor</span>
             </a>
 
             <!-- Right elements -->
@@ -51,9 +44,13 @@
             <div class="row row-cols-1 row-cols-md-2 g-4">
                 <div class="col">
                     <div class="card">
-                        <div class="card-header">Light Intensity</div>
+                        <div class="card-header">Sensors</div>
                         <div class="card-body">
-                            <p class="card-text"><span id="lux">?</span>&nbsp;lux</p>
+
+                            <table class="table table-sm card-text" id="sensors-table">
+                                <tbody id="sensors-table-body"></tbody>
+                            </table>
+
                         </div>
                     </div>
                 </div>
@@ -90,10 +87,6 @@
                             <div class="p-2">
                                 <button type="button" class="btn btn-info btn-block" data-mdb-toggle="modal"
                                     data-mdb-dismiss="modal" data-mdb-target="#informationModal">Information</button>
-                            </div>
-                            <div class="p-2">
-                                <button type="button" class="btn btn-info btn-block" data-mdb-toggle="modal"
-                                    data-mdb-dismiss="modal" data-mdb-target="#logsModal">Logs</button>
                             </div>
                             <div class="p-2">
                                 <button type="button" class="btn btn-info btn-block" data-mdb-dismiss="modal"
@@ -354,25 +347,6 @@
         </div>
         <!-- Information Modal End -->
 
-        <!-- Logs Modal Start-->
-        <div class="modal fade" id="logsModal" tabindex="-1">
-            <div class="modal-dialog modal-fullscreen">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Logs</h5>
-                        <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <pre class="logs"><code id="logsBlock"></code></pre>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-primary" data-mdb-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Logs Modal End -->
-
         <!-- File Update Modal Start-->
         <form class="needs-validation" id="fileUploadUploadForm" method="post" enctype="multipart/form-data">
             <div class="modal fade" id="fileUploadUpdateModal" tabindex="-1" data-bs-backdrop="static"
@@ -430,10 +404,26 @@
             });
         }
 
-        function updateLux(e) {
+        function updateSensorValue(e) {
             var data = e.data;
             if (data != null) {
-                $('#lux').html(data);
+                var sensorData = JSON.parse(data);
+                sensorsData.set(sensorData["type"], sensorData["value"] + "&nbsp;" + sensorData["unit"]);
+                // console.log(sensorsData);
+
+                var tableBody = document.getElementById("sensors-table-body");
+
+                // Reset the table
+                tableBody.innerHTML = "";
+
+                // insert the data
+                for (let [key, value] of sensorsData) {
+                    // console.log(key + " = " + value);
+                    var row = $('<tr/>');
+                    row.append($('<td/>').html(key));
+                    row.append($('<td/>').html(value));
+                    $(tableBody).append(row);
+                }
             }
         }
 
@@ -474,6 +464,7 @@
         var eventsSource = new EventSource('/events');
         var informationUpdateRefreshInterval;
         var fileUploadFileUploadMd5;
+        var sensorsData = new Map();
 
         $(document).ready(function () {
             // Wifi Password toggle
@@ -550,29 +541,6 @@
 
             document.getElementById('informationModal').addEventListener('hide.mdb.modal', (e) => {
                 clearInterval(informationUpdateRefreshInterval);
-            });
-
-            var logsSource;
-
-            function appendLogs(e) {
-                var data = e.data;
-                if (data != null) {
-                    var logsBlock = $('#logsBlock');
-                    logsBlock.html(logsBlock.html() + data + "\r\n");
-                }
-            }
-
-            document.getElementById('logsModal').addEventListener('show.mdb.modal', (e) => {
-                $('#logsBlock').text('');
-                logsSource = new EventSource('/logs');
-                logsSource.addEventListener("logs", appendLogs);
-            });
-
-            document.getElementById('logsModal').addEventListener('hide.mdb.modal', (e) => {
-                if (logsSource) {
-                    logsSource.close();
-                    logsSource = null;
-                }
             });
 
             document.getElementById('restartDeviceButtonId').addEventListener('click', function () {
@@ -682,7 +650,7 @@
 
             // md5
             document.getElementById('fileUploadFileUploadId').addEventListener('change', function () {
-                if (this.files[0].size > 1024 * 1024) {
+                if (this.files[0].size > 4 * 1024 * 1024) {
                     $('#fileUploadUploadStatus').html('<div class="text-danger">File is too big.</div>');
                     $("#fileUploadUploadStatusWrapper").show();
                     this.value = "";
@@ -727,7 +695,7 @@
         });
 
         $(document).ready(function () {
-            eventsSource.addEventListener("lux", updateLux);
+            eventsSource.addEventListener("sensor", updateSensorValue);
             updateHostName();
         });
     </script>

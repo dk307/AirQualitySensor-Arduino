@@ -88,6 +88,8 @@ ui_interface::information_table_type hardware::get_information_table(information
     {
     case information_type::system:
         return {
+            {"Firmware Version", to_string(VERSION)},
+            {"SDK Version", to_string(ESP.getSdkVersion())},
             {"Chip", to_string(ESP.getChipModel(), "\nRev: ", ESP.getChipRevision(), "\nFlash: ", stringify_size(ESP.getFlashChipSize()))},
             {"Heap", to_string(stringify_size(ESP.getFreeHeap()), " free out of ", stringify_size(ESP.getHeapSize()))},
             {"PsRam", to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
@@ -198,7 +200,7 @@ void hardware::begin()
                                                             do
                                                             {
                                                                 display_instance.loop();
-                                                                // read_sensors();                                                                    
+                                                                read_sensors();                                                                    
                                                                 vTaskDelay(3);
                                                             } while(true); });
 

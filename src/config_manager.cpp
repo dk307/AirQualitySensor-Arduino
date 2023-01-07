@@ -1,6 +1,7 @@
 #include "config_manager.h"
 
 #include <Arduino.h>
+#include <psram_allocator.h>
 
 #include <SD.h>
 #include <MD5Builder.h>
@@ -65,7 +66,7 @@ bool config::pre_begin()
         return false;
     }
 
-    DynamicJsonDocument json_document(2048);
+    BasicJsonDocument<psram::psram_json_allocator>  json_document(2048);
     if (!deserialize_to_json(config_data.c_str(), json_document))
     {
         reset();
@@ -127,7 +128,7 @@ void config::save_config()
 {
     log_i("Saving configuration");
 
-    DynamicJsonDocument json_document(2048);
+    BasicJsonDocument<psram::psram_json_allocator> json_document(2048);
 
     json_document[FPSTR(HostNameId)] = data.get_host_name();
     json_document[FPSTR(WebUserNameId)] = data.get_web_user_name();
@@ -189,7 +190,7 @@ String config::get_all_config_as_json()
 
 bool config::restore_all_config_as_json(const std::vector<uint8_t> &json, const String &hashMd5)
 {
-    DynamicJsonDocument json_doc(2048);
+    BasicJsonDocument<psram::psram_json_allocator> json_doc(2048);
     if (!deserialize_to_json(json, json_doc))
     {
         return false;
@@ -214,8 +215,8 @@ bool config::restore_all_config_as_json(const std::vector<uint8_t> &json, const 
     return true;
 }
 
-template <class T>
-bool config::deserialize_to_json(const T &data, DynamicJsonDocument &jsonDocument)
+template <class T, class JDoc>
+bool config::deserialize_to_json(const T &data, JDoc &jsonDocument)
 {
     DeserializationError error = deserializeJson(jsonDocument, data);
 

@@ -3,6 +3,8 @@
 #include <AsyncWebServer_ESP32_ENC.h>
 #include <vector>
 
+#include <sensor.h>
+
 class web_server
 {
 public:
@@ -62,7 +64,7 @@ private:
     static void add_key_value_object(Array &array, const K &key, const T &value);
     template <class V, class T>
     static void add_to_json_doc(V &doc, T id, float value);
-    void notifySensorChange();
+    void notifySensorChange(sensor_id_index id);
 
     AsyncWebServer http_server{80};
     AsyncEventSource events{"/events"};

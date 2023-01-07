@@ -181,8 +181,8 @@ private:
     static size_t write_to_file(const String &fileName, T &&...contents);
     static size_t write_to_file(const String &fileName, const char *data, unsigned int len);
 
-    template <class T>
-    bool deserialize_to_json(const T &data, DynamicJsonDocument &jsonDocument);
+    template <class T, class JDoc>
+    bool deserialize_to_json(const T &data, JDoc &jsonDocument);
 
     void save_config();
 
