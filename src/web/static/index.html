@@ -12,6 +12,37 @@
     <link rel="shortcut icon" href="media/favicon.png" type="image/x-icon">
     <link rel="icon" href="media/favicon.png" type="image/x-icon">
     <title>Main</title>
+    <style>
+        .level0 {
+            color: #4BD175;
+            font-weight: bold;
+        }
+
+        .level1 {
+            color: #767C30;
+            font-weight: bold;
+        }
+
+        .level2 {
+            color: #EC9706;
+            font-weight: bold;
+        }
+
+        .level3 {
+            color: #E3242B;
+            font-weight: bold;
+        }
+
+        .level4 {
+            color: #710193;
+            font-weight: bold;
+        }
+
+        .level5 {
+            color: #940606;
+            font-weight: bold;
+        }
+    </style>
 </head>
 
 <body>
@@ -46,7 +77,6 @@
                     <div class="card">
                         <div class="card-header">Sensors</div>
                         <div class="card-body">
-
                             <table class="table table-sm card-text" id="sensors-table">
                                 <tbody id="sensors-table-body"></tbody>
                             </table>
@@ -408,7 +438,9 @@
             var data = e.data;
             if (data != null) {
                 var sensorData = JSON.parse(data);
-                sensorsData.set(sensorData["type"], sensorData["value"] + "&nbsp;" + sensorData["unit"]);
+
+                var valueStr = "<span class='level" + sensorData["level"] + "'>" + sensorData["value"] + "&nbsp;" + sensorData["unit"] + "</span>";
+                sensorsData.set(sensorData["type"], valueStr);
                 // console.log(sensorsData);
 
                 var tableBody = document.getElementById("sensors-table-body");

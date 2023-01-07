@@ -406,7 +406,7 @@
 #endif
 
 /*Enable drawing placeholders when glyph dsc is not found*/
-#define LV_USE_FONT_PLACEHOLDER 1
+#define LV_USE_FONT_PLACEHOLDER 0
 
 /*=================
  *  TEXT SETTINGS
@@ -547,7 +547,7 @@
     #define LV_SPAN_SNIPPET_STACK_SIZE 64
 #endif
 
-#define LV_USE_SPINBOX    1
+#define LV_USE_SPINBOX    0
 
 #define LV_USE_SPINNER    0
 

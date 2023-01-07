@@ -31,14 +31,13 @@ bool sdcard::mount()
     const auto card_type = SD.cardType();
     if (card_type == CARD_NONE)
     {
-        log_i("No SD card");
+        log_e("No SD card");
         return false;
     }
     else
     {
         log_i("SD card type :%d", card_type);
-        const auto cardSize = SD.cardSize() / (1024 * 1024);
-        log_i("SD Card Size: %llu MB", cardSize);
+        log_i("SD Card Size: %llu MB", SD.cardSize() / (1024 * 1024));
     }
 
     return true;

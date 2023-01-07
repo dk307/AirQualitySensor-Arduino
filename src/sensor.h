@@ -123,7 +123,7 @@ public:
         std::vector<T, psram::allocator<T>> last_x_min_values;
     } sensor_history_snapshot;
 
-    static constexpr int reads_per_minute = 20;
+    static constexpr int reads_per_minute = 3;
 
     void add_value(T value)
     {
@@ -164,4 +164,4 @@ private:
     CircularBuffer<T, reads_per_minute * Count> last_x_min_values;
 };
 
-using sensor_history = sensor_history_t<sensor_value::value_type, 5>;
+using sensor_history = sensor_history_t<sensor_value::value_type, 240>;

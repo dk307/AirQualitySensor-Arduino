@@ -136,6 +136,19 @@ ui_interface::information_table_type hardware::get_information_table(information
             break;
         }
 
+        auto local_time_now = ntp_time::instance.get_local_time();
+        if (local_time_now.has_value())
+        {
+            char value[64];
+            tm tm;
+            gmtime_r(&local_time_now.value(), &tm);
+            table.push_back({"Local time", asctime_r(&tm, value)});
+        }
+        else
+        {
+            table.push_back({"Local time", "Not Synced"});
+        }
+
         return table;
     }
     case information_type::config:

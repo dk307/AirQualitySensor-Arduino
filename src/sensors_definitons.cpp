@@ -11,6 +11,18 @@ const std::array<sensor_definition_display, 6> pm_2_5_definition_display{
     sensor_definition_display{250.4, std::numeric_limits<uint32_t>::max(), 5},
 };
 
+const std::array<sensor_definition_display, 1> pm_1_definition_display{
+    sensor_definition_display{-999, 999, 0},
+};
+
+const std::array<sensor_definition_display, 1> pm_4_definition_display{
+    sensor_definition_display{-999, 999, 0},
+};
+
+const std::array<sensor_definition_display, 1> voc_definition_display{
+    sensor_definition_display{-99, 99, 0},
+};
+
 const std::array<sensor_definition_display, 6> pm_10_definition_display{
     sensor_definition_display{std::numeric_limits<uint32_t>::min(), 54, 0},
     sensor_definition_display{55, 154, 1},
@@ -20,16 +32,18 @@ const std::array<sensor_definition_display, 6> pm_10_definition_display{
     sensor_definition_display{424, std::numeric_limits<uint32_t>::max(), 5},
 };
 
-const std::array<sensor_definition_display, 1> voc_definition_display{
-    sensor_definition_display{-99, 99, 0},
+const std::array<sensor_definition_display, 3> co2_definition_display{
+    sensor_definition_display{0, 1000, 0},
+    sensor_definition_display{1000, 1500, 1},
+    sensor_definition_display{1500, 2000, 2},
 };
 
-const std::array<sensor_definition_display, 1> co2_definition_display{
-    sensor_definition_display{2000, 2000, 0},
-};
-
-const std::array<sensor_definition_display, 1> temperature_definition_display{
-    sensor_definition_display{-99, 99, 0},
+const std::array<sensor_definition_display, 5> temperature_definition_display{
+    sensor_definition_display{-99, 32, 2},
+    sensor_definition_display{32, 60, 1},
+    sensor_definition_display{60, 80, 0},
+    sensor_definition_display{80, 100, 1},
+    sensor_definition_display{100, 999, 2},
 };
 
 const std::array<sensor_definition_display, 4> humidity_definition_display{
@@ -45,7 +59,7 @@ const std::array<sensor_definition, total_sensors> sensor_definitions{
     sensor_definition{"Temperature", "°F", temperature_definition_display.data(), temperature_definition_display.size()},
     sensor_definition{"Humidity", "⁒", humidity_definition_display.data(), humidity_definition_display.size()},
     sensor_definition{"eCO2", "ppm", co2_definition_display.data(), co2_definition_display.size()},
-    sensor_definition{"PM 1", "µg/m³", temperature_definition_display.data(), temperature_definition_display.size()},
-    sensor_definition{"PM 4", "µg/m³", temperature_definition_display.data(), temperature_definition_display.size()},
+    sensor_definition{"PM 1", "µg/m³", pm_1_definition_display.data(), pm_1_definition_display.size()},
+    sensor_definition{"PM 4", "µg/m³", pm_4_definition_display.data(), pm_4_definition_display.size()},
     sensor_definition{"PM 10", "µg/m³", pm_10_definition_display.data(), pm_10_definition_display.size()},
 };
