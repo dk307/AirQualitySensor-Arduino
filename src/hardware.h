@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Adafruit_SHT31.h>
+
 #include "sensor.h"
 #include "task_wrapper.h"
 #include "psram_allocator.h"
@@ -49,18 +51,23 @@ private:
     // same index as sensor_id_index
     std::array<sensor_value, total_sensors> sensors;
     std::unique_ptr<std::array<sensor_history, total_sensors>, psram::deleter> sensors_history;
-    uint64_t sensor_last_read = 0;
 
-    std::unique_ptr<task_wrapper> hardware_core_0_task;
+    std::unique_ptr<task_wrapper> sensor_refresh_task;
+    std::unique_ptr<task_wrapper> lvgl_refresh_task;
 
-    template <class T>
-    void set_sensor_value(sensor_id_index index, T value)
-    {
-        const auto i = static_cast<size_t>(index);
-        (*sensors_history)[i].add_value(value);
-        sensors[i].set_value(value);
-    }
+    const int SDAWire = 11;
+    const int SCLWire = 10;
+
+    // SHT31
+    const int sht31_i2c_address = 0x44;
+    Adafruit_SHT31 temp_hum_sensor{&Wire1}; // Wire is already used by touch i2c
+    uint64_t sht31_sensor_last_read = 0;
+
+    void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
 
     static String get_up_time();
-    void read_sensors();
+    void read_temperature_humdity_sensor();
+    
+    static std::optional<sensor_value::value_type> round_value(float val, int places = 0);
+    static void scan_i2c_bus();
 };

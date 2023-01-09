@@ -76,23 +76,21 @@ public:
         return value;
     }
 
-    template <class T1>
-    void set_value(T1 value_)
+    void set_value(T value_)
     {
-        const auto new_value = static_cast<value_type>(value_);
-        set_value_(new_value);
+        set_value_(value_);
     }
 
     void set_invalid_value()
     {
-        set_value(std::nullopt);
+        set_value_(std::nullopt);
     }
 
 private:
     mutable std::mutex data_mutex;
     std::optional<T> value;
 
-    void set_value_(const std::optional<value_type>& value_)
+    void set_value_(const std::optional<value_type> &value_)
     {
         std::unique_lock<std::mutex> lock(data_mutex);
         if (value != value_)
@@ -124,11 +122,18 @@ public:
     } sensor_history_snapshot;
 
     static constexpr int reads_per_minute = 3;
+    static constexpr int sensor_interval = (60 * 1000 / reads_per_minute);
 
     void add_value(T value)
     {
         std::lock_guard<std::mutex> lock(data_mutex);
         last_x_min_values.push(value);
+    }
+
+    void clear()
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        last_x_min_values.clear();
     }
 
     sensor_history_snapshot get_snapshot() const

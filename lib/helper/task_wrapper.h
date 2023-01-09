@@ -23,7 +23,7 @@ public:
     {
         kill();
         TaskHandle_t handle = nullptr;
-        if (xTaskCreate(RunAdapter, name, stack_depth, this, priority, &handle) != pdTRUE)
+        if (xTaskCreate(run_adapter, name, stack_depth, this, priority, &handle) != pdTRUE)
         {
             return ESP_ERR_NO_MEM;
         }
@@ -46,7 +46,7 @@ public:
     {
         kill();
         TaskHandle_t handle = nullptr;
-        if (xTaskCreatePinnedToCore(RunAdapter, name, stack_depth, this, priority, &handle, cpu) !=
+        if (xTaskCreatePinnedToCore(run_adapter, name, stack_depth, this, priority, &handle, cpu) !=
             pdTRUE)
         {
             return ESP_ERR_NO_MEM;
@@ -85,5 +85,5 @@ private:
     task_wrapper(task_wrapper &&) = delete;
     task_wrapper &operator=(const task_wrapper &) = delete;
 
-    static void RunAdapter(void *self) { reinterpret_cast<task_wrapper *>(self)->run(); }
+    static void run_adapter(void *self) { reinterpret_cast<task_wrapper *>(self)->run(); }
 };

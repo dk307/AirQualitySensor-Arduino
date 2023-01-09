@@ -150,9 +150,8 @@ void operations::loop()
 		}
 	}
 
-	if (reboot_pending)
+	if (reboot_pending.load())
 	{
-		reboot_pending = false;
 		reset();
 	}
 }

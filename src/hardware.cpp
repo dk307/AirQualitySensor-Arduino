@@ -13,6 +13,7 @@
 #include <esp_netif_types.h>
 #include <StreamString.h>
 #include <SD.h>
+#include <Wire.h>
 
 #include <memory>
 #include <sstream>
@@ -199,7 +200,44 @@ bool hardware::pre_begin()
         return false;
     }
 
+    // Wire is already used by touch i2c
+    if (!Wire1.begin(SDAWire, SCLWire))
+    {
+        log_e("Failed to begin I2C interface");
+        return false;
+    }
+
+    scan_i2c_bus();
+
+    if (!temp_hum_sensor.begin(sht31_i2c_address))
+    {
+        log_e("Failed to start SHT31");
+        // return false;
+    }
+    else
+    {
+        log_e("SHT31 Initialized");
+    }
+
+    temp_hum_sensor.heater(false);
+
     return true;
+}
+
+void hardware::set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
+{
+    const auto i = static_cast<size_t>(index);
+    if (value.has_value())
+    {
+        (*sensors_history)[i].add_value(value.value());
+        sensors[i].set_value(value.value());
+    }
+    else
+    {
+        log_w("Got an invalid value for sensor:%d", index);
+        (*sensors_history)[i].clear();
+        sensors[i].set_invalid_value();
+    }
 }
 
 void hardware::begin()
@@ -207,32 +245,79 @@ void hardware::begin()
     display_instance.begin();
     sdcard::instance.begin();
 
-    hardware_core_0_task = std::make_unique<task_wrapper>([this]
-                                                          {
-                                                            log_i("Hardware task started on Core:%d", xPortGetCoreID());
+    sensor_refresh_task = std::make_unique<task_wrapper>([this]
+                                                         {
+                                                            log_i("Hardware task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {
-                                                                display_instance.loop();
-                                                                read_sensors();                                                                    
+                                                                read_temperature_humdity_sensor();
+                                                                vTaskDelay(sensor_history::sensor_interval/2);
+                                                            } while(true); });
+
+    lvgl_refresh_task = std::make_unique<task_wrapper>([this]
+                                                       {
+                                                            log_i("Lvgl task started on core:%d", xPortGetCoreID());
+                                                            do
+                                                            {
+                                                                display_instance.loop();                                                                                                                         
                                                                 vTaskDelay(3);
                                                             } while(true); });
 
     // start on core 0
-    hardware_core_0_task->spawn_arduino_other_core("hardware task");
+    lvgl_refresh_task->spawn_arduino_other_core("lvgl task", 4196);
+    sensor_refresh_task->spawn_arduino_other_core("sensor task", 4196);
 }
 
-void hardware::read_sensors()
+void hardware::read_temperature_humdity_sensor()
 {
-    const auto sensor_interval = (60 * 1000 / sensor_history::reads_per_minute);
     const auto now = millis();
-    if (now - sensor_last_read >= sensor_interval)
+    if (now - sht31_sensor_last_read >= sensor_history::sensor_interval)
     {
-        sensor_last_read = now;
-        log_i("Reading sensors");
-        int plus = esp_random() % 2 == 1 ? -1 : 1;
-        set_sensor_value(sensor_id_index::pm_2_5, (get_sensor_value(sensor_id_index::pm_2_5).value_or(0) + plus * esp_random() % 10) % 250);
-        set_sensor_value(sensor_id_index::eCO2, (get_sensor_value(sensor_id_index::eCO2).value_or(0) + plus * esp_random() % 10) % 1999);
-        set_sensor_value(sensor_id_index::temperatureF, (get_sensor_value(sensor_id_index::temperatureF).value_or(0) + plus * esp_random() % 3) % 120);
-        set_sensor_value(sensor_id_index::humidity, (get_sensor_value(sensor_id_index::humidity).value_or(0) - plus * esp_random() % 3) % 99);
+        sht31_sensor_last_read = now;
+        log_i("Reading SHT31 sensor");
+
+        float temperature;
+        float humidity;
+        temp_hum_sensor.readBoth(&temperature, &humidity);
+
+        set_sensor_value(sensor_id_index::temperatureF, round_value((temperature * 9) / 5 + 32));
+        set_sensor_value(sensor_id_index::humidity, round_value(humidity));
+    }
+}
+
+std::optional<sensor_value::value_type> hardware::round_value(float val, int places)
+{
+    if (!isnan(val))
+    {
+        const auto expVal = places == 0 ? 1 : pow(10, places);
+        const auto result = float(uint64_t(expVal * val + 0.5)) / expVal;
+        return static_cast<sensor_value::value_type>(result);
+    }
+
+    return std::nullopt;
+}
+
+void hardware::scan_i2c_bus()
+{
+    log_d("Scanning...");
+
+    auto nDevices = 0;
+    for (auto address = 1; address < 127; address++)
+    {
+        // The i2c_scanner uses the return value of
+        // the Write.endTransmisstion to see if
+        // a device did acknowledge to the address.
+        Wire1.beginTransmission(address);
+        auto error = Wire1.endTransmission();
+
+        if (error == 0)
+        {
+            log_i("I2C device found at address 0x%x", address);
+            nDevices++;
+        }
+    }
+    if (nDevices == 0)
+    {
+        log_i("No I2C devices found\n");
     }
 }
