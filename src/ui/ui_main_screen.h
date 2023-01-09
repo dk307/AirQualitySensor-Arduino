@@ -47,7 +47,7 @@ public:
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
     {
-        log_d("Updating sensor %d to %d in main screen", index, value.value_or(-1));
+        log_i("Updating sensor %s to %d in main screen", get_sensor_name(index), value.value_or(-1));
         const auto &pair = panel_and_labels.at(static_cast<size_t>(index));
         set_value_in_panel(pair, index, value);
     }
@@ -68,7 +68,7 @@ private:
         auto label = lv_label_create(panel);
         lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
 
-        lv_label_set_text_static(label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
+        lv_label_set_text_static(label, get_sensor_name(index));
         lv_obj_set_style_text_color(label, off_black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -118,7 +118,7 @@ private:
 
         auto label = lv_label_create(panel);
         lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_label_set_text(label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
+        lv_label_set_text(label, get_sensor_name(index));
         lv_obj_set_style_text_color(label, off_black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(label, fonts->font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -169,7 +169,7 @@ private:
         lv_obj_set_style_text_font(value_label, fonts->font_montserrat_medium_48, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_color(value_label, lv_color_hex(0x0), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(value_label, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_label_set_text_fmt(value_label, "- %s", sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+        lv_label_set_text_fmt(value_label, "- %s", get_sensor_unit(index));
 
         add_panel_callback_event(panel, index);
         return {nullptr, value_label};
@@ -202,7 +202,7 @@ private:
         lv_obj_set_style_text_font(value_label, fonts->font_montserrat_medium_48, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_color(value_label, lv_color_hex(0x0), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_color(value_label, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_label_set_text_fmt(value_label, "- %s", sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+        lv_label_set_text_fmt(value_label, "- %s", get_sensor_unit(index));
 
         add_panel_callback_event(panel, index);
         return {nullptr, value_label};

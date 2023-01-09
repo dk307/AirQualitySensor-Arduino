@@ -63,3 +63,17 @@ const std::array<sensor_definition, total_sensors> sensor_definitions{
     sensor_definition{"PM 4", "µg/m³", pm_4_definition_display.data(), pm_4_definition_display.size()},
     sensor_definition{"PM 10", "µg/m³", pm_10_definition_display.data(), pm_10_definition_display.size()},
 };
+
+const sensor_definition &get_sensor_definition(sensor_id_index id)
+{
+    return sensor_definitions[static_cast<size_t>(id)];
+}
+const char *get_sensor_name(sensor_id_index id)
+{
+    return sensor_definitions[static_cast<size_t>(id)].get_name();
+}
+
+const char *get_sensor_unit(sensor_id_index id)
+{
+    return sensor_definitions[static_cast<size_t>(id)].get_unit();
+}

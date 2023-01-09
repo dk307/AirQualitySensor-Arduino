@@ -737,7 +737,7 @@ void web_server::notifySensorChange(sensor_id_index id)
 
 		BasicJsonDocument<psram::psram_json_allocator> json_document(128);
 
-		auto && definition = sensor_definitions[static_cast<size_t>(id)];
+		auto && definition = get_sensor_definition(id);
 		json_document["value"] = value_str;
 		json_document["unit"] = definition.get_unit();
 		json_document["type"] = definition.get_name();

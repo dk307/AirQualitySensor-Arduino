@@ -83,7 +83,8 @@ protected:
         if (value.has_value())
         {
             const auto final_value = value.value();
-            const auto level = sensor_definitions[static_cast<uint8_t>(index)].calculate_level(final_value);
+            const auto sensor_definition = get_sensor_definition(index);
+            const auto level = sensor_definition.calculate_level(final_value);
             if (pair.panel)
             {
                 set_label_panel_color(pair.panel, level);
@@ -93,7 +94,7 @@ protected:
             {
                 if (!pair.panel)
                 {
-                    lv_label_set_text_fmt(pair.label, "%d%s", final_value, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+                    lv_label_set_text_fmt(pair.label, "%d%s", final_value, sensor_definition.get_unit());
                 }
                 else
                 {

@@ -62,8 +62,6 @@ private:
     const uint8_t display_definitions_count;
 };
 
-extern const std::array<sensor_definition, total_sensors> sensor_definitions;
-
 template <class T>
 class sensor_value_t : public change_callback
 {
@@ -170,3 +168,7 @@ private:
 };
 
 using sensor_history = sensor_history_t<sensor_value::value_type, 240>;
+
+const sensor_definition &get_sensor_definition(sensor_id_index id);
+const char *get_sensor_name(sensor_id_index id);
+const char *get_sensor_unit(sensor_id_index id);

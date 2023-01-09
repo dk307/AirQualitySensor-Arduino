@@ -86,7 +86,7 @@ public:
         {
             if (lv_obj_get_user_data(screen) == reinterpret_cast<void *>(index))
             {
-                log_d("Updating sensor %d to %d in details screen", index, value.value_or(-1));
+                log_i("Updating sensor %s to %d in details screen", get_sensor_name(index), value.value_or(-1));
                 set_current_values(index, value);
             }
         }
@@ -97,8 +97,9 @@ public:
         log_i("Panel pressed for sensor index:%d", index);
         lv_obj_set_user_data(screen, reinterpret_cast<void *>(index));
 
-        lv_label_set_text(sensor_detail_screen_top_label, sensor_definitions[static_cast<uint8_t>(index)].get_name());
-        lv_label_set_text_static(sensor_detail_screen_top_label_units, sensor_definitions[static_cast<uint8_t>(index)].get_unit());
+        const auto sensor_definition = get_sensor_definition(index);
+        lv_label_set_text(sensor_detail_screen_top_label, sensor_definition.get_name());
+        lv_label_set_text_static(sensor_detail_screen_top_label_units, sensor_definition.get_unit());
 
         const auto value = ui_interface_instance.get_sensor_value(index);
         set_current_values(index, value);
