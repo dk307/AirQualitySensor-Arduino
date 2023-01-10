@@ -95,7 +95,9 @@ ui_interface::information_table_type hardware::get_information_table(information
             {"Heap", to_string(stringify_size(ESP.getFreeHeap()), " free out of ", stringify_size(ESP.getHeapSize()))},
             {"PsRam", to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
             {"Uptime", get_up_time()},
-            {"SD Card Size:", to_string(SD.cardSize() / (1024 * 1024), " MB")},
+            {"SD Card Size", to_string(SD.cardSize() / (1024 * 1024), " MB")},
+            {"SHT31 sensor status", get_sht31_status()},
+            {"CCS811 sensor status", get_ccs811_status()},
         };
 
     case information_type::network:
@@ -209,7 +211,7 @@ bool hardware::pre_begin()
 
     scan_i2c_bus();
 
-    if (!temp_hum_sensor.begin(sht31_i2c_address))
+    if (!sht31_sensor.begin(sht31_i2c_address))
     {
         log_e("Failed to start SHT31");
         // return false;
@@ -217,9 +219,19 @@ bool hardware::pre_begin()
     else
     {
         log_e("SHT31 Initialized");
+        sht31_sensor.heater(false);
+
     }
 
-    temp_hum_sensor.heater(false);
+    if (!ccs811_sensor.begin(ccs811_i2c_address, &Wire1))
+    {
+        log_e("Failed to start CCS811");
+    }
+    else
+    {
+        log_e("CCS811 Initialized");
+        ccs811_sensor.setDriveMode(CCS811_DRIVE_MODE_1SEC);
+    }
 
     return true;
 }
@@ -250,7 +262,8 @@ void hardware::begin()
                                                             log_i("Hardware task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {
-                                                                read_temperature_humdity_sensor();
+                                                                read_sht31_sensor();
+                                                                read_ccs811_sensor();
                                                                 vTaskDelay(sensor_history::sensor_interval/2);
                                                             } while(true); });
 
@@ -268,7 +281,7 @@ void hardware::begin()
     sensor_refresh_task->spawn_arduino_other_core("sensor task", 4196);
 }
 
-void hardware::read_temperature_humdity_sensor()
+void hardware::read_sht31_sensor()
 {
     const auto now = millis();
     if (now - sht31_sensor_last_read >= sensor_history::sensor_interval)
@@ -276,12 +289,44 @@ void hardware::read_temperature_humdity_sensor()
         sht31_sensor_last_read = now;
         log_i("Reading SHT31 sensor");
 
-        float temperature;
-        float humidity;
-        temp_hum_sensor.readBoth(&temperature, &humidity);
+        sht31_sensor.readBoth(&last_temperatureC, &last_humidity);
 
-        set_sensor_value(sensor_id_index::temperatureF, round_value((temperature * 9) / 5 + 32));
-        set_sensor_value(sensor_id_index::humidity, round_value(humidity));
+        set_sensor_value(sensor_id_index::temperatureF, round_value((last_temperatureC * 9) / 5 + 32));
+        set_sensor_value(sensor_id_index::humidity, round_value(last_humidity));
+    }
+}
+
+void hardware::read_ccs811_sensor()
+{
+    const auto now = millis();
+    if (now - ccs811_sensor_last_read >= sensor_history::sensor_interval)
+    {
+        if (ccs811_sensor.available())
+        {
+            ccs811_sensor_last_read = now;
+            log_i("Reading CCS811 sensor");
+
+            if (!isnan(last_humidity) && !isnan(last_temperatureC))
+            {
+                ccs811_sensor.setEnvironmentalData(last_humidity, last_temperatureC);
+            }
+
+            float eCO2{NAN};
+            float voc{NAN};
+            const auto read_error = ccs811_sensor.readData();
+            if (!read_error)
+            {
+                eCO2 = ccs811_sensor.geteCO2();
+                voc = ccs811_sensor.getTVOC();
+            }
+            else
+            {
+                log_w("Failed to read from ccs 811 with error:%d", read_error);
+            }
+
+            set_sensor_value(sensor_id_index::eCO2, round_value(eCO2));
+            set_sensor_value(sensor_id_index::voc, round_value(voc));
+        }
     }
 }
 
@@ -318,6 +363,59 @@ void hardware::scan_i2c_bus()
     }
     if (nDevices == 0)
     {
-        log_i("No I2C devices found\n");
+        log_i("No I2C devices found");
     }
+}
+
+String hardware::get_sht31_status()
+{
+    const auto status = sht31_sensor.readStatus();
+
+    if (status == 0xFFFF)
+    {
+        return "Not found";
+    }
+
+    StreamString stream;
+    if (bitRead(status, 1))
+    {
+        stream.print("Checksum of last write transfer failed.");
+    }
+
+    if (bitRead(status, 2))
+    {
+        stream.print("Last command failed.");
+    }
+
+    if (bitRead(status, 4))
+    {
+        stream.print("System Reset Detected");
+    }
+
+    if (bitRead(status, SHT31_REG_HEATER_BIT))
+    {
+        stream.print("Heater On");
+    }
+
+    if (stream.isEmpty())
+    {
+        stream.print("Normal");
+    }
+
+    return stream;
+}
+
+String hardware::get_ccs811_status()
+{
+    StreamString stream;
+    if (ccs811_sensor.checkError())
+    {
+        stream.print("Errored");
+    }
+    else
+    {
+        stream.printf("Baseline:%d", ccs811_sensor.getBaseline());
+    }
+
+    return stream;
 }

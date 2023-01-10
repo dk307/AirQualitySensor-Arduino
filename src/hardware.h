@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Adafruit_SHT31.h>
+#include <Adafruit_CCS811.h>
 
 #include "sensor.h"
 #include "task_wrapper.h"
@@ -60,14 +61,24 @@ private:
 
     // SHT31
     const int sht31_i2c_address = 0x44;
-    Adafruit_SHT31 temp_hum_sensor{&Wire1}; // Wire is already used by touch i2c
+    Adafruit_SHT31 sht31_sensor{&Wire1}; // Wire is already used by touch i2c
     uint64_t sht31_sensor_last_read = 0;
+    float last_temperatureC{NAN};
+    float last_humidity{NAN};
+
+    // CCS811
+    const int ccs811_i2c_address = 90;
+    Adafruit_CCS811 ccs811_sensor;
+    uint64_t ccs811_sensor_last_read = 0;
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
 
     static String get_up_time();
-    void read_temperature_humdity_sensor();
-    
+    void read_sht31_sensor();
+    void read_ccs811_sensor();
+    String get_sht31_status();
+    String get_ccs811_status();
+
     static std::optional<sensor_value::value_type> round_value(float val, int places = 0);
     static void scan_i2c_bus();
 };
