@@ -40,7 +40,7 @@ private:
 
     void wifi_start();
     void start_captive_portal();
-    void stop_captive_portal();
+    void stop_captive_portal_if_running();
     void set_wifi(const String &newSSID, const String &newPass);
     static bool connect_wifi(const String &newSSID, const String &newPass);
 

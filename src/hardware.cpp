@@ -326,8 +326,7 @@ void hardware::read_ccs811_sensor()
         }
         else
         {
-            ccs811_last_error = ccs811_sensor.getErrorRegister();
-            log_e("Failed to read from CCS811 sensor with error:%x", get_ccs811_error_register_status());
+            log_e("Failed to read from CCS811 sensor with error:%s", get_ccs811_error_register_status().c_str());
             set_sensor_value(sensor_id_index::eCO2, std::nullopt);
             set_sensor_value(sensor_id_index::voc, std::nullopt);
         }
@@ -377,7 +376,7 @@ String hardware::get_sht31_status()
 
     if (status == 0xFFFF)
     {
-        return "Not found";
+        return "Not found.";
     }
 
     StreamString stream;
@@ -426,8 +425,14 @@ String hardware::get_ccs811_status()
 
 String hardware::get_ccs811_error_register_status()
 {
-    StreamString stream;
+    const auto ccs811_last_error = ccs811_sensor.getErrorRegister();
 
+    if (ccs811_last_error == 0xFF)
+    {
+        return "Not found.";
+    }
+
+    StreamString stream;
     if (bitRead(ccs811_last_error, 1))
     {
         stream.print("Invalid Write Address ID.");

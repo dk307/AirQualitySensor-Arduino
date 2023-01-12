@@ -14,12 +14,13 @@ void wifi_manager::begin()
     // WiFi.useStaticBuffers(true);
     WiFi.persistent(false);
     WiFi.onEvent(std::bind(&wifi_manager::wifi_event, this, std::placeholders::_1, std::placeholders::_2));
+    WiFi.setAutoReconnect(false);
+    WiFi.mode(WIFI_MODE_STA);
     wifi_start();
 }
 
 void wifi_manager::wifi_start()
 {
-    const auto ssid = config::instance.data.get_wifi_ssid();
     const bool connected = connect_wifi(config::instance.data.get_wifi_ssid(), config::instance.data.get_wifi_password());
 
     if (!connected)
@@ -60,15 +61,11 @@ bool wifi_manager::connect_wifi(const String &ssid, const String &password)
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
     WiFi.setHostname(rfc_name.c_str());
 
-    WiFi.disconnect(true, true);
-    delay(100);
-    WiFi.mode(WIFI_MODE_STA);
-
     WiFi.setAutoReconnect(false);
     log_i("wifi connection:%s pwd:%s", ssid.c_str(), password.c_str());
     WiFi.begin(ssid.c_str(), password.c_str());
 
-    constexpr unsigned long timeout = 60000;
+    constexpr unsigned long timeout = 30000;
     if (WiFi.waitForConnectResult(timeout) == WL_CONNECTED)
     {
         // connected
@@ -83,9 +80,6 @@ bool wifi_manager::connect_wifi(const String &ssid, const String &password)
 // function to connect to new WiFi credentials
 void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
 {
-    const auto rfc_name = get_rfc_name();
-    WiFi.setHostname(rfc_name.c_str());
-
     // fix for auto connect racing issue
     if (!(WiFi.status() == WL_CONNECTED && (WiFi.SSID() == newSSID)))
     {
@@ -96,7 +90,7 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
         const bool connected = connect_wifi(newSSID, newPass);
         if (!connected)
         {
-            log_e("New connection unsuccessful");
+            log_e("New connection unsuccessful for %s", newSSID.c_str());
             if (!in_captive_portal)
             {
                 const bool connect_old = connect_wifi(oldSSID, oldPSK);
@@ -114,13 +108,9 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
         {
             log_i("Connected to new WiFi details with IP: %s", WiFi.localIP().toString().c_str());
 
-            if (in_captive_portal)
-            {
-                stop_captive_portal();
-            }
-
             config::instance.data.set_wifi_ssid(newSSID);
             config::instance.data.set_wifi_password(newPass);
+            stop_captive_portal_if_running();
             config::instance.save();
         }
     };
@@ -131,10 +121,12 @@ void wifi_manager::start_captive_portal()
     const auto rfc_name = get_rfc_name();
     log_i("Opening a captive portal with AP :%s", rfc_name.c_str());
 
-    WiFi.disconnect(true, true);
-    delay(100);
-    WiFi.mode(WIFI_MODE_AP);
+    const auto mode = WiFi.getMode();
+
+    WiFi.mode(WIFI_AP_STA);
     WiFi.softAP(rfc_name.c_str());
+
+    connect_wifi(config::instance.data.get_wifi_ssid(), config::instance.data.get_wifi_password());
 
     dns_server = psram::make_unique<DNSServer>();
 
@@ -147,13 +139,19 @@ void wifi_manager::start_captive_portal()
     call_change_listeners();
 }
 
-void wifi_manager::stop_captive_portal()
+void wifi_manager::stop_captive_portal_if_running()
 {
-    log_i("Stopping captive portal");
-    dns_server.reset();
+    if (in_captive_portal)
+    {
+        log_i("Stopping captive portal");
+        dns_server.reset();
 
-    in_captive_portal = false;
-    call_change_listeners();
+        WiFi.softAPdisconnect(true);
+        WiFi.mode(WIFI_MODE_STA);
+
+        in_captive_portal = false;
+        call_change_listeners();
+    }
 }
 
 bool wifi_manager::is_captive_portal()
@@ -265,7 +263,7 @@ void wifi_manager::wifi_event(arduino_event_id_t event, arduino_event_info_t inf
         call_change_listeners();
         if (!connect_new_ssid)
         {
-            wifi_start();
+            // wifi_start();
         }
         break;
     }

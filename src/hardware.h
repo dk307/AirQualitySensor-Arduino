@@ -66,8 +66,7 @@ private:
  
     // CCS811
     CCS811 ccs811_sensor;
-    uint64_t ccs811_sensor_last_read = 0;
-    uint8_t ccs811_last_error{0};
+    uint32_t ccs811_sensor_last_read = 0;
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
 
