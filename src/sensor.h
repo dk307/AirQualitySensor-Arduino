@@ -102,7 +102,7 @@ private:
 
 using sensor_value = sensor_value_t<int16_t>;
 
-template <class T, size_t Count>
+template <class T, uint16_t MinutesT>
 class sensor_history_t
 {
 public:
@@ -119,8 +119,9 @@ public:
         std::vector<T, psram::allocator<T>> last_x_min_values;
     } sensor_history_snapshot;
 
-    static constexpr int reads_per_minute = 3;
-    static constexpr int sensor_interval = (60 * 1000 / reads_per_minute);
+    static constexpr auto total_minutes = MinutesT;
+    static constexpr uint8_t reads_per_minute = 6;
+    static constexpr auto sensor_interval = (60 * 1000 / reads_per_minute);
 
     void add_value(T value)
     {
@@ -164,7 +165,7 @@ public:
 
 private:
     mutable std::mutex data_mutex;
-    CircularBuffer<T, reads_per_minute * Count> last_x_min_values;
+    CircularBuffer<T, reads_per_minute * total_minutes> last_x_min_values;
 };
 
 using sensor_history = sensor_history_t<sensor_value::value_type, 240>;

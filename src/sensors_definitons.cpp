@@ -2,6 +2,10 @@
 
 #include <limits>
 
+const std::array<sensor_definition_display, 1> no_level{
+    sensor_definition_display{-999, 999, 0},
+};
+
 const std::array<sensor_definition_display, 6> pm_2_5_definition_display{
     sensor_definition_display{std::numeric_limits<uint32_t>::min(), 12, 0},
     sensor_definition_display{12, 35.4, 1},
@@ -62,6 +66,7 @@ const std::array<sensor_definition, total_sensors> sensor_definitions{
     sensor_definition{"PM 1", "µg/m³", pm_1_definition_display.data(), pm_1_definition_display.size()},
     sensor_definition{"PM 4", "µg/m³", pm_4_definition_display.data(), pm_4_definition_display.size()},
     sensor_definition{"PM 10", "µg/m³", pm_10_definition_display.data(), pm_10_definition_display.size()},
+    sensor_definition{"Particle size", "µg", no_level.data(), no_level.size()},
 };
 
 const sensor_definition &get_sensor_definition(sensor_id_index id)

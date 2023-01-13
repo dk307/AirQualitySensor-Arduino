@@ -98,6 +98,7 @@ ui_interface::information_table_type hardware::get_information_table(information
             {"SD Card Size", to_string(SD.cardSize() / (1024 * 1024), " MB")},
             {"SHT31 sensor status", get_sht31_status()},
             {"CCS811 sensor status", get_ccs811_status()},
+            {"SPS30 sensor status", get_sps30_error_register_status()},
         };
 
     case information_type::network:
@@ -217,7 +218,7 @@ bool hardware::pre_begin()
     }
     else
     {
-        log_e("SHT31 Initialized");
+        log_i("SHT31 Initialized");
         sht31_sensor.heatOff();
     }
 
@@ -229,7 +230,29 @@ bool hardware::pre_begin()
     }
     else
     {
-        log_e("CCS811 Initialized");
+        log_i("CCS811 Initialized");
+    }
+
+    const auto sps_error = sps30_probe();
+    if (sps_error == NO_ERROR)
+    {
+        log_i("SPS30 Found");
+
+        const auto sps_error = sps30_start_manual_fan_cleaning();
+        if (sps_error != NO_ERROR)
+        {
+            log_e("SPS30 manual clean up failed with :%d", sps_error);
+        }
+
+        const auto sps_error1 = sps30_start_measurement();
+        if (sps_error1 != NO_ERROR)
+        {
+            log_e("SPS30 start measurement failed with :%d", sps_error1);
+        }
+    }
+    else
+    {
+        log_e("SPS30 Probe failed with :%d", sps_error);
     }
 
     return true;
@@ -245,7 +268,7 @@ void hardware::set_sensor_value(sensor_id_index index, const std::optional<senso
     }
     else
     {
-        log_w("Got an invalid value for sensor:%d", index);
+        log_w("Got an invalid value for sensor:%s", get_sensor_name(index));
         (*sensors_history)[i].clear();
         sensors[i].set_invalid_value();
     }
@@ -263,6 +286,7 @@ void hardware::begin()
                                                             {
                                                                 read_sht31_sensor();
                                                                 read_ccs811_sensor();
+                                                                read_sps30_sensor();
                                                                 vTaskDelay(sensor_history::sensor_interval/2);
                                                             } while(true); });
 
@@ -329,6 +353,53 @@ void hardware::read_ccs811_sensor()
             log_e("Failed to read from CCS811 sensor with error:%s", get_ccs811_error_register_status().c_str());
             set_sensor_value(sensor_id_index::eCO2, std::nullopt);
             set_sensor_value(sensor_id_index::voc, std::nullopt);
+        }
+    }
+}
+
+void hardware::read_sps30_sensor()
+{
+    const auto now = millis();
+    if (now - sps30_sensor_last_read >= sensor_history::sensor_interval)
+    {
+        log_i("Reading SPS30 sensor");
+        bool read = false;
+        uint16_t ready = 0;
+
+        auto error = sps30_read_data_ready(&ready);
+
+        if ((error == NO_ERROR) && ready)
+        {
+            sps30_measurement m{};
+            error = sps30_read_measurement(&m);
+            if (error == NO_ERROR)
+            {
+                sps30_sensor_last_read = now;
+                read = true;
+
+                set_sensor_value(sensor_id_index::pm_10, round_value(m.mc_10p0));
+                set_sensor_value(sensor_id_index::pm_1, round_value(m.mc_1p0));
+                set_sensor_value(sensor_id_index::pm_2_5, round_value(m.mc_2p5));
+                set_sensor_value(sensor_id_index::pm_4, round_value(m.mc_4p0));
+                set_sensor_value(sensor_id_index::typical_particle_size, round_value(m.typical_particle_size));
+            }
+            else
+            {
+                log_e("Failed to read from SPS sensor with failed to read measurement error:0x%x", error);
+            }
+        }
+        else
+        {
+            log_e("Failed to read from SPS sensor with data not ready error:0x%x", error);
+        }
+
+        if (!read)
+        {
+            set_sensor_value(sensor_id_index::pm_10, std::nullopt);
+            set_sensor_value(sensor_id_index::pm_1, std::nullopt);
+            set_sensor_value(sensor_id_index::pm_2_5, std::nullopt);
+            set_sensor_value(sensor_id_index::pm_4, std::nullopt);
+            set_sensor_value(sensor_id_index::typical_particle_size, std::nullopt);
         }
     }
 }
@@ -418,7 +489,7 @@ String hardware::get_ccs811_status()
     StreamString stream;
 
     stream.print(get_ccs811_error_register_status());
-    stream.printf("Baseline0x:%x", ccs811_sensor.getBaseline());
+    stream.printf("Baseline:0x%x", ccs811_sensor.getBaseline());
 
     return stream;
 }
@@ -463,5 +534,38 @@ String hardware::get_ccs811_error_register_status()
         stream.print("Heater voltage not applied.");
     }
 
+    return stream;
+}
+
+String hardware::get_sps30_error_register_status()
+{
+    uint32_t device_status_flags{};
+
+    const auto error = sps30_read_device_status_register(&device_status_flags);
+
+    StreamString stream;
+    if (error != NO_ERROR)
+    {
+        stream.printf("Failed to read status with 0x%x", error);
+        return stream;
+    }
+
+    if (device_status_flags & SPS30_DEVICE_STATUS_FAN_ERROR_MASK)
+    {
+        stream.print("Fan Error.");
+    }
+    if (device_status_flags & SPS30_DEVICE_STATUS_LASER_ERROR_MASK)
+    {
+        stream.print("Laser Error.");
+    }
+    if (device_status_flags & SPS30_DEVICE_STATUS_FAN_SPEED_WARNING)
+    {
+        stream.print("Fan Speed Warning.");
+    }
+
+    if (stream.isEmpty())
+    {
+        stream.print("Normal");
+    }
     return stream;
 }

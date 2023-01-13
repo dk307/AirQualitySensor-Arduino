@@ -541,7 +541,7 @@ bool web_server::is_captive_portal_request(AsyncWebServerRequest *request)
 	{
 		log_i("Request redirected to captive portal");
 		AsyncWebServerResponse *response = request->beginResponse(302, String(TextPlainMediaType), String());
-		response->addHeader(F("Location"), String(F("http://")) + to_string_ip(request->client()->localIP()));
+		response->addHeader(F("Location"), String("http://") + to_string_ip(request->client()->localIP()));
 		request->send(response);
 		return true;
 	}

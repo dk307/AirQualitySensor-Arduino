@@ -2,6 +2,7 @@
 
 #include <SHT31.h>
 #include <SparkFunCCS811.h>
+#include <sps30.h>
 
 #include "sensor.h"
 #include "task_wrapper.h"
@@ -63,19 +64,24 @@ private:
     const int sht31_i2c_address = 0x44;
     SHT31 sht31_sensor;
     int sht31_last_error{0xFF};
- 
+
     // CCS811
     CCS811 ccs811_sensor;
     uint32_t ccs811_sensor_last_read = 0;
+
+    // SPS 30
+    uint32_t sps30_sensor_last_read = 0;
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
 
     static String get_up_time();
     void read_sht31_sensor();
     void read_ccs811_sensor();
+    void read_sps30_sensor();
     String get_sht31_status();
     String get_ccs811_status();
     String get_ccs811_error_register_status();
+    String get_sps30_error_register_status();
 
     static std::optional<sensor_value::value_type> round_value(float val, int places = 0);
     static void scan_i2c_bus();

@@ -17,6 +17,7 @@ static const char NtpServerId[] PROGMEM = "ntpserver";
 static const char NtpServerRefreshIntervalId[] PROGMEM = "ntpserverrefreshinterval";
 static const char TimeZoneId[] PROGMEM = "timezone";
 static const char ScreenBrightnessId[] PROGMEM = "screenbrightness";
+static const char CCS811Baseline[] PROGMEM = "ccs811baseline";
 
 config config::instance;
 
@@ -51,13 +52,13 @@ size_t config::write_to_file(const String &fileName, const char *data, unsigned 
 
 void config::erase()
 {
-    SD.remove(FPSTR(ConfigChecksumFilePath));
-    SD.remove(FPSTR(ConfigFilePath));
+    SD.remove((ConfigChecksumFilePath));
+    SD.remove((ConfigFilePath));
 }
 
 bool config::pre_begin()
 {
-    const auto config_data = read_file(FPSTR(ConfigFilePath));
+    const auto config_data = read_file((ConfigFilePath));
 
     if (config_data.isEmpty())
     {
@@ -66,7 +67,7 @@ bool config::pre_begin()
         return false;
     }
 
-    BasicJsonDocument<psram::psram_json_allocator>  json_document(2048);
+    BasicJsonDocument<psram::psram_json_allocator> json_document(2048);
     if (!deserialize_to_json(config_data.c_str(), json_document))
     {
         reset();
@@ -74,7 +75,7 @@ bool config::pre_begin()
     }
 
     // read checksum from file
-    const auto read_checksum = read_file(FPSTR(ConfigChecksumFilePath));
+    const auto read_checksum = read_file((ConfigChecksumFilePath));
     const auto checksum = md5_hash(config_data);
 
     if (!checksum.equalsIgnoreCase(read_checksum))
@@ -84,17 +85,20 @@ bool config::pre_begin()
         return false;
     }
 
-    data.set_host_name(json_document[FPSTR(HostNameId)].as<String>());
-    data.set_web_user_name(json_document[FPSTR(WebUserNameId)].as<String>());
-    data.set_web_password(json_document[FPSTR(WebPasswordId)].as<String>());
-    data.set_wifi_ssid(json_document[FPSTR(SsidId)].as<String>());
-    data.set_wifi_password(json_document[FPSTR(SsidPasswordId)].as<String>());
-    data.set_ntp_server(json_document[FPSTR(NtpServerId)].as<String>());
-    data.set_timezone(static_cast<TimeZoneSupported>(json_document[FPSTR(TimeZoneId)].as<uint64_t>()));
-    data.set_ntp_server_refresh_interval(json_document[FPSTR(NtpServerRefreshIntervalId)].as<uint64_t>());
+    data.set_host_name(json_document[(HostNameId)].as<String>());
+    data.set_web_user_name(json_document[(WebUserNameId)].as<String>());
+    data.set_web_password(json_document[(WebPasswordId)].as<String>());
+    data.set_wifi_ssid(json_document[(SsidId)].as<String>());
+    data.set_wifi_password(json_document[(SsidPasswordId)].as<String>());
+    data.set_ntp_server(json_document[(NtpServerId)].as<String>());
+    data.set_timezone(static_cast<TimeZoneSupported>(json_document[(TimeZoneId)].as<uint64_t>()));
+    data.set_ntp_server_refresh_interval(json_document[(NtpServerRefreshIntervalId)].as<uint64_t>());
 
-    const auto screen_brightness = json_document[FPSTR(ScreenBrightnessId)].as<uint8_t>();
-    data.set_manual_screen_brightness(screen_brightness ? std::optional<uint8_t>(screen_brightness) : std::nullopt);
+    const auto screen_brightness = json_document[ScreenBrightnessId];
+    data.set_manual_screen_brightness(screen_brightness.isNull() ? std::optional<uint8_t>(screen_brightness.as<uint8_t>()) : std::nullopt);
+
+    const auto ccs_811_baseline = json_document[CCS811Baseline];
+    data.set_ccs811_baseline(ccs_811_baseline.isNull() ? std::optional<uint8_t>(ccs_811_baseline.as<uint16_t>()) : std::nullopt);
 
     log_i("Loaded Config from file");
 
@@ -107,6 +111,7 @@ bool config::pre_begin()
     log_i("Ntp Server:%s", data.get_ntp_server().c_str());
     log_i("Ntp Server Refresh Interval:%d ms", data.get_ntp_server_refresh_interval());
     log_i("Time zone:%d", data.get_timezone());
+    log_i("CCS 811 baseline:%d", data.get_ccs811_baseline().value_or(0));
 
     return true;
 }
@@ -130,23 +135,43 @@ void config::save_config()
 
     BasicJsonDocument<psram::psram_json_allocator> json_document(2048);
 
-    json_document[FPSTR(HostNameId)] = data.get_host_name();
-    json_document[FPSTR(WebUserNameId)] = data.get_web_user_name();
-    json_document[FPSTR(WebPasswordId)] = data.get_web_password();
-    json_document[FPSTR(SsidId)] = data.get_wifi_ssid();
-    json_document[FPSTR(SsidPasswordId)] = data.get_wifi_password();
-    json_document[FPSTR(ScreenBrightnessId)] = data.get_manual_screen_brightness().value_or(0);
-    json_document[FPSTR(NtpServerId)] = data.get_ntp_server();
-    json_document[FPSTR(NtpServerRefreshIntervalId)] = data.get_ntp_server_refresh_interval();
-    json_document[FPSTR(TimeZoneId)] = static_cast<uint64_t>(data.get_timezone());
+    json_document[(HostNameId)] = data.get_host_name();
+    json_document[(WebUserNameId)] = data.get_web_user_name();
+    json_document[(WebPasswordId)] = data.get_web_password();
+    json_document[(SsidId)] = data.get_wifi_ssid();
+    json_document[(SsidPasswordId)] = data.get_wifi_password();
+
+    json_document[(NtpServerId)] = data.get_ntp_server();
+    json_document[(NtpServerRefreshIntervalId)] = data.get_ntp_server_refresh_interval();
+    json_document[(TimeZoneId)] = static_cast<uint64_t>(data.get_timezone());
+
+    const auto brightness = data.get_manual_screen_brightness();
+    if (brightness.has_value())
+    {
+        json_document[ScreenBrightnessId] = brightness.value();
+    }
+    else
+    {
+        json_document[ScreenBrightnessId] = nullptr;
+    }
+
+    const auto ccs_811_baseline = data.get_ccs811_baseline();
+    if (ccs_811_baseline.has_value())
+    {
+        json_document[CCS811Baseline] = ccs_811_baseline.value();
+    }
+    else
+    {
+        json_document[CCS811Baseline] = nullptr;
+    }
 
     String json;
     serializeJson(json_document, json);
 
-    if (write_to_file(FPSTR(ConfigFilePath), json.c_str(), json.length()) == json.length())
+    if (write_to_file((ConfigFilePath), json.c_str(), json.length()) == json.length())
     {
         const auto checksum = md5_hash(json);
-        if (write_to_file(FPSTR(ConfigChecksumFilePath), checksum.c_str(), checksum.length()) != checksum.length())
+        if (write_to_file((ConfigChecksumFilePath), checksum.c_str(), checksum.length()) != checksum.length())
         {
             log_e("Failed to write config checksum file");
         }
@@ -185,7 +210,7 @@ String config::read_file(const String &fileName)
 String config::get_all_config_as_json()
 {
     loop(); // save if needed
-    return read_file(FPSTR(ConfigFilePath));
+    return read_file((ConfigFilePath));
 }
 
 bool config::restore_all_config_as_json(const std::vector<uint8_t> &json, const String &hashMd5)
@@ -203,12 +228,12 @@ bool config::restore_all_config_as_json(const std::vector<uint8_t> &json, const 
         return false;
     }
 
-    if (write_to_file(FPSTR(ConfigFilePath), json.data(), json.size()) != json.size())
+    if (write_to_file((ConfigFilePath), json.data(), json.size()) != json.size())
     {
         return false;
     }
 
-    if (write_to_file(FPSTR(ConfigChecksumFilePath), hashMd5.c_str(), hashMd5.length()) != hashMd5.length())
+    if (write_to_file((ConfigChecksumFilePath), hashMd5.c_str(), hashMd5.length()) != hashMd5.length())
     {
         return false;
     }

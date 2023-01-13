@@ -25,14 +25,14 @@ struct config_data
     {
         std::lock_guard<std::mutex> lock(data_mutex);
 
-        const auto defaultUserIDPassword = F("admin");
+        const auto defaultUserIDPassword = "admin";
         host_name.clear();
         web_user_name = defaultUserIDPassword;
         web_password = defaultUserIDPassword;
         wifi_ssid.clear();
         wifi_password.clear();
         ntp_server.clear();
-        ntp_server_refresh_interval = 60 * 1000;
+        ntp_server_refresh_interval = 60 * 60 * 1000;
         time_zone = TimeZoneSupported::USPacific;
         manual_screen_brightness.reset();
     }
@@ -136,6 +136,18 @@ struct config_data
         time_zone = time_zone_;
     }
 
+    std::optional<uint8_t> get_ccs811_baseline() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        return ccs811_baseline;
+    }
+
+    void set_ccs811_baseline(const std::optional<uint8_t> &value)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        ccs811_baseline = value;
+    }
+
 private:
     String host_name;
     String web_user_name;
@@ -146,6 +158,7 @@ private:
     String ntp_server;
     uint64_t ntp_server_refresh_interval;
     TimeZoneSupported time_zone;
+    std::optional<uint16_t> ccs811_baseline;
 
     std::optional<uint8_t> manual_screen_brightness;
 
