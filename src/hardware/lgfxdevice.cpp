@@ -39,7 +39,7 @@ LGFX::LGFX(void)
         cfg.panel_height = LGFX::Height;  // actual displayable height
         cfg.offset_x = 0;                 // Panel offset in X direction
         cfg.offset_y = 0;                 // Panel offset in Y direction
-        cfg.offset_rotation = 2;
+        cfg.offset_rotation = 0;
         cfg.dummy_read_pixel = 8;
         cfg.dummy_read_bits = 1;
         cfg.readable = false;

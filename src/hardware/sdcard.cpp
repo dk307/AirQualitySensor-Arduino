@@ -5,9 +5,7 @@
 #include <SD.h>
 #include <FS.h>
 
-sdcard sdcard::instance;
-
-bool sdcard::pre_begin()
+bool sd_card::pre_begin()
 {
     pinMode(SD_CS, OUTPUT);
     digitalWrite(SD_CS, HIGH);
@@ -16,11 +14,7 @@ bool sdcard::pre_begin()
     return mount();
 }
 
-void sdcard::begin()
-{
-}
-
-bool sdcard::mount()
+bool sd_card::mount()
 {
     if (!SD.begin(SD_CS))
     {

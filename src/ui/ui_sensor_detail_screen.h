@@ -286,9 +286,9 @@ private:
         time_t t = sensor_detail_screen_chart_series_data_time.value_or((time_t)0);
 
         auto &&sensor_info = ui_interface_instance.get_sensor_detail_info(index);
-        if (sensor_info.last_x_min_stats.has_value())
+        if (sensor_info.stat.has_value())
         {
-            auto &&stats = sensor_info.last_x_min_stats.value();
+            auto &&stats = sensor_info.stat.value();
 
             lv_chart_set_type(sensor_detail_screen_chart, LV_CHART_TYPE_LINE);
 
@@ -296,7 +296,7 @@ private:
             set_value_in_panel(panel_and_labels[label_and_unit_label_min_index], index, stats.min);
             set_value_in_panel(panel_and_labels[label_and_unit_label_max_index], index, stats.max);
 
-            auto &&values = sensor_info.last_x_min_values;
+            auto &&values = sensor_info.history;
             lv_chart_set_point_count(sensor_detail_screen_chart, values.size());
             lv_chart_set_range(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_Y, stats.min, stats.max);
 
@@ -304,7 +304,6 @@ private:
 
             lv_chart_set_ext_y_array(sensor_detail_screen_chart, sensor_detail_screen_chart_series,
                                      sensor_detail_screen_chart_series_data.data());
-            (sensor_detail_screen_chart, 256);
         }
         else
         {

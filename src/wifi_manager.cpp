@@ -11,7 +11,6 @@ wifi_manager wifi_manager::instance;
 
 void wifi_manager::begin()
 {
-    // WiFi.useStaticBuffers(true);
     WiFi.persistent(false);
     WiFi.onEvent(std::bind(&wifi_manager::wifi_event, this, std::placeholders::_1, std::placeholders::_2));
     WiFi.setAutoReconnect(false);
@@ -29,20 +28,6 @@ void wifi_manager::wifi_start()
     }
 }
 
-// void wifi_manager::disconnect(bool disconnectWifi)
-// {
-//     WiFi.disconnect(disconnectWifi);
-// }
-
-// // function to forget current WiFi details and start a captive portal
-// void wifi_manager::forget()
-// {
-//     disconnect(false);
-//     startCaptivePortal();
-
-//     log_i("Requested to forget WiFi. Started Captive portal.");
-// }
-
 void wifi_manager::set_new_wifi(const String &newSSID, const String &newPass)
 {
     log_i("Trying up setup new wifi:%s pwd:%s", newSSID.c_str(), newPass.c_str());
@@ -58,7 +43,7 @@ bool wifi_manager::connect_wifi(const String &ssid, const String &password)
         return false;
     }
     const auto rfc_name = get_rfc_name();
-    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+    // WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
     WiFi.setHostname(rfc_name.c_str());
 
     WiFi.setAutoReconnect(false);

@@ -3,11 +3,13 @@
 #include <SHT31.h>
 #include <SparkFunCCS811.h>
 #include <sps30.h>
+#include <BH1750.h>
 
 #include "sensor.h"
 #include "task_wrapper.h"
 #include "psram_allocator.h"
 #include "hardware/display.h"
+#include "hardware/sdcard.h"
 #include "ui/ui_interface.h"
 
 class hardware final : ui_interface
@@ -47,7 +49,8 @@ public:
 
 private:
     hardware() = default;
-
+    
+    sd_card card;
     display display_instance{*this};
 
     // same index as sensor_id_index
@@ -72,9 +75,14 @@ private:
     // SPS 30
     uint32_t sps30_sensor_last_read = 0;
 
+    // BH1750
+    BH1750 bh1750_sensor;
+    uint32_t bh1750_sensor_last_read = 0;
+
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value);
 
     static String get_up_time();
+    void read_bh1750_sensor();
     void read_sht31_sensor();
     void read_ccs811_sensor();
     void read_sps30_sensor();
@@ -82,6 +90,7 @@ private:
     String get_ccs811_status();
     String get_ccs811_error_register_status();
     String get_sps30_error_register_status();
+    uint8_t lux_to_intensity(uint32_t lux);
 
     static std::optional<sensor_value::value_type> round_value(float val, int places = 0);
     static void scan_i2c_bus();

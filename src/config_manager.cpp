@@ -95,10 +95,10 @@ bool config::pre_begin()
     data.set_ntp_server_refresh_interval(json_document[(NtpServerRefreshIntervalId)].as<uint64_t>());
 
     const auto screen_brightness = json_document[ScreenBrightnessId];
-    data.set_manual_screen_brightness(screen_brightness.isNull() ? std::optional<uint8_t>(screen_brightness.as<uint8_t>()) : std::nullopt);
+    data.set_manual_screen_brightness(!screen_brightness.isNull() ? std::optional<uint8_t>(screen_brightness.as<uint8_t>()) : std::nullopt);
 
     const auto ccs_811_baseline = json_document[CCS811Baseline];
-    data.set_ccs811_baseline(ccs_811_baseline.isNull() ? std::optional<uint8_t>(ccs_811_baseline.as<uint16_t>()) : std::nullopt);
+    data.set_ccs811_baseline(!ccs_811_baseline.isNull() ? std::optional<uint16_t>(ccs_811_baseline.as<uint16_t>()) : std::nullopt);
 
     log_i("Loaded Config from file");
 

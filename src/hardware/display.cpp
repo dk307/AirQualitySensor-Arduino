@@ -117,8 +117,9 @@ void display::begin()
             std::lock_guard<std::mutex> lock(lgvl_mutex);
             ui_instance.wifi_changed(); });
 
-    auto brightness = config::instance.data.get_manual_screen_brightness();
-    display_device.setBrightness(brightness.value_or(128));
+    const auto brightness = config::instance.data.get_manual_screen_brightness();
+    const auto brightness_value = std::max<uint8_t>(1, brightness.value_or(128));
+    display_device.setBrightness(brightness_value);
 
     log_i("Display Ready");
 }

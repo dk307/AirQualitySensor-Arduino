@@ -66,7 +66,8 @@ const std::array<sensor_definition, total_sensors> sensor_definitions{
     sensor_definition{"PM 1", "µg/m³", pm_1_definition_display.data(), pm_1_definition_display.size()},
     sensor_definition{"PM 4", "µg/m³", pm_4_definition_display.data(), pm_4_definition_display.size()},
     sensor_definition{"PM 10", "µg/m³", pm_10_definition_display.data(), pm_10_definition_display.size()},
-    sensor_definition{"Particle size", "µg", no_level.data(), no_level.size()},
+    sensor_definition{"Typical Particle Size", "µg", no_level.data(), no_level.size()},
+    sensor_definition{"Light Intensity", "lux", no_level.data(), no_level.size()},
 };
 
 const sensor_definition &get_sensor_definition(sensor_id_index id)

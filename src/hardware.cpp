@@ -193,7 +193,7 @@ String hardware::get_wifi_status()
 bool hardware::pre_begin()
 {
     sensors_history = psram::make_unique<std::array<sensor_history, total_sensors>>();
-    if (!sdcard::instance.pre_begin())
+    if (!card.pre_begin())
     {
         return false;
     }
@@ -211,6 +211,15 @@ bool hardware::pre_begin()
     }
 
     scan_i2c_bus();
+
+    if (!bh1750_sensor.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x23, &Wire1))
+    {
+        log_e("Failed to start BH 1750");
+    }
+    else
+    {
+        log_i("BH1750 Initialized");
+    }
 
     if (!sht31_sensor.begin(sht31_i2c_address, &Wire1)) // Wire is already used by touch i2c
     {
@@ -238,11 +247,11 @@ bool hardware::pre_begin()
     {
         log_i("SPS30 Found");
 
-        const auto sps_error = sps30_start_manual_fan_cleaning();
-        if (sps_error != NO_ERROR)
-        {
-            log_e("SPS30 manual clean up failed with :%d", sps_error);
-        }
+        // const auto sps_error = sps30_start_manual_fan_cleaning();
+        // if (sps_error != NO_ERROR)
+        // {
+        //     log_e("SPS30 manual clean up failed with :%d", sps_error);
+        // }
 
         const auto sps_error1 = sps30_start_measurement();
         if (sps_error1 != NO_ERROR)
@@ -277,13 +286,13 @@ void hardware::set_sensor_value(sensor_id_index index, const std::optional<senso
 void hardware::begin()
 {
     display_instance.begin();
-    sdcard::instance.begin();
 
     sensor_refresh_task = std::make_unique<task_wrapper>([this]
                                                          {
                                                             log_i("Hardware task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {
+                                                                read_bh1750_sensor();
                                                                 read_sht31_sensor();
                                                                 read_ccs811_sensor();
                                                                 read_sps30_sensor();
@@ -302,6 +311,26 @@ void hardware::begin()
     // start on core 0
     lvgl_refresh_task->spawn_arduino_other_core("lvgl task", 4196);
     sensor_refresh_task->spawn_arduino_other_core("sensor task", 4196);
+}
+
+void hardware::read_bh1750_sensor()
+{
+    const auto now = millis();
+    if (now - sht31_sensor.lastRead() >= sensor_history::sensor_interval)
+    {
+        log_i("Reading BH1750 sensor");
+
+        if (bh1750_sensor.measurementReady(true))
+        {
+            const float lux = bh1750_sensor.readLightLevel();
+            set_sensor_value(sensor_id_index::light_intensity, round_value(lux));
+        }
+        else
+        {
+            log_e("Failed to read from BH1750");
+            set_sensor_value(sensor_id_index::light_intensity, std::nullopt);
+        }
+    }
 }
 
 void hardware::read_sht31_sensor()
@@ -540,7 +569,6 @@ String hardware::get_ccs811_error_register_status()
 String hardware::get_sps30_error_register_status()
 {
     uint32_t device_status_flags{};
-
     const auto error = sps30_read_device_status_register(&device_status_flags);
 
     StreamString stream;
@@ -568,4 +596,73 @@ String hardware::get_sps30_error_register_status()
         stream.print("Normal");
     }
     return stream;
+}
+
+uint8_t hardware::lux_to_intensity(uint32_t lux)
+{
+    // https://learn.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values
+    if (lux <= 10)
+    {
+        return 0;
+    }
+    else if (lux <= 10)
+    {
+        return 1;
+    }
+    else if (lux <= 30)
+    {
+        return 2;
+    }
+    else if (lux <= 50)
+    {
+        return 3;
+    }
+    else if (lux <= 100)
+    {
+        return 4;
+    }
+    else if (lux <= 200)
+    {
+        return 5;
+    }
+    else if (lux <= 300)
+    {
+        return 6;
+    }
+    else if (lux <= 400)
+    {
+        return 7;
+    }
+    else if (lux <= 500)
+    {
+        return 8;
+    }
+    else if (lux <= 600)
+    {
+        return 9;
+    }
+    else if (lux <= 700)
+    {
+        return 10;
+    }
+    else if (lux <= 800)
+    {
+        return 11;
+    }
+    else if (lux <= 900)
+    {
+        return 12;
+    }
+    else if (lux <= 1000)
+    {
+        return 13;
+    }
+    else if (lux <= 1500)
+    {
+        return 14;
+    }
+    else
+    {
+        return 15;
+    }
 }
