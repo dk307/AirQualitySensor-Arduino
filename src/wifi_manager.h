@@ -36,12 +36,17 @@ private:
     String new_password;
 
     bool in_captive_portal{false};
-    uint64_t captive_portal_start{0};
+    uint32_t captive_portal_start{0};
+
+    uint8_t reconnect_retries{0};
+    uint32_t reconnect_last_retry{0};
+    bool check_connection{false};
 
     void wifi_start();
     void start_captive_portal();
     void stop_captive_portal_if_running();
     void set_wifi(const String &newSSID, const String &newPass);
+    bool connect_saved_wifi();
     static bool connect_wifi(const String &newSSID, const String &newPass);
 
     static String get_rfc_name();

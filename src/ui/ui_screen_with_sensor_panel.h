@@ -45,24 +45,24 @@ protected:
         {
         default:
         case 0:
-            color = 0x4BD175; // green
-            color_grad = 0x228D44;
+            color = 0x9BDE31; // green
+            color_grad = 0x7EB528;
             break;
         case 1:
-            color = 0x767C30; // yellow
-            color_grad = 0xBFCC20;
+            color = 0xD8E358; // yellow
+            color_grad = 0xA3AB42;
             break;
         case 2:
-            color = 0xEC9706; // orange
-            color_grad = 0xED7117;
+            color = 0xF59D06; // orange
+            color_grad = 0xC98105;
             break;
         case 3:
-            color = 0xE3242B; // red
-            color_grad = 0x900D09;
+            color = 0xF0262D; // red
+            color_grad = 0x9E191E;
             break;
         case 4:
-            color = 0x710193; // purple
-            color_grad = 0xA32CC4;
+            color = 0xB202E8; // purple
+            color_grad = 0x9301BF;
             break;
         case 5:
             color = 0x940606; // Maroon
@@ -84,9 +84,9 @@ protected:
         {
             const auto final_value = value.value();
             const auto sensor_definition = get_sensor_definition(index);
-            const auto level = sensor_definition.calculate_level(final_value);
             if (pair.panel)
             {
+                const auto level = sensor_definition.calculate_level(final_value);
                 set_label_panel_color(pair.panel, level);
             }
 

@@ -13,16 +13,16 @@ void wifi_manager::begin()
 {
     WiFi.persistent(false);
     WiFi.onEvent(std::bind(&wifi_manager::wifi_event, this, std::placeholders::_1, std::placeholders::_2));
-    WiFi.setAutoReconnect(false);
+    // WiFi.setAutoReconnect(false);
+    WiFi.setAutoReconnect(true);
     WiFi.mode(WIFI_MODE_STA);
+    delay(100);
     wifi_start();
 }
 
 void wifi_manager::wifi_start()
 {
-    const bool connected = connect_wifi(config::instance.data.get_wifi_ssid(), config::instance.data.get_wifi_password());
-
-    if (!connected)
+    if (!connect_saved_wifi())
     {
         start_captive_portal();
     }
@@ -36,6 +36,11 @@ void wifi_manager::set_new_wifi(const String &newSSID, const String &newPass)
     connect_new_ssid = true;
 }
 
+bool wifi_manager::connect_saved_wifi()
+{
+    return connect_wifi(config::instance.data.get_wifi_ssid(), config::instance.data.get_wifi_password());
+}
+
 bool wifi_manager::connect_wifi(const String &ssid, const String &password)
 {
     if (ssid.isEmpty() || password.isEmpty())
@@ -43,10 +48,8 @@ bool wifi_manager::connect_wifi(const String &ssid, const String &password)
         return false;
     }
     const auto rfc_name = get_rfc_name();
-    // WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
     WiFi.setHostname(rfc_name.c_str());
 
-    WiFi.setAutoReconnect(false);
     log_i("wifi connection:%s pwd:%s", ssid.c_str(), password.c_str());
     WiFi.begin(ssid.c_str(), password.c_str());
 
@@ -55,7 +58,6 @@ bool wifi_manager::connect_wifi(const String &ssid, const String &password)
     {
         // connected
         log_i("Connected to WiFi %s with IP: %s", ssid.c_str(), WiFi.localIP().toString().c_str());
-        WiFi.setAutoReconnect(true);
         return true;
     }
 
@@ -109,9 +111,8 @@ void wifi_manager::start_captive_portal()
     const auto mode = WiFi.getMode();
 
     WiFi.mode(WIFI_AP_STA);
+    delay(100);
     WiFi.softAP(rfc_name.c_str());
-
-    connect_wifi(config::instance.data.get_wifi_ssid(), config::instance.data.get_wifi_password());
 
     dns_server = psram::make_unique<DNSServer>();
 
@@ -133,6 +134,7 @@ void wifi_manager::stop_captive_portal_if_running()
 
         WiFi.softAPdisconnect(true);
         WiFi.mode(WIFI_MODE_STA);
+        delay(100);
 
         in_captive_portal = false;
         call_change_listeners();
@@ -162,24 +164,72 @@ int8_t wifi_manager::RSSI()
 
 void wifi_manager::loop()
 {
+    const uint32_t max_captive_portal_time = 5 * 60 * 1000;
+    const uint8_t max_connection_retries = 10;
+    const uint32_t connection_retry_interval = 60 * 1000;
+
+    const auto now = millis();
+
     if (in_captive_portal)
     {
         dns_server->processNextRequest();
 
         // only wait for 5 min in portal and then reboot
-        if ((millis() - captive_portal_start) > (5 * 60 * 1000))
+        if ((now - captive_portal_start) > max_captive_portal_time)
         {
-            log_i("Captive portal timeout");
+            log_i("Captive portal timeout. Restarting");
             operations::instance.reboot();
+            return;
         }
     }
 
     if (connect_new_ssid)
     {
         set_wifi(new_ssid, new_password);
+        reconnect_retries = 0;
+        reconnect_last_retry = millis();
         connect_new_ssid = false;
         new_ssid.clear();
         new_password.clear();
+    }
+
+    if (!in_captive_portal)
+    {
+        // check every connection_retry_interval
+        if ((now - reconnect_last_retry >= connection_retry_interval) || check_connection)
+        {
+            check_connection = false;
+            if (!WiFi.isConnected())
+            {
+                if (reconnect_retries <= max_connection_retries)
+                {
+                    log_w("Disconnected from wifi, connection retry no:%d", reconnect_retries);
+                    if (!connect_saved_wifi())
+                    {
+                        log_w("Connection to saved wifi failed for retry no:%d", reconnect_retries);
+                    }
+                    else
+                    {
+                        log_i("Connection to saved wifi succeeded for retry no:%d", reconnect_retries);
+                    }
+                    reconnect_retries++;
+                    reconnect_last_retry = millis(); // get the time again to account for time taken to connect to wifi
+                }
+                else
+                {
+                    start_captive_portal();
+                }
+            }
+            else
+            {
+                // valid connection for connection_retry_interval
+                if ((now - reconnect_last_retry >= connection_retry_interval) && reconnect_retries)
+                {
+                    log_i("Wifi connection is stable now");
+                    reconnect_retries = 0;
+                }
+            }
+        }
     }
 }
 
@@ -245,11 +295,8 @@ void wifi_manager::wifi_event(arduino_event_id_t event, arduino_event_info_t inf
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
     case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
         log_d("WiFi STA disconnected");
+        check_connection = true;
         call_change_listeners();
-        if (!connect_new_ssid)
-        {
-            // wifi_start();
-        }
         break;
     }
 }

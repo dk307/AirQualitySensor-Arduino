@@ -19,7 +19,7 @@ public:
         const int y_pad = 10;
         const int big_panel_w = (screen_width - x_pad * 3) / 2;
         const int big_panel_h = 150;
-        const int small_panel_w = (screen_width - x_pad * 5) / 4;
+        const int small_panel_w = (screen_width - x_pad * 3) / 2;
         const int small_panel_h = 81;
 
         panel_and_labels[static_cast<size_t>(sensor_id_index::pm_2_5)] =
@@ -29,12 +29,8 @@ public:
 
         panel_and_labels[static_cast<size_t>(sensor_id_index::pm_10)] =
             create_small_panel(sensor_id_index::pm_10, x_pad, big_panel_h + y_pad * 2, small_panel_w, small_panel_h);
-        panel_and_labels[static_cast<size_t>(sensor_id_index::pm_4)] =
-            create_small_panel(sensor_id_index::pm_4, x_pad * 2 + small_panel_w, big_panel_h + y_pad * 2, small_panel_w, small_panel_h);
-        panel_and_labels[static_cast<size_t>(sensor_id_index::pm_1)] =
-            create_small_panel(sensor_id_index::pm_1, x_pad * 3 + small_panel_w * 2, big_panel_h + y_pad * 2, small_panel_w, small_panel_h);
         panel_and_labels[static_cast<size_t>(sensor_id_index::eCO2)] =
-            create_small_panel(sensor_id_index::eCO2, x_pad * 4 + small_panel_w * 3, big_panel_h + y_pad * 2, small_panel_w, small_panel_h);
+            create_small_panel(sensor_id_index::eCO2, x_pad * 2 + small_panel_w, big_panel_h + y_pad * 2, small_panel_w, small_panel_h);
 
         panel_and_labels[static_cast<size_t>(sensor_id_index::temperatureF)] =
             create_temperature_panel(sensor_id_index::temperatureF, 10, -10);
@@ -79,7 +75,7 @@ private:
         lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
         lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(value_label, fonts->font_montserrat_light_numbers_112, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_color(value_label, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(value_label, lv_color_black(), LV_PART_MAIN | LV_STATE_DEFAULT);
 
         add_panel_callback_event(panel, index);
 
@@ -129,7 +125,8 @@ private:
         lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
         lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(value_label, fonts->font_montserrat_regular_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_color(value_label, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(value_label, lv_color_black(), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_letter_space(value_label, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         add_panel_callback_event(panel, index);
 
