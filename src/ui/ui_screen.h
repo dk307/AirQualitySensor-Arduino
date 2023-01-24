@@ -9,7 +9,7 @@ struct ui_common_fonts
 {
     // fonts loaded from sd card - bpp4
     lv_font_t *font_montserrat_light_numbers_112;  // 0x20,0,1,2,3,4,5,6,7,8,9,-
-    lv_font_t *font_montserrat_regular_numbers_48; // 0x20,0,1,2,3,4,5,6,7,8,9,-
+    lv_font_t *font_montserrat_bold_numbers_48; // 0x20,0,1,2,3,4,5,6,7,8,9,-
     lv_font_t *font_montserrat_regular_numbers_40; // 0x20,0,1,2,3,4,5,6,7,8,9,-
     lv_font_t *font_montserrat_medium_48;          // 0x20-0x7F,0,1,2,3,4,5,6,7,8,9,F,µ,g,/,m,³,°,F,⁒,p,-
     lv_font_t *font_montserrat_medium_units_18;    // 0x20,F,µ,g,/,m,³,°,F,⁒,p,-

@@ -25,7 +25,7 @@ void ui::load_from_sd_card()
     }
 
     log_d("1");
-    common_fonts.font_montserrat_regular_numbers_48 = lv_font_load("S:display/font/montserrat/ui_font_m48regularnumbers.bin");
+    common_fonts.font_montserrat_bold_numbers_48 = lv_font_load("S:display/font/montserrat/ui_font_m48boldnumbers.bin");
     log_d("2");
     common_fonts.font_montserrat_regular_numbers_40 = lv_font_load("S:display/font/montserrat/ui_font_m40regularnumbers.bin");
     log_d("3");

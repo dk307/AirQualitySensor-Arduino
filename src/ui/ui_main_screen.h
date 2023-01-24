@@ -124,7 +124,7 @@ private:
 
         lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
         lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(value_label, fonts->font_montserrat_regular_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(value_label, fonts->font_montserrat_bold_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_color(value_label, lv_color_black(), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_letter_space(value_label, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
 
