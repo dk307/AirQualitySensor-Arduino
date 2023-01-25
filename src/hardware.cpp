@@ -193,10 +193,6 @@ String hardware::get_wifi_status()
 bool hardware::pre_begin()
 {
     sensors_history = psram::make_unique<std::array<sensor_history, total_sensors>>();
-    if (!card.pre_begin())
-    {
-        return false;
-    }
 
     if (!display_instance.pre_begin())
     {

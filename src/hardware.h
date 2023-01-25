@@ -50,7 +50,6 @@ public:
 private:
     hardware() = default;
     
-    sd_card card;
     display display_instance{*this};
 
     // same index as sensor_id_index

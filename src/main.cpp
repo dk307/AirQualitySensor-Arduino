@@ -7,16 +7,33 @@
 #include "operations.h"
 #include "hardware\display.h"
 
+#include <logging.hpp>
+#include <fs-appender.hpp>
+
+sd_card card;
+
+void boot_failure()
+{
+	log_e("Boot Failure");
+	delay(5000);
+	ESP.restart();
+	delay(2000);
+}
+
 void setup(void)
 {
 	Serial.begin(115200);
 	log_i("Start on Core %d", xPortGetCoreID());
+
+	if (!card.pre_begin())
+	{
+		boot_failure();
+		return;
+	}
+
 	if (!hardware::instance.pre_begin())
 	{
-		log_e("Boot Failure");
-		delay(5000);
-		ESP.restart();
-		delay(2000);
+		boot_failure();
 		return;
 	}
 
