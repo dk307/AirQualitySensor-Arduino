@@ -79,8 +79,12 @@ String hardware::get_up_time()
 
 void hardware::set_screen_brightness(uint8_t value)
 {
-    log_i("Setting display brightness to %d", value);
-    display_instance.set_brightness(value);
+    if (current_brightness != value)
+    {
+        log_i("Setting display brightness to %d", value);
+        display_instance.set_brightness(std::max<uint8_t>(1, value));
+        current_brightness = value;
+    }
 }
 
 ui_interface::information_table_type hardware::get_information_table(information_type type)
@@ -192,6 +196,7 @@ String hardware::get_wifi_status()
 
 bool hardware::pre_begin()
 {
+    light_sensor_values = std::make_unique<light_sensor_values_t>();
     sensors_history = psram::make_unique<std::array<sensor_history, total_sensors>>();
 
     if (!display_instance.pre_begin())
@@ -260,6 +265,8 @@ bool hardware::pre_begin()
         log_e("SPS30 Probe failed with :%d", sps_error);
     }
 
+    set_auto_display_brightness();
+
     return true;
 }
 
@@ -292,7 +299,8 @@ void hardware::begin()
                                                                 read_sht31_sensor();
                                                                 read_ccs811_sensor();
                                                                 read_sps30_sensor();
-                                                                vTaskDelay(sensor_history::sensor_interval/2);
+                                                                set_auto_display_brightness();
+                                                                vTaskDelay(500);
                                                             } while(true); });
 
     lvgl_refresh_task = std::make_unique<task_wrapper>([this]
@@ -311,15 +319,21 @@ void hardware::begin()
 
 void hardware::read_bh1750_sensor()
 {
+    std::optional<float> lux;
+    if (bh1750_sensor.measurementReady(true))
+    {
+        log_d("Reading BH1750 sensor");
+
+        lux = bh1750_sensor.readLightLevel();
+        light_sensor_values->add_value(lux.value());
+    }
+
     const auto now = millis();
     if (now - sht31_sensor.lastRead() >= sensor_history::sensor_interval)
     {
-        log_i("Reading BH1750 sensor");
-
-        if (bh1750_sensor.measurementReady(true))
+        if (lux.has_value())
         {
-            const float lux = bh1750_sensor.readLightLevel();
-            set_sensor_value(sensor_id_index::light_intensity, round_value(lux));
+            set_sensor_value(sensor_id_index::light_intensity, round_value(lux.value()));
         }
         else
         {
@@ -594,71 +608,27 @@ String hardware::get_sps30_error_register_status()
     return stream;
 }
 
-uint8_t hardware::lux_to_intensity(uint32_t lux)
+uint8_t hardware::lux_to_intensity(sensor_value::value_type lux)
 {
     // https://learn.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values
-    if (lux <= 10)
+    const auto intensity = (std::log10(lux) / 5) * 256;
+    return std::max<uint8_t>(1, intensity);
+}
+
+void hardware::set_auto_display_brightness()
+{
+    const auto config_brightness = config::instance.data.get_manual_screen_brightness();
+
+    uint8_t required_brightness;
+    if (config_brightness.has_value())
     {
-        return 0;
-    }
-    else if (lux <= 10)
-    {
-        return 1;
-    }
-    else if (lux <= 30)
-    {
-        return 2;
-    }
-    else if (lux <= 50)
-    {
-        return 3;
-    }
-    else if (lux <= 100)
-    {
-        return 4;
-    }
-    else if (lux <= 200)
-    {
-        return 5;
-    }
-    else if (lux <= 300)
-    {
-        return 6;
-    }
-    else if (lux <= 400)
-    {
-        return 7;
-    }
-    else if (lux <= 500)
-    {
-        return 8;
-    }
-    else if (lux <= 600)
-    {
-        return 9;
-    }
-    else if (lux <= 700)
-    {
-        return 10;
-    }
-    else if (lux <= 800)
-    {
-        return 11;
-    }
-    else if (lux <= 900)
-    {
-        return 12;
-    }
-    else if (lux <= 1000)
-    {
-        return 13;
-    }
-    else if (lux <= 1500)
-    {
-        return 14;
+        required_brightness = config_brightness.value();
     }
     else
     {
-        return 15;
+        const auto avg_lux = light_sensor_values->get_average();
+        required_brightness = avg_lux.value_or(128);
     }
+
+    set_screen_brightness(required_brightness);
 }

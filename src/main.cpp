@@ -7,9 +7,6 @@
 #include "operations.h"
 #include "hardware\display.h"
 
-#include <logging.hpp>
-#include <fs-appender.hpp>
-
 sd_card card;
 
 void boot_failure()

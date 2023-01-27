@@ -130,7 +130,6 @@ public:
     {
         std::lock_guard<std::mutex> lock(data_mutex);
         const auto size = last_x_values.size();
-        std::vector<T, psram::allocator<T>> return_values;
         if (size)
         {
             return_values.reserve(last_x_values.size());
@@ -150,6 +149,27 @@ public:
         else
         {
             return {std::nullopt, return_values};
+        }
+    }
+
+    std::optional<T> get_average() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex);
+        const auto size = last_x_values.size();
+        std::vector<T, psram::allocator<T>> return_values;
+        if (size)
+        {
+            double sum = 0;
+            for (auto i = 0; i < size; i++)
+            {
+                const auto value = last_x_values[i];
+                sum += value;
+            }
+            return static_cast<T>(sum / size);
+        }
+        else
+        {
+            return std::nullopt;
         }
     }
 

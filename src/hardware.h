@@ -49,8 +49,9 @@ public:
 
 private:
     hardware() = default;
-    
+
     display display_instance{*this};
+    uint8_t current_brightness{0};
 
     // same index as sensor_id_index
     std::array<sensor_value, total_sensors> sensors;
@@ -58,6 +59,9 @@ private:
 
     std::unique_ptr<task_wrapper> sensor_refresh_task;
     std::unique_ptr<task_wrapper> lvgl_refresh_task;
+
+    using light_sensor_values_t = sensor_history_t<sensor_value::value_type, 20>;
+    std::unique_ptr<light_sensor_values_t> light_sensor_values;
 
     const int SDAWire = 11;
     const int SCLWire = 10;
@@ -89,7 +93,8 @@ private:
     String get_ccs811_status();
     String get_ccs811_error_register_status();
     String get_sps30_error_register_status();
-    uint8_t lux_to_intensity(uint32_t lux);
+    uint8_t lux_to_intensity(sensor_value::value_type lux);
+    void set_auto_display_brightness();
 
     static std::optional<sensor_value::value_type> round_value(float val, int places = 0);
     static void scan_i2c_bus();
