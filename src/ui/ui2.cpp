@@ -78,6 +78,7 @@ void ui::init()
     launcher_screen.init();
     sensor_detail_screen.init();
     settings_screen.init();
+    hardware_info_screen.init();
 }
 
 void ui::init_no_wifi_image()

@@ -38,6 +38,9 @@ public:
         create_button(LV_ALIGN_TOP_RIGHT, -pad, pad,
                       "S:display/image/info.png", "Information",
                       event_callback<ui_launcher_screen, &ui_launcher_screen::show_information>);
+        create_button(LV_ALIGN_BOTTOM_MID, 0, -pad - 25,
+                      "S:display/image/info.png", "Hardware",
+                      event_callback<ui_launcher_screen, &ui_launcher_screen::hardware_info>);
 
         init_confirm_win();
 
@@ -129,6 +132,12 @@ private:
         inter_screen_interface.show_setting_screen();
     }
 
+    void hardware_info(lv_event_t *e)
+    {
+        log_i("Showing Hardware clicked");
+        inter_screen_interface.show_hardware_info_screen();
+    }
+
     void restart(lv_event_t *)
     {
         log_i("Restart clicked");
@@ -144,7 +153,7 @@ private:
     void yes_win_confirm(lv_event_t *e)
     {
         log_i("Yes clicked");
-         lv_obj_add_flag(win_confirm, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(win_confirm, LV_OBJ_FLAG_HIDDEN);
         confirm_type type = (confirm_type)(uintptr_t)lv_obj_get_user_data(win_confirm);
 
         switch (type)

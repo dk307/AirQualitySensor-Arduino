@@ -46,6 +46,8 @@ public:
     sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) override;
     bool is_wifi_connected() override;
     String get_wifi_status() override;
+    void set_ccs_811_baseline() override;
+    bool clean_sps_30() override;
 
 private:
     hardware() = default;

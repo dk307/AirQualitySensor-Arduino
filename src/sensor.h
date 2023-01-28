@@ -128,10 +128,13 @@ public:
 
     sensor_history_snapshot get_snapshot() const
     {
+        std::vector<T, psram::allocator<T>> return_values;
+
         std::lock_guard<std::mutex> lock(data_mutex);
         const auto size = last_x_values.size();
         if (size)
         {
+
             return_values.reserve(last_x_values.size());
             stats stats_value{0, std::numeric_limits<T>::max(), std::numeric_limits<T>::min()};
             double sum = 0;
@@ -149,14 +152,13 @@ public:
         else
         {
             return {std::nullopt, return_values};
-        }
+        };
     }
 
     std::optional<T> get_average() const
     {
         std::lock_guard<std::mutex> lock(data_mutex);
         const auto size = last_x_values.size();
-        std::vector<T, psram::allocator<T>> return_values;
         if (size)
         {
             double sum = 0;

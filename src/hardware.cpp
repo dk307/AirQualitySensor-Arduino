@@ -194,6 +194,30 @@ String hardware::get_wifi_status()
     return wifi_manager::instance.get_wifi_status();
 }
 
+void hardware::set_ccs_811_baseline()
+{
+    const auto baseline = ccs811_sensor.getBaseline();
+    log_i("Setting CCS 811 baseline TO 0x%x", baseline);
+
+    config::instance.data.set_ccs811_baseline(baseline);
+    config::instance.save();
+}
+
+bool hardware::clean_sps_30()
+{
+    const auto sps_error = sps30_start_manual_fan_cleaning();
+    if (sps_error != NO_ERROR)
+    {
+        log_e("SPS30 manual clean up failed with :%d", sps_error);
+        return false;
+    }
+    else
+    {
+        log_e("SPS30 manual cleanup started");
+        return true;
+    }
+}
+
 bool hardware::pre_begin()
 {
     light_sensor_values = std::make_unique<light_sensor_values_t>();
@@ -247,12 +271,6 @@ bool hardware::pre_begin()
     if (sps_error == NO_ERROR)
     {
         log_i("SPS30 Found");
-
-        // const auto sps_error = sps30_start_manual_fan_cleaning();
-        // if (sps_error != NO_ERROR)
-        // {
-        //     log_e("SPS30 manual clean up failed with :%d", sps_error);
-        // }
 
         const auto sps_error1 = sps30_start_measurement();
         if (sps_error1 != NO_ERROR)
@@ -612,7 +630,7 @@ uint8_t hardware::lux_to_intensity(sensor_value::value_type lux)
 {
     // https://learn.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values
     const auto intensity = (std::log10(lux) / 5) * 256;
-    return std::max<uint8_t>(1, intensity);
+    return std::max<uint8_t>(5, intensity);
 }
 
 void hardware::set_auto_display_brightness()

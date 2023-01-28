@@ -14,6 +14,7 @@
 #include "ui_information_screen.h"
 #include "ui_inter_screen_interface.h"
 #include "ui_launcher_screen.h"
+#include "ui_hardware_info_screen.h"
 
 class ui : public ui_inter_screen_interface
 {
@@ -48,6 +49,13 @@ public:
         lv_obj_add_flag(top_message_panel, LV_OBJ_FLAG_HIDDEN);
         launcher_screen.show_screen();
     }
+
+    void show_hardware_info_screen() override
+    {
+        lv_obj_add_flag(top_message_panel, LV_OBJ_FLAG_HIDDEN);
+        hardware_info_screen.show_screen();
+    }
+
 private:
     ui_interface &ui_interface_instance;
 
@@ -69,6 +77,7 @@ private:
     ui_sensor_detail_screen sensor_detail_screen{ui_interface_instance, *this, &common_fonts};
     ui_information_screen settings_screen{ui_interface_instance, *this, &common_fonts};
     ui_launcher_screen launcher_screen{ui_interface_instance, *this, &common_fonts};
+    ui_hardware_info_screen hardware_info_screen{ui_interface_instance, *this, &common_fonts};
 
     void inline_loop(uint64_t maxWait);
     void load_from_sd_card();

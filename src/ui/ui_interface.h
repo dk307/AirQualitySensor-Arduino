@@ -25,4 +25,7 @@ public:
     virtual sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) = 0;
     virtual bool is_wifi_connected() = 0;
     virtual String get_wifi_status() = 0;
+
+    virtual void set_ccs_811_baseline() = 0;
+    virtual bool clean_sps_30() = 0;
 };
