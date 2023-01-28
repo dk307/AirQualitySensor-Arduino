@@ -77,6 +77,8 @@ public:
 
         create_close_button_to_main_screen(screen, LV_ALIGN_BOTTOM_LEFT, 15, -15);
 
+        lv_obj_add_event_cb(screen, event_callback<ui_sensor_detail_screen, &ui_sensor_detail_screen::screen_callback>, LV_EVENT_ALL, this);
+
         log_d("Sensor detail init done");
     }
 
@@ -84,12 +86,17 @@ public:
     {
         if (is_active())
         {
-            if (lv_obj_get_user_data(screen) == reinterpret_cast<void *>(index))
+            if (get_sensor_id_index() == index)
             {
                 log_i("Updating sensor %s to %d in details screen", get_sensor_name(index), value.value_or(-1));
                 set_current_values(index, value);
             }
         }
+    }
+
+    sensor_id_index get_sensor_id_index()
+    {
+        return static_cast<sensor_id_index>(reinterpret_cast<uint64_t>(lv_obj_get_user_data(screen)));
     }
 
     void show_screen(sensor_id_index index)
@@ -121,6 +128,30 @@ private:
     const size_t label_and_unit_label_average_index = 1;
     const size_t label_and_unit_label_min_index = 2;
     const size_t label_and_unit_label_max_index = 3;
+
+    void screen_callback(lv_event_t *e)
+    {
+        lv_event_code_t event_code = lv_event_get_code(e);
+        lv_obj_t *target = lv_event_get_target(e);
+
+        if (event_code == LV_EVENT_GESTURE)
+        {
+            const auto dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+
+            if (dir == LV_DIR_LEFT)
+            {
+                const auto index = static_cast<int8_t>(get_sensor_id_index()) + 1;
+                inter_screen_interface.show_sensor_detail_screen(
+                    index > static_cast<int8_t>(sensor_id_index::last) ? sensor_id_index::first : static_cast<sensor_id_index>(index));
+            }
+            else if (dir == LV_DIR_RIGHT)
+            {
+                const auto index = static_cast<int8_t>(get_sensor_id_index()) - 1;
+                inter_screen_interface.show_sensor_detail_screen(
+                    index < static_cast<int8_t>(sensor_id_index::first) ? sensor_id_index::last : static_cast<sensor_id_index>(index));
+            }
+        }
+    }
 
     panel_and_label create_panel(const char *label_text,
                                  lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs,

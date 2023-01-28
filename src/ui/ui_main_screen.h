@@ -222,6 +222,19 @@ private:
                 set_sensor_value(static_cast<sensor_id_index>(i), ui_interface_instance.get_sensor_value(static_cast<sensor_id_index>(i)));
             }
         }
+        else if (event_code == LV_EVENT_GESTURE)
+        {
+            auto dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+
+            if (dir == LV_DIR_LEFT)
+            {
+                inter_screen_interface.show_sensor_detail_screen(sensor_id_index::first);
+            }
+            else if (dir == LV_DIR_RIGHT)
+            {
+                inter_screen_interface.show_sensor_detail_screen(sensor_id_index::last);
+            }
+        }
     }
 
     void add_panel_callback_event(lv_obj_t *panel, sensor_id_index index)

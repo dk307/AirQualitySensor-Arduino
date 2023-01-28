@@ -5,6 +5,7 @@
 enum class sensor_id_index : uint8_t
 {
     pm_2_5 = 0,
+    first = pm_2_5,
     voc,
     temperatureF,
     humidity,
