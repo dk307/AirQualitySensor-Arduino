@@ -197,7 +197,7 @@ String hardware::get_wifi_status()
 void hardware::set_ccs_811_baseline()
 {
     const auto baseline = ccs811_sensor.getBaseline();
-    log_i("Setting CCS 811 baseline TO 0x%x", baseline);
+    log_i("Saving CCS 811 baseline in config 0x%x", baseline);
 
     config::instance.data.set_ccs811_baseline(baseline);
     config::instance.save();
@@ -318,6 +318,7 @@ void hardware::begin()
                                                                 read_ccs811_sensor();
                                                                 read_sps30_sensor();
                                                                 set_auto_display_brightness();
+                                                                set_ccs811_baseline();
                                                                 vTaskDelay(500);
                                                             } while(true); });
 
@@ -649,4 +650,21 @@ void hardware::set_auto_display_brightness()
     }
 
     set_screen_brightness(required_brightness);
+}
+
+void hardware::set_ccs811_baseline()
+{
+    if (!ccs811_sensor_baseline_set)
+    {
+        if (millis() >= 20 * 60 * 1000)
+        {
+            ccs811_sensor_baseline_set = true;
+            const auto config_baseline = config::instance.data.get_ccs811_baseline();
+            if (config_baseline.has_value())
+            {
+                log_i("Setting CCS811 sensor baseline to 0x%x", config_baseline.value());
+                ccs811_sensor.setBaseline(config_baseline.value());
+            }
+        }
+    }
 }

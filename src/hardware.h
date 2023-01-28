@@ -76,6 +76,7 @@ private:
     // CCS811
     CCS811 ccs811_sensor;
     uint32_t ccs811_sensor_last_read = 0;
+    bool ccs811_sensor_baseline_set{false};
 
     // SPS 30
     uint32_t sps30_sensor_last_read = 0;
@@ -97,6 +98,7 @@ private:
     String get_sps30_error_register_status();
     uint8_t lux_to_intensity(sensor_value::value_type lux);
     void set_auto_display_brightness();
+    void set_ccs811_baseline();
 
     static std::optional<sensor_value::value_type> round_value(float val, int places = 0);
     static void scan_i2c_bus();
