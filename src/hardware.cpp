@@ -82,7 +82,7 @@ void hardware::set_screen_brightness(uint8_t value)
     if (current_brightness != value)
     {
         log_i("Setting display brightness to %d", value);
-        display_instance.set_brightness(std::max<uint8_t>(1, value));
+        display_instance.set_brightness(std::max<uint8_t>(30, value));
         current_brightness = value;
     }
 }
@@ -630,7 +630,7 @@ String hardware::get_sps30_error_register_status()
 uint8_t hardware::lux_to_intensity(sensor_value::value_type lux)
 {
     // https://learn.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values
-    const auto intensity = (std::log10(lux) / 5) * 256;
+    const auto intensity = (std::log10(lux) / 5) * 255;
     return std::max<uint8_t>(5, intensity);
 }
 

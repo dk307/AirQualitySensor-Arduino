@@ -393,6 +393,8 @@ void web_server::other_settings_update(AsyncWebServerRequest *request)
 	const auto ntpServer = F("ntpServer");
 	const auto ntpServerRefreshInterval = F("ntpServerRefreshInterval");
 	const auto timezone = F("timezone");
+	const auto autoScreenBrightness = "autoScreenBrightness";
+	const auto screenBrightness = "screenBrightness";
 
 	log_i("config Update");
 
@@ -419,6 +421,15 @@ void web_server::other_settings_update(AsyncWebServerRequest *request)
 	if (request->hasArg(timezone))
 	{
 		config::instance.data.set_timezone(static_cast<TimeZoneSupported>(request->arg(timezone).toInt()));
+	}
+
+	if (!request->hasArg(autoScreenBrightness))
+	{
+		config::instance.data.set_manual_screen_brightness(request->arg(screenBrightness).toInt());
+	} 
+	else 
+	{
+		config::instance.data.set_manual_screen_brightness(std::nullopt);
 	}
 
 	config::instance.save();

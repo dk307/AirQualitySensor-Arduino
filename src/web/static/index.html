@@ -339,6 +339,21 @@
                                 <option value="4">US Pacific Time</option>
                             </select>
 
+                            <div class="form-outline mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        name="autoScreenBrightness" id="autoScreenBrightness" />
+                                    <label class="form-check-label" for="autoScreenBrightness">Display Screen Auto
+                                        brightness</label>
+                                </div>
+
+                                <label class="form-label" for="screenBrightness">Manual Brightness</label>
+                                <div class="range">
+                                    <input type="range" class="form-range" min="30" max="255" id="screenBrightness"
+                                        name="screenBrightness" />
+                                </div>
+                            </div>
+
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Close</button>
@@ -559,6 +574,17 @@
                         $('#ntpServerRefreshInterval').val(data["ntpserverrefreshinterval"] / 1000);
                         $('#ntpServer').val(data["ntpserver"]);
                         $('#timezone').val(data["timezone"]);
+
+                        var brightness = data["screenbrightness"];
+                        if (brightness == null) {
+                            $('#autoScreenBrightness').prop('checked', true);
+                            $('#screenBrightness').attr('disabled', true);
+
+                        } else {
+                            $('#autoScreenBrightness').prop('checked', false);
+                            $('#screenBrightness').removeAttr('disabled');
+                            $('#screenBrightness').val(brightness);
+                        }
                     },
                     error: function () {
                         console.warn('Failed to update');
@@ -729,6 +755,14 @@
         $(document).ready(function () {
             eventsSource.addEventListener("sensor", updateSensorValue);
             updateHostName();
+        });
+
+        $("#autoScreenBrightness").on('change', function (event, state) {
+            if (event.target.checked) {
+                $('#screenBrightness').attr('disabled', true);
+            } else {
+                $('#screenBrightness').removeAttr('disabled');
+            }
         });
     </script>
 </body>
