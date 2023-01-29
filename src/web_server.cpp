@@ -4,6 +4,7 @@
 #include <AsyncJson.h>
 #include <StreamString.h>
 #include <SD.h>
+#include <FS.h>
 #include <mbedtls/md.h>
 #include <psram_allocator.h>
 
@@ -15,6 +16,7 @@
 #include "hardware.h"
 #include "web/include/index.html.gz.h"
 #include "web/include/login.html.gz.h"
+#include "web/include/fs.html.gz.h"
 
 enum class static_file_type
 {
@@ -47,12 +49,15 @@ static const char SettingsUrl[] = "/media/settings.png";
 static const char AllJsUrl[] = "/js/s.js";
 static const char MdbCssUrl[] = "/css/mdb.min.css";
 
+static const char FSListUrl[] = "/fs.html";
+
 static const char MD5Header[] = "md5";
 static const char CacheControlHeader[] = "Cache-Control";
 static const char CookieHeader[] = "Cookie";
 static const char AuthCookieName[] = "ESPSESSIONID=";
 
 const static static_files_map static_files[] = {
+	{FSListUrl, fs_html_gz, fs_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
 	{IndexUrl, index_html_gz, index_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
 	{LoginUrl, login_html_gz, login_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
 	{LogoUrl, "/web/logo.png", 0, PngMediaType, static_file_type::sdcard},
@@ -108,7 +113,7 @@ bool web_server::manage_security(AsyncWebServerRequest *request)
 	if (!is_authenticated(request))
 	{
 		log_w("Auth Failed");
-		request->send(401, FPSTR(JsonMediaType), F("{\"msg\": \"Not-authenticated\"}"));
+		request->send(401, JsonMediaType, F("{\"msg\": \"Not-authenticated\"}"));
 		return false;
 	}
 	return true;
@@ -145,6 +150,10 @@ void web_server::server_routing()
 	http_server.on(("/api/wifi/get"), HTTP_GET, wifi_get);
 	http_server.on(("/api/information/get"), HTTP_GET, information_get);
 	http_server.on(("/api/config/get"), HTTP_GET, config_get);
+
+	// fs ajax
+	http_server.on("/fs/list", HTTP_GET, handle_file_list);
+	http_server.on("/fs/download", HTTP_GET, handle_file_download);
 
 	http_server.onNotFound(handle_file_read);
 }
@@ -267,8 +276,6 @@ void web_server::sensor_get(AsyncWebServerRequest *request)
 	}
 	auto response = new AsyncJsonResponse(false, 256);
 	auto doc = response->getRoot();
-
-	// addToJsonDoc(doc, F("lux"), hardware::instance.getLux());
 	response->setLength();
 	request->send(response);
 }
@@ -426,8 +433,8 @@ void web_server::other_settings_update(AsyncWebServerRequest *request)
 	if (!request->hasArg(autoScreenBrightness))
 	{
 		config::instance.data.set_manual_screen_brightness(request->arg(screenBrightness).toInt());
-	} 
-	else 
+	}
+	else
 	{
 		config::instance.data.set_manual_screen_brightness(std::nullopt);
 	}
@@ -748,7 +755,7 @@ void web_server::notifySensorChange(sensor_id_index id)
 
 		BasicJsonDocument<psram::psram_json_allocator> json_document(128);
 
-		auto && definition = get_sensor_definition(id);
+		auto &&definition = get_sensor_definition(id);
 		json_document["value"] = value_str;
 		json_document["unit"] = definition.get_unit();
 		json_document["type"] = definition.get_name();
@@ -758,4 +765,127 @@ void web_server::notifySensorChange(sensor_id_index id)
 		serializeJson(json_document, json);
 		events.send(json.c_str(), "sensor", millis());
 	}
+}
+
+void web_server::handle_file_list(AsyncWebServerRequest *request)
+{
+	const auto dir_param = "dir";
+
+	log_d("/fs/list");
+	if (!manage_security(request))
+	{
+		return;
+	}
+
+	if (!request->hasArg(dir_param))
+	{
+		handle_error(request, "Bad Arguments", 500);
+		return;
+	}
+
+	const auto path = request->arg(dir_param);
+
+	auto dir = SD.open(path);
+
+	if (!dir)
+	{
+		handle_error(request, "Failed to open directory:" + path, 500);
+		return;
+	}
+
+	if (!dir.isDirectory())
+	{
+		handle_error(request, "Not a directory:" + path, 500);
+		dir.close();
+		return;
+	}
+
+	auto response = new AsyncJsonResponse(true, 4096);
+	auto array = response->getRoot();
+	auto entry = dir.openNextFile();
+	while (entry)
+	{
+		auto nested_entry = array.createNestedObject();
+		nested_entry["type"] = entry.isDirectory() ? "dir" : "file";
+		nested_entry["name"] = String(entry.name());
+
+		entry.close();
+		entry = dir.openNextFile();
+	}
+
+	dir.close();
+
+	response->setLength();
+	request->send(response);
+}
+
+void web_server::handle_file_download(AsyncWebServerRequest *request)
+{
+	const auto path_param = "path";
+
+	log_d("/fs/download");
+	if (!manage_security(request))
+	{
+		return;
+	}
+
+	if (!request->hasArg(path_param))
+	{
+		handle_error(request, "Bad Arguments", 500);
+		return;
+	}
+
+	const auto path = request->arg(path_param);
+
+	auto file = SD.open(path);
+
+	if (!file)
+	{
+		handle_error(request, "Failed to open file:" + path, 500);
+		return;
+	}
+
+	if (file.isDirectory())
+	{
+		handle_error(request, "Not a file:" + path, 500);
+		file.close();
+		return;
+	}
+
+	const bool download = request->hasArg("download");
+
+	const auto contentType = download ? "application/octet-stream" : get_content_type(path);
+	AsyncWebServerResponse *response = request->beginResponse(file, path, contentType, download);
+	request->send(response);
+}
+
+const char *web_server::get_content_type(const String &filename)
+{
+	if (filename.endsWith(".htm"))
+		return "text/html";
+	else if (filename.endsWith(".html"))
+		return "text/html";
+	else if (filename.endsWith(".css"))
+		return "text/css";
+	else if (filename.endsWith(".js"))
+		return "application/javascript";
+	else if (filename.endsWith(".json"))
+		return "application/json";
+	else if (filename.endsWith(".png"))
+		return "image/png";
+	else if (filename.endsWith(".gif"))
+		return "image/gif";
+	else if (filename.endsWith(".jpg"))
+		return "image/jpeg";
+	else if (filename.endsWith(".ico"))
+		return "image/x-icon";
+	else if (filename.endsWith(".xml"))
+		return "text/xml";
+	else if (filename.endsWith(".pdf"))
+		return "application/x-pdf";
+	else if (filename.endsWith(".zip"))
+		return "application/x-zip";
+	else if (filename.endsWith(".gz"))
+		return "application/x-gzip";
+	return "text/plain";
 }

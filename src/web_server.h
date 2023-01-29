@@ -58,6 +58,12 @@ private:
     void on_event_connect(AsyncEventSourceClient *client);
     bool filter_events(AsyncWebServerRequest *request);
 
+    // fs ajax
+    static void handle_file_list(AsyncWebServerRequest *request);
+    static void handle_file_download(AsyncWebServerRequest *request);
+
+    static const char *get_content_type(const String &filename);
+
     static bool is_ip(const String &str);
     static String to_string_ip(const IPAddress &ip);
     template <class Array, class K, class T>
