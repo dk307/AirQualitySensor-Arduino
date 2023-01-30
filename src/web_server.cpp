@@ -800,15 +800,18 @@ void web_server::handle_file_list(AsyncWebServerRequest *request)
 		return;
 	}
 
-	auto response = new AsyncJsonResponse(true, 4096);
-	auto array = response->getRoot();
+	auto response = new AsyncJsonResponse(false, 4096);
+	auto root = response->getRoot();
+	auto array = root.createNestedArray("data");
 	auto entry = dir.openNextFile();
 	while (entry)
 	{
 		auto nested_entry = array.createNestedObject();
-		nested_entry["type"] = entry.isDirectory() ? "dir" : "file";
+		nested_entry["isDir"] = entry.isDirectory();
 		nested_entry["name"] = String(entry.name());
-
+		nested_entry["size"] = entry.size();
+		nested_entry["lastModified"] = entry.getLastWrite();
+	
 		entry.close();
 		entry = dir.openNextFile();
 	}
