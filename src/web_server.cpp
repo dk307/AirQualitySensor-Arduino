@@ -48,7 +48,10 @@ static const char FaviconUrl[] = "/media/favicon.png";
 static const char LogoutUrl[] = "/media/logout.png";
 static const char SettingsUrl[] = "/media/settings.png";
 static const char AllJsUrl[] = "/js/s.js";
-static const char MdbCssUrl[] = "/css/mdb.min.css";
+static const char DatatableJsUrl[] = "/js/datatables.min.js";
+static const char MomentJsUrl[] = "/js/moment.min.js";
+static const char BootstrapCssUrl[] = "/css/bootstrap.min.css";
+static const char DatatableCssUrl[] = "/css/datatables.min.css";
 
 static const char FSListUrl[] = "/fs.html";
 
@@ -64,7 +67,10 @@ const static static_files_map static_files[] = {
 	{LogoUrl, "/web/logo.png", 0, PngMediaType, static_file_type::sdcard},
 	{FaviconUrl, "/web/logo.png", 0, PngMediaType, static_file_type::sdcard},
 	{AllJsUrl, "/web/s.js", 0, JsMediaType, static_file_type::sdcard},
-	{MdbCssUrl, "/web/mdb.min.css", 0, CssMediaType, static_file_type::sdcard},
+	{DatatableJsUrl, "/web/datatables.min.js", 0, JsMediaType, static_file_type::sdcard},
+	{MomentJsUrl, "/web/moment.min.js", 0, JsMediaType, static_file_type::sdcard},
+	{BootstrapCssUrl, "/web/bootstrap.min.css", 0, CssMediaType, static_file_type::sdcard},
+	{DatatableCssUrl, "/web/datatables.min.css", 0, CssMediaType, static_file_type::sdcard},
 };
 
 web_server web_server::instance;
@@ -114,7 +120,7 @@ bool web_server::manage_security(AsyncWebServerRequest *request)
 	if (!is_authenticated(request))
 	{
 		log_w("Auth Failed");
-		request->send(401, JsonMediaType, F("{\"msg\": \"Not-authenticated\"}"));
+		request->send(401, JsonMediaType, ("{\"msg\": \"Not-authenticated\"}"));
 		return false;
 	}
 	return true;
@@ -198,16 +204,16 @@ void web_server::wifi_get(AsyncWebServerRequest *request)
 	auto response = new AsyncJsonResponse(false, 256);
 	auto jsonBuffer = response->getRoot();
 
-	jsonBuffer[F("captivePortal")] = wifi_manager::instance.is_captive_portal();
-	jsonBuffer[F("ssid")] = config::instance.data.get_wifi_ssid();
+	jsonBuffer[("captivePortal")] = wifi_manager::instance.is_captive_portal();
+	jsonBuffer[("ssid")] = config::instance.data.get_wifi_ssid();
 	response->setLength();
 	request->send(response);
 }
 
 void web_server::wifi_update(AsyncWebServerRequest *request)
 {
-	const auto SsidParameter = F("ssid");
-	const auto PasswordParameter = F("wifipassword");
+	const auto SsidParameter = ("ssid");
+	const auto PasswordParameter = ("wifipassword");
 
 	log_i("Wifi Update");
 
@@ -224,7 +230,7 @@ void web_server::wifi_update(AsyncWebServerRequest *request)
 	}
 	else
 	{
-		handle_error(request, F("Required parameters not provided"), 400);
+		handle_error(request, ("Required parameters not provided"), 400);
 	}
 }
 
@@ -232,8 +238,8 @@ template <class Array, class K, class T>
 void web_server::add_key_value_object(Array &array, const K &key, const T &value)
 {
 	auto j1 = array.createNestedObject();
-	j1[F("key")] = key;
-	j1[F("value")] = value;
+	j1[("key")] = key;
+	j1[("value")] = value;
 }
 
 void web_server::information_get(AsyncWebServerRequest *request)
@@ -266,7 +272,7 @@ void web_server::config_get(AsyncWebServerRequest *request)
 		return;
 	}
 	const auto json = config::instance.get_all_config_as_json();
-	request->send(200, FPSTR(JsonMediaType), json);
+	request->send(200, (JsonMediaType), json);
 }
 
 template <class V, class T>
@@ -295,9 +301,9 @@ void web_server::sensor_get(AsyncWebServerRequest *request)
 bool web_server::is_authenticated(AsyncWebServerRequest *request)
 {
 	log_v("Checking if authenticated");
-	if (request->hasHeader(FPSTR(CookieHeader)))
+	if (request->hasHeader((CookieHeader)))
 	{
-		const String cookie = request->header(FPSTR(CookieHeader));
+		const String cookie = request->header((CookieHeader));
 		log_v("Found cookie:%s", cookie.c_str());
 
 		const String token = create_hash(config::instance.data.get_web_user_name(),
@@ -316,15 +322,15 @@ bool web_server::is_authenticated(AsyncWebServerRequest *request)
 
 void web_server::handle_login(AsyncWebServerRequest *request)
 {
-	const auto UserNameParameter = F("username");
-	const auto PasswordParameter = F("password");
+	const auto UserNameParameter = ("username");
+	const auto PasswordParameter = ("password");
 
 	log_i("Handle login");
 	String msg;
-	if (request->hasHeader(FPSTR(CookieHeader)))
+	if (request->hasHeader((CookieHeader)))
 	{
 		// Print cookies
-		log_v("Found cookie: %s", request->header(FPSTR(CookieHeader)).c_str());
+		log_v("Found cookie: %s", request->header((CookieHeader)).c_str());
 	}
 
 	if (request->hasArg(UserNameParameter) && request->hasArg(PasswordParameter))
@@ -337,30 +343,30 @@ void web_server::handle_login(AsyncWebServerRequest *request)
 			log_w("User/Password correct");
 			auto response = request->beginResponse(301); // Sends 301 redirect
 
-			response->addHeader(F("Location"), F("/"));
-			response->addHeader(FPSTR(CacheControlHeader), F("no-cache"));
+			response->addHeader(("Location"), ("/"));
+			response->addHeader((CacheControlHeader), ("no-cache"));
 
 			const String token = create_hash(user, password, request->client()->remoteIP().toString());
 			log_d("Token:%s", token.c_str());
-			response->addHeader(F("Set-Cookie"), String(AuthCookieName) + token);
+			response->addHeader(("Set-Cookie"), String(AuthCookieName) + token);
 
 			request->send(response);
 			log_i("Log in Successful");
 			return;
 		}
 
-		msg = F("Wrong username/password! Try again.");
+		msg = ("Wrong username/password! Try again.");
 		log_w("Log in Failed");
 		auto response = request->beginResponse(301); // Sends 301 redirect
 
-		response->addHeader(F("Location"), String(F("/login.html?msg=")) + msg);
-		response->addHeader(FPSTR(CacheControlHeader), F("no-cache"));
+		response->addHeader(("Location"), String(("/login.html?msg=")) + msg);
+		response->addHeader((CacheControlHeader), ("no-cache"));
 		request->send(response);
 		return;
 	}
 	else
 	{
-		handle_error(request, F("Login Parameter not provided"), 400);
+		handle_error(request, ("Login Parameter not provided"), 400);
 	}
 }
 
@@ -398,7 +404,7 @@ void web_server::web_login_update(AsyncWebServerRequest *request)
 	}
 	else
 	{
-		handle_error(request, F("Correct Parameters not provided"), 400);
+		handle_error(request, ("Correct Parameters not provided"), 400);
 	}
 
 	config::instance.save();
@@ -407,10 +413,10 @@ void web_server::web_login_update(AsyncWebServerRequest *request)
 
 void web_server::other_settings_update(AsyncWebServerRequest *request)
 {
-	const auto hostName = F("hostName");
-	const auto ntpServer = F("ntpServer");
-	const auto ntpServerRefreshInterval = F("ntpServerRefreshInterval");
-	const auto timezone = F("timezone");
+	const auto hostName = ("hostName");
+	const auto ntpServer = ("ntpServer");
+	const auto ntpServerRefreshInterval = ("ntpServerRefreshInterval");
+	const auto timezone = ("timezone");
 	const auto autoScreenBrightness = "autoScreenBrightness";
 	const auto screenBrightness = "screenBrightness";
 
@@ -498,17 +504,17 @@ void web_server::handle_file_read(AsyncWebServerRequest *request)
 	auto path = request->url();
 	log_d("handleFileRead: %s", path.c_str());
 
-	if (path.endsWith(F("/")) || path.isEmpty())
+	if (path.endsWith(("/")) || path.isEmpty())
 	{
 		log_d("Redirecting to index page");
-		path = FPSTR(IndexUrl);
+		path = (IndexUrl);
 	}
 
-	const bool worksWithoutAuth = path.startsWith(F("/media/")) ||
-								  path.startsWith(F("/js/")) ||
-								  path.startsWith(F("/css/")) ||
-								  path.startsWith(F("/font/")) ||
-								  path.equalsIgnoreCase(FPSTR(LoginUrl));
+	const bool worksWithoutAuth = path.startsWith(("/media/")) ||
+								  path.startsWith(("/js/")) ||
+								  path.startsWith(("/css/")) ||
+								  path.startsWith(("/font/")) ||
+								  path.equalsIgnoreCase((LoginUrl));
 
 	if (!worksWithoutAuth && !is_authenticated(request))
 	{
@@ -570,7 +576,7 @@ bool web_server::is_captive_portal_request(AsyncWebServerRequest *request)
 	{
 		log_i("Request redirected to captive portal");
 		AsyncWebServerResponse *response = request->beginResponse(302, String(TextPlainMediaType), String());
-		response->addHeader(F("Location"), String("http://") + to_string_ip(request->client()->localIP()));
+		response->addHeader(("Location"), String("http://") + to_string_ip(request->client()->localIP()));
 		request->send(response);
 		return true;
 	}
@@ -585,18 +591,18 @@ void web_server::handle_not_found(AsyncWebServerRequest *request)
 		return;
 	}
 
-	String message = F("File Not Found\n\n");
-	message += F("URI: ");
+	String message = ("File Not Found\n\n");
+	message += ("URI: ");
 	message += request->url();
-	message += F("\nMethod: ");
-	message += (request->method() == HTTP_GET) ? F("GET") : F("POST");
-	message += F("\nArguments: ");
+	message += ("\nMethod: ");
+	message += (request->method() == HTTP_GET) ? ("GET") : ("POST");
+	message += ("\nArguments: ");
 	message += request->args();
-	message += F("\n");
+	message += ("\n");
 
 	for (unsigned int i = 0; i < request->args(); i++)
 	{
-		message += String(F(" ")) + request->argName(i) + F(": ") + request->arg(i) + "\n";
+		message += String((" ")) + request->argName(i) + (": ") + request->arg(i) + "\n";
 	}
 
 	handle_error(request, message, 404);
@@ -624,7 +630,7 @@ String web_server::to_string_ip(const IPAddress &ip)
 void web_server::redirect_to_root(AsyncWebServerRequest *request)
 {
 	AsyncWebServerResponse *response = request->beginResponse(301); // Sends 301 redirect
-	response->addHeader(F("Location"), F("/"));
+	response->addHeader(("Location"), ("/"));
 	request->send(response);
 }
 
@@ -656,7 +662,7 @@ void web_server::firmware_update_upload(AsyncWebServerRequest *request,
 
 		if (md5.length() != 32)
 		{
-			handle_error(request, F("MD5 parameter invalid. Check file exists."), 500);
+			handle_error(request, ("MD5 parameter invalid. Check file exists."), 500);
 			return;
 		}
 
@@ -717,22 +723,22 @@ void web_server::restore_configuration_upload(AsyncWebServerRequest *request,
 	if (final)
 	{
 		String md5;
-		if (request->hasHeader(FPSTR(MD5Header)))
+		if (request->hasHeader((MD5Header)))
 		{
-			md5 = request->getHeader(FPSTR(MD5Header))->value();
+			md5 = request->getHeader((MD5Header))->value();
 		}
 
 		log_d("Expected MD5:%s", md5.c_str());
 
 		if (md5.length() != 32)
 		{
-			handle_error(request, F("MD5 parameter invalid. Check file exists."), 500);
+			handle_error(request, ("MD5 parameter invalid. Check file exists."), 500);
 			return;
 		}
 
 		if (!config::instance.restore_all_config_as_json(*web_server::instance.restore_config_data, md5))
 		{
-			handle_error(request, F("Restore Failed"), 500);
+			handle_error(request, ("Restore Failed"), 500);
 			return;
 		}
 	}
@@ -745,9 +751,9 @@ void web_server::handle_error(AsyncWebServerRequest *request, const String &mess
 		log_e("%s", message.c_str());
 	}
 	AsyncWebServerResponse *response = request->beginResponse(code, TextPlainMediaType, message);
-	response->addHeader(FPSTR(CacheControlHeader), F("no-cache, no-store, must-revalidate"));
-	response->addHeader(F("Pragma"), F("no-cache"));
-	response->addHeader(F("Expires"), F("-1"));
+	response->addHeader((CacheControlHeader), ("no-cache, no-store, must-revalidate"));
+	response->addHeader(("Pragma"), ("no-cache"));
+	response->addHeader(("Expires"), ("-1"));
 	request->send(response);
 }
 
@@ -999,6 +1005,7 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 			const auto dir = request->getHeader(uploadDirHeader)->value();
 			const auto full_path = join_path(dir, filename + ".tmp");
 
+			log_i("Creating File: %s", full_path.c_str());
 			request->_tempFile = SD.open(full_path, "w+", true);
 			if (!request->_tempFile)
 			{
@@ -1041,7 +1048,7 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 			md5 = request->getHeader(MD5Header)->value();
 		}
 
-		log_i("Expected MD5:%s", md5.c_str());
+		log_d("Expected MD5:%s", md5.c_str());
 
 		if (md5.length() != 32)
 		{
@@ -1072,6 +1079,8 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 			handle_error(request, "Failed from rename temp file failed", 500);
 			return;
 		}
+
+		log_i("File Uploaded: %s", full_path.c_str());
 	}
 }
 

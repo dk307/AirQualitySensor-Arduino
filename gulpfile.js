@@ -73,6 +73,7 @@ gulp.task('html', function() {
             minifyJS: true
         })).
         pipe(minifyInline()).
+        pipe(htmlvalidate()).
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
         pipe(toHeader(null, true)).
@@ -83,6 +84,14 @@ gulp.task('js', function() {
     return gulp.src(baseFolder + '/js/*.js').
         pipe(stripcomments()).
         pipe(concat("s.js")).
+        pipe(gzip({ gzipOptions: { level: 9 } })).
+        pipe(gulp.dest(dataFolder)).
+        pipe(gulp.dest(staticSDcardFolder));
+});
+
+gulp.task('js-extra', function() {
+    return gulp.src(baseFolder + '/js/extra/*.js').
+        pipe(stripcomments()).
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
         pipe(gulp.dest(staticSDcardFolder));
@@ -102,7 +111,7 @@ gulp.task('images', function() {
         pipe(gulp.dest(staticSDcardFolder));
 });
 
-gulp.task('default', gulp.series('html', 'js', 'css', 'images'));
+gulp.task('default', gulp.series('html', 'js', 'js-extra', 'css', 'images'));
 
 
 gulp.task('serve', function() {
