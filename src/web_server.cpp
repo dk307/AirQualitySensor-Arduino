@@ -157,13 +157,14 @@ void web_server::server_routing()
 	http_server.on(("/api/config/get"), HTTP_GET, config_get);
 
 	// fs ajax
-	http_server.on("/fs/list", HTTP_GET, handle_file_list);
-	http_server.on("/fs/download", HTTP_GET, handle_file_download);
+	http_server.on("/fs/list", HTTP_GET, handle_dir_list);
+	http_server.on("/fs/download", HTTP_GET, handle_fs_download);
 	http_server.on("/fs/upload", HTTP_POST, handle_file_upload_complete,
 				   std::bind(&web_server::handle_file_upload, this,
 							 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
 							 std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
-
+	http_server.on("/fs/delete", HTTP_POST, handle_fs_delete);
+	http_server.on("/fs/rename", HTTP_POST, handle_fs_rename);
 	http_server.onNotFound(handle_file_read);
 }
 
@@ -645,9 +646,9 @@ void web_server::firmware_update_upload(AsyncWebServerRequest *request,
 	{
 		String md5;
 
-		if (request->hasHeader(FPSTR(MD5Header)))
+		if (request->hasHeader(MD5Header))
 		{
-			md5 = request->getHeader(FPSTR(MD5Header))->value();
+			md5 = request->getHeader(MD5Header)->value();
 		}
 
 		log_i("Expected MD5:%s", md5.c_str());
@@ -776,7 +777,7 @@ void web_server::notify_sensor_change(sensor_id_index id)
 	}
 }
 
-void web_server::handle_file_list(AsyncWebServerRequest *request)
+void web_server::handle_dir_list(AsyncWebServerRequest *request)
 {
 	const auto dir_param = "dir";
 
@@ -835,7 +836,7 @@ void web_server::handle_file_list(AsyncWebServerRequest *request)
 	request->send(response);
 }
 
-void web_server::handle_file_download(AsyncWebServerRequest *request)
+void web_server::handle_fs_download(AsyncWebServerRequest *request)
 {
 	const auto path_param = "path";
 
@@ -875,6 +876,66 @@ void web_server::handle_file_download(AsyncWebServerRequest *request)
 	request->send(response);
 }
 
+void web_server::handle_fs_delete(AsyncWebServerRequest *request)
+{
+	const auto path_param = "deleteFilePath";
+
+	log_d("/fs/delete");
+	if (!manage_security(request))
+	{
+		return;
+	}
+
+	if (!request->hasArg(path_param))
+	{
+		handle_error(request, "Bad Arguments", 500);
+		return;
+	}
+
+	const auto path = request->arg(path_param);
+
+	log_i("Deleting %s", path.c_str());
+	if (!SD.remove(path))
+	{
+		handle_error(request, "Failed to delete " + path, 500);
+		return;
+	}
+
+	request->send(200);
+}
+
+void web_server::handle_fs_rename(AsyncWebServerRequest *request)
+{
+	const auto path_original_path = "renameFilePath";
+	const auto path_new_name = "renameNewFilename";
+
+	log_d("/fs/delete");
+	if (!manage_security(request))
+	{
+		return;
+	}
+
+	if (!request->hasArg(path_original_path) || !request->hasArg(path_new_name))
+	{
+		handle_error(request, "Bad Arguments", 500);
+		return;
+	}
+
+	const auto original_path = request->arg(path_original_path);
+	const auto new_name = request->arg(path_new_name);
+	// const auto parent_path =
+
+
+	// log_i("Renaming %s", original_path.c_str());
+	// if (!SD.rename(original_path, ))
+	// {
+	// 	handle_error(request, "Failed to delete " + path, 500);
+	// 	return;
+	// }
+
+	request->send(200);
+}
+
 void web_server::handle_file_upload(AsyncWebServerRequest *request,
 									const String &filename,
 									size_t index,
@@ -889,13 +950,13 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 		return;
 	}
 
-	const auto uploadDirHeader = "uploadDir";
+	const auto uploadDir = "uploadDir";
 	if (!index)
 	{
 		String uploadDir;
-		if (request->hasHeader(uploadDirHeader))
+		if (request->hasHeader(uploadDir))
 		{
-			const auto dir = request->getHeader(uploadDirHeader)->value();
+			const auto dir = request->getHeader(uploadDir)->value();
 			const auto full_path = join_path(dir, filename + ".tmp");
 
 			request->_tempFile = SD.open(full_path, "w+", true);
@@ -947,23 +1008,22 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 			handle_error(request, "MD5 parameter invalid. Check file exists", 500);
 			return;
 		}
-		
+
 		request->_tempFile.close();
 
-		const auto dir = request->getHeader(uploadDirHeader)->value();
+		const auto dir = request->getHeader(uploadDir)->value();
 		const auto tmp_full_path = join_path(dir, filename + ".tmp");
 
-		//calculate hash of written file
-
+		// calculate hash of written file
 		auto file = SD.open(tmp_full_path);
 		MD5Builder hashBuilder;
 		hashBuilder.begin();
-		
+
 		file.seek(0);
 		hashBuilder.addStream(file, file.size());
 		hashBuilder.calculate();
 		file.close();
-		
+
 		md5.toUpperCase();
 		auto disk_md5 = hashBuilder.toString();
 		disk_md5.toUpperCase();
@@ -976,7 +1036,6 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 		}
 
 		const auto full_path = join_path(dir, filename);
-
 		if (!SD.rename(tmp_full_path, full_path))
 		{
 			handle_error(request, "Failed from rename temp file failed", 500);
@@ -987,8 +1046,7 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 
 void web_server::handle_file_upload_complete(AsyncWebServerRequest *request)
 {
-	log_i("reboot");
-
+	log_i("file upload complete");
 	if (!manage_security(request))
 	{
 		return;

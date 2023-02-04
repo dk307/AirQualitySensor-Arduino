@@ -60,8 +60,10 @@ private:
     bool filter_events(AsyncWebServerRequest *request);
 
     // fs ajax
-    static void handle_file_list(AsyncWebServerRequest *request);
-    static void handle_file_download(AsyncWebServerRequest *request);
+    static void handle_dir_list(AsyncWebServerRequest *request);
+    static void handle_fs_download(AsyncWebServerRequest *request);
+    static void handle_fs_delete(AsyncWebServerRequest *request);
+    static void handle_fs_rename(AsyncWebServerRequest *request);
     void handle_file_upload(AsyncWebServerRequest *request,
                             const String &filename,
                             size_t index,

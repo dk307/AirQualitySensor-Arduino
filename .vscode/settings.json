@@ -58,6 +58,8 @@
         "unordered_set": "cpp",
         "complex": "cpp",
         "valarray": "cpp",
-        "*.tpp": "cpp"
+        "*.tpp": "cpp",
+        "filesystem": "cpp",
+        "codecvt": "cpp"
     }
 }

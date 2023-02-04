@@ -67,7 +67,7 @@
               <div class="alert alert-danger" role="alert" id="deleteActionStatus"></div>
             </div>
 
-            <input type="hidden" id="filePath">
+            <input type="hidden" id="deleteFilePath" name="deleteFilePath">
           </div>
 
           <div class="modal-footer">
@@ -92,15 +92,15 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label for="renameFileName">Rename to:</label>
-              <input type="text" class="form-control" id="renameFileName">
+              <label for="renameNewFilename">Rename to:</label>
+              <input type="text" class="form-control" id="renameNewFilename" name="renameNewFilename">
             </div>
 
             <div class="mb-4">
               <div class="alert alert-danger" role="alert" id="renameActionStatus"></div>
             </div>
 
-            <input type="hidden" id="renameFilePath">
+            <input type="hidden" id="renameFilePath" name="renameFilePath">
           </div>
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary" id="confirmRename">Rename</button>
@@ -220,6 +220,10 @@
 
     var fs_table = null;
 
+    function refreshCurrent() {
+      fs_table.ajax.reload();
+    }
+
     function loadDir(dir) {
       attempted_current_dir = dir;
 
@@ -255,7 +259,6 @@
                 } else {
                   data = "<a title='Download' href='/fs/download?path=" + encodeURIComponent(fullPath) + "&download=true'>" + dataStr + "</a>";
                 }
-                console.log(data);
                 return data;
               }
             },
@@ -296,7 +299,7 @@
 
     function deleteNode(filePath, name) {
       var url = "/fs/delete";
-      $('#filePath').val(filePath);
+      $('#deleteFilePath').val(filePath);
       $('#deleteFileName').text(name);
       $('#deleteActionForm').attr('action', url);
       $('#deleteActionStatus').hide();
@@ -306,20 +309,23 @@
     function renameNode(filePath, name) {
       var url = "/fs/rename";
       $('#renameFilePath').val(filePath);
-      $('#renameFileName').val(name);
+      $('#renameNewFilename').val(name);
       $('#renameActionForm').attr('action', url);
       $('#renameActionStatus').hide();
       $('#renameModal').modal('show');
     }
 
+
     $("#renameActionForm").on('submit', function (e) {
       e.preventDefault();
       var form = $('#renameActionForm');
 
+      var formData = new FormData(this);
+
       $.ajax({
         type: form.attr('method'),
         url: form.attr('action'),
-        data: new FormData(this),
+        data: formData,
         contentType: false,
         cache: false,
         processData: false,
@@ -336,7 +342,7 @@
         },
         success: function (resp) {
           $('#renameModal').modal('hide');
-          fs_table.ajax.reload();
+          refreshCurrent();
         }
       });
     });
@@ -367,7 +373,7 @@
         contentType: false,
         cache: false,
         processData: false,
-        headers: { 'uploadDir': current_dir, 'md5': fileUploadFileUploadMd5 },
+        headers: { "md5": fileUploadFileUploadMd5, "uploadDir": current_dir },
         beforeSend: function () {
           $("#fileUploadUploadProgressBar").width('0%');
           $('#fileUploadUploadStatus').html('');
@@ -385,7 +391,6 @@
         },
         success: function (resp) {
           $('#fileUploadUpdateModal').modal('hide');
-          fs_table.ajax.reload();
         }
       });
     });
@@ -442,7 +447,12 @@
         uploadAjax.abort();
         uploadAjax = null;
         console.log("Cancelled upload");
+        refreshCurrent();
       }
+    });
+
+    document.getElementById('deleteActionModal').addEventListener('hide.bs.modal', (e) => {
+      refreshCurrent();
     });
 
     loadDir(attempted_current_dir);
