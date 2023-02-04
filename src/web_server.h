@@ -61,6 +61,7 @@ private:
 
     // fs ajax
     static void handle_dir_list(AsyncWebServerRequest *request);
+    static void handle_dir_create(AsyncWebServerRequest *request);
     static void handle_fs_download(AsyncWebServerRequest *request);
     static void handle_fs_delete(AsyncWebServerRequest *request);
     static void handle_fs_rename(AsyncWebServerRequest *request);

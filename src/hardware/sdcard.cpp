@@ -16,7 +16,7 @@ bool sd_card::pre_begin()
 
 bool sd_card::mount()
 {
-    if (!SD.begin(SD_CS))
+    if (!SD.begin(SD_CS, SPI, 4000000, "/sd", 15, false))
     {
         log_e("Failed to initialize SD Card");
         return false;

@@ -14,7 +14,6 @@
 </head>
 
 <body>
-
   <div class="container py-4">
     <div class="row py-1">
       <div class="col px-1 align-self-start">
@@ -23,9 +22,9 @@
           <ol class="breadcrumb h4" id="pathBreadCrumb">
           </ol>
         </nav>
-
       </div>
       <div class="col align-self-end d-flex justify-content-end">
+        <button type="button" class="btn btn-info mx-3" id="mkdirButtonId">Create Directory</button>
         <button type="button" class="btn btn-info" id="uploadButtonId">Upload</button>
       </div>
     </div>
@@ -46,7 +45,7 @@
   </div>
 
   <!-- Confirm Delete Modal Start-->
-  <form id="deleteActionForm" method="post">
+  <form id="deleteActionForm" method="post" action="/fs/delete">
     <div class="modal fade" id="deleteActionModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
       aria-hidden="true">
       <div class="modal-dialog">
@@ -81,7 +80,7 @@
   <!-- Confirm Delete Modal End -->
 
   <!-- Rename Modal -->
-  <form id="renameActionForm" method="post">
+  <form id="renameActionForm" method="post" action="/fs/rename">
     <div class="modal fade" id="renameModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
       role="dialog" aria-labelledby="renameModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
@@ -93,7 +92,7 @@
           <div class="modal-body">
             <div class="form-group">
               <label for="renameNewName">Rename to:</label>
-              <input type="text" class="form-control" id="renameNewName">
+              <input type="text" class="form-control" id="renameNewName" required>
             </div>
 
             <div class="mb-4">
@@ -111,8 +110,37 @@
     </div>
   </form>
 
+  <!-- Mkdir Modal -->
+  <form id="mkdirActionForm" method="post" action="/fs/mkdir">
+    <div class="modal fade" id="mkdirModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+      role="dialog" aria-labelledby="mkdirModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="mkdirModalLabel">Create Directory</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <input type="text" class="form-control" id="mkdirName" required>
+            </div>
+
+            <div class="mb-4">
+              <div class="alert alert-danger" role="alert" id="mkdirActionStatus"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary" id="confirmmkdir">Create</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
   <!-- File Update Modal Start-->
-  <form class="needs-validation" id="fileUploadUploadForm" method="post" enctype="multipart/form-data">
+  <form class="needs-validation" id="fileUploadUploadForm" method="post" enctype="multipart/form-data"
+    action="/fs/upload">
     <div class="modal fade" id="fileUploadUpdateModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -214,6 +242,7 @@
         },
         success: function (resp) {
           $('#deleteActionModal').modal('hide');
+          refreshCurrent();
         }
       });
     });
@@ -298,23 +327,19 @@
     }
 
     function deleteNode(filePath, name) {
-      var url = "/fs/delete";
       $('#deleteFilePath').val(filePath);
       $('#deleteFileName').text(name);
-      $('#deleteActionForm').attr('action', url);
       $('#deleteActionStatus').hide();
       $('#deleteActionModal').modal('show');
     }
 
     function renameNode(filePath, name) {
-      var url = "/fs/rename";
+
       $('#renameOldFilePath').val(filePath);
       $('#renameNewName').val(name);
-      $('#renameActionForm').attr('action', url);
       $('#renameActionStatus').hide();
       $('#renameModal').modal('show');
     }
-
 
     $("#renameActionForm").on('submit', function (e) {
       e.preventDefault();
@@ -348,6 +373,39 @@
         },
         success: function (resp) {
           $('#renameModal').modal('hide');
+          refreshCurrent();
+        }
+      });
+    });
+
+    $("#mkdirActionForm").on('submit', function (e) {
+      e.preventDefault();
+      var form = $('#mkdirActionForm');
+ 
+      var name = $("#mkdirName").val();
+      var formData = new FormData(this);
+      formData.append("dir", current_dir + "/" + name);
+
+      $.ajax({
+        type: form.attr('method'),
+        url: form.attr('action'),
+        data: formData,
+        contentType: false,
+        cache: false,
+        processData: false,
+        beforeSend: function () {
+          $('#mkdirActionStatus').hide();
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          if (jqXHR.status == 500) {
+            $('#mkdirActionStatus').text(jqXHR.responseText);
+          } else {
+            $('#mkdirActionStatus').text('Create operation failed');
+          }
+          $('#mkdirActionStatus').show();
+        },
+        success: function (resp) {
+          $('#mkdirModal').modal('hide');
           refreshCurrent();
         }
       });
@@ -442,10 +500,15 @@
 
     document.getElementById('uploadButtonId').addEventListener('click', function () {
       $("#fileUploadFileUploadId").val('');
-      $('#fileUploadUploadForm').attr('action', '/fs/upload');
       $("#fileUploadUploadStatusWrapper").hide();
       $('#fileUploadButton').show();
       $('#fileUploadUpdateModal').modal('show');
+    });
+
+    document.getElementById('mkdirButtonId').addEventListener('click', function () {
+      $('#mkdirName').val('');
+      $('#mkdirActionStatus').hide();
+      $('#mkdirModal').modal('show');
     });
 
     document.getElementById('fileUploadUpdateModal').addEventListener('hide.bs.modal', (e) => {
@@ -457,12 +520,7 @@
       }
     });
 
-    document.getElementById('deleteActionModal').addEventListener('hide.bs.modal', (e) => {
-      refreshCurrent();
-    });
-
     loadDir(attempted_current_dir);
-
   </script>
 </body>
 

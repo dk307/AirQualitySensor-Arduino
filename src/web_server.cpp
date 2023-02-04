@@ -158,6 +158,7 @@ void web_server::server_routing()
 
 	// fs ajax
 	http_server.on("/fs/list", HTTP_GET, handle_dir_list);
+	http_server.on("/fs/mkdir", HTTP_POST, handle_dir_create);
 	http_server.on("/fs/download", HTTP_GET, handle_fs_download);
 	http_server.on("/fs/upload", HTTP_POST, handle_file_upload_complete,
 				   std::bind(&web_server::handle_file_upload, this,
@@ -895,9 +896,50 @@ void web_server::handle_fs_delete(AsyncWebServerRequest *request)
 	const auto path = request->arg(path_param);
 
 	log_i("Deleting %s", path.c_str());
-	if (!SD.remove(path))
+
+	auto file = SD.open(path);
+	if (!file)
+	{
+		handle_error(request, "Failed to open " + path, 500);
+		return;
+	}
+
+	const bool isDirectory = file.isDirectory();
+	file.close();
+
+	const bool success = isDirectory ? SD.rmdir(path) : SD.remove(path);
+
+	if (!success)
 	{
 		handle_error(request, "Failed to delete " + path, 500);
+		return;
+	}
+
+	request->send(200);
+}
+
+void web_server::handle_dir_create(AsyncWebServerRequest *request)
+{
+	const auto path_param = "dir";
+
+	log_d("/fs/mkdir");
+	if (!manage_security(request))
+	{
+		return;
+	}
+
+	if (!request->hasArg(path_param))
+	{
+		handle_error(request, "Bad Arguments", 500);
+		return;
+	}
+
+	const auto path = request->arg(path_param);
+
+	log_i("mkdir %s", path.c_str());
+	if (!SD.mkdir(path))
+	{
+		handle_error(request, "Failed to create " + path, 500);
 		return;
 	}
 
@@ -1039,7 +1081,6 @@ String web_server::get_file_md5(const String &path)
 	MD5Builder hashBuilder;
 	hashBuilder.begin();
 
-	file.seek(0);
 	hashBuilder.addStream(file, file.size());
 	hashBuilder.calculate();
 	file.close();
