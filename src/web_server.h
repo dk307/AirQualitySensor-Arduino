@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AsyncWebServer_ESP32_ENC.h>
+#include <FS.h>
 #include <vector>
 
 #include <sensor.h>
@@ -32,12 +33,12 @@ private:
                                        bool final);
     static void reboot_on_upload_complete(AsyncWebServerRequest *request);
 
-    static void restore_configuration_upload(AsyncWebServerRequest *request,
-                                             const String &filename,
-                                             size_t index,
-                                             uint8_t *data,
-                                             size_t len,
-                                             bool final);
+    void restore_configuration_upload(AsyncWebServerRequest *request,
+                                      const String &filename,
+                                      size_t index,
+                                      uint8_t *data,
+                                      size_t len,
+                                      bool final);
 
     static void handle_early_update_disconnect();
 
@@ -61,8 +62,15 @@ private:
     // fs ajax
     static void handle_file_list(AsyncWebServerRequest *request);
     static void handle_file_download(AsyncWebServerRequest *request);
-
+    void handle_file_upload(AsyncWebServerRequest *request,
+                            const String &filename,
+                            size_t index,
+                            uint8_t *data,
+                            size_t len,
+                            bool final);
+    static void handle_file_upload_complete(AsyncWebServerRequest *request);
     static const char *get_content_type(const String &filename);
+    static String join_path(const String &part1, const String &part2);
 
     static bool is_ip(const String &str);
     static String to_string_ip(const IPAddress &ip);
@@ -70,7 +78,7 @@ private:
     static void add_key_value_object(Array &array, const K &key, const T &value);
     template <class V, class T>
     static void add_to_json_doc(V &doc, T id, float value);
-    void notifySensorChange(sensor_id_index id);
+    void notify_sensor_change(sensor_id_index id);
 
     AsyncWebServer http_server{80};
     AsyncEventSource events{"/events"};

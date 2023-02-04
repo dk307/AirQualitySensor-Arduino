@@ -7,6 +7,7 @@
 #include <FS.h>
 #include <mbedtls/md.h>
 #include <psram_allocator.h>
+#include <MD5Builder.h>
 
 #include "wifi_manager.h"
 #include "config_manager.h"
@@ -104,7 +105,7 @@ void web_server::begin()
 	{
 		const auto id = static_cast<sensor_id_index>(i);
 		hardware::instance.get_sensor(id).add_callback([id, this]
-													   { notifySensorChange(id); });
+													   { notify_sensor_change(id); });
 	}
 }
 
@@ -142,7 +143,11 @@ void web_server::server_routing()
 	// ajax form call
 	http_server.on(("/factory.reset.handler"), HTTP_POST, factory_reset);
 	http_server.on(("/firmware.update.handler"), HTTP_POST, reboot_on_upload_complete, firmware_update_upload);
-	http_server.on(("/setting.restore.handler"), HTTP_POST, reboot_on_upload_complete, restore_configuration_upload);
+	http_server.on(("/setting.restore.handler"), HTTP_POST, reboot_on_upload_complete,
+				   std::bind(&web_server::restore_configuration_upload, this,
+							 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
+							 std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+
 	http_server.on(("/restart.handler"), HTTP_POST, restart_device);
 
 	// json ajax calls
@@ -154,6 +159,10 @@ void web_server::server_routing()
 	// fs ajax
 	http_server.on("/fs/list", HTTP_GET, handle_file_list);
 	http_server.on("/fs/download", HTTP_GET, handle_file_download);
+	http_server.on("/fs/upload", HTTP_POST, handle_file_upload_complete,
+				   std::bind(&web_server::handle_file_upload, this,
+							 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
+							 std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
 
 	http_server.onNotFound(handle_file_read);
 }
@@ -171,7 +180,7 @@ void web_server::on_event_connect(AsyncEventSourceClient *client)
 		// send all the events
 		for (auto i = 0; i < total_sensors; i++)
 		{
-			notifySensorChange(static_cast<sensor_id_index>(i));
+			notify_sensor_change(static_cast<sensor_id_index>(i));
 		}
 	}
 }
@@ -695,12 +704,12 @@ void web_server::restore_configuration_upload(AsyncWebServerRequest *request,
 	String error;
 	if (!index)
 	{
-		web_server::instance.restore_config_data = std::make_unique<std::vector<uint8_t>>();
+		restore_config_data = std::make_unique<std::vector<uint8_t>>();
 	}
 
 	for (size_t i = 0; i < len; i++)
 	{
-		web_server::instance.restore_config_data->push_back(data[i]);
+		restore_config_data->push_back(data[i]);
 	}
 
 	if (final)
@@ -731,7 +740,7 @@ void web_server::handle_error(AsyncWebServerRequest *request, const String &mess
 {
 	if (!message.isEmpty())
 	{
-		log_i("%s", message.c_str());
+		log_e("%s", message.c_str());
 	}
 	AsyncWebServerResponse *response = request->beginResponse(code, TextPlainMediaType, message);
 	response->addHeader(FPSTR(CacheControlHeader), F("no-cache, no-store, must-revalidate"));
@@ -745,7 +754,7 @@ void web_server::handle_early_update_disconnect()
 	operations::instance.abort_update();
 }
 
-void web_server::notifySensorChange(sensor_id_index id)
+void web_server::notify_sensor_change(sensor_id_index id)
 {
 	if (events.count())
 	{
@@ -800,18 +809,22 @@ void web_server::handle_file_list(AsyncWebServerRequest *request)
 		return;
 	}
 
-	auto response = new AsyncJsonResponse(false, 4096);
+	auto response = new AsyncJsonResponse(false, 1024 * 16);
 	auto root = response->getRoot();
 	auto array = root.createNestedArray("data");
 	auto entry = dir.openNextFile();
+
+	const auto path_with_slash = path.endsWith("/") ? path : path + "/";
 	while (entry)
 	{
 		auto nested_entry = array.createNestedObject();
+		const auto name = String(entry.name());
+		nested_entry["path"] = path_with_slash + name;
 		nested_entry["isDir"] = entry.isDirectory();
-		nested_entry["name"] = String(entry.name());
+		nested_entry["name"] = name;
 		nested_entry["size"] = entry.size();
 		nested_entry["lastModified"] = entry.getLastWrite();
-	
+
 		entry.close();
 		entry = dir.openNextFile();
 	}
@@ -862,6 +875,128 @@ void web_server::handle_file_download(AsyncWebServerRequest *request)
 	request->send(response);
 }
 
+void web_server::handle_file_upload(AsyncWebServerRequest *request,
+									const String &filename,
+									size_t index,
+									uint8_t *data,
+									size_t len,
+									bool final)
+{
+	log_i("/fs/upload");
+
+	if (!manage_security(request))
+	{
+		return;
+	}
+
+	const auto uploadDirHeader = "uploadDir";
+	if (!index)
+	{
+		String uploadDir;
+		if (request->hasHeader(uploadDirHeader))
+		{
+			const auto dir = request->getHeader(uploadDirHeader)->value();
+			const auto full_path = join_path(dir, filename + ".tmp");
+
+			request->_tempFile = SD.open(full_path, "w+", true);
+			if (!request->_tempFile)
+			{
+				handle_error(request, "Failed to open the file", 500);
+				return;
+			}
+		}
+		else
+		{
+			handle_error(request, "Upload dir not specified", 500);
+			return;
+		}
+	}
+
+	if (request->_tempFile)
+	{
+		if (!request->_tempFile.seek(index))
+		{
+			handle_error(request, "Failed to seek the file", 500);
+			return;
+		}
+		if (request->_tempFile.write(data, len) != len)
+		{
+			const auto error = request->_tempFile.getWriteError();
+			handle_error(request, String("Failed to write to the file with error: ") + String(error, 10), 500);
+			return;
+		}
+	}
+	else
+	{
+		handle_error(request, "No open file for upload", 500);
+		return;
+	}
+
+	if (final)
+	{
+		String md5;
+		if (request->hasHeader(MD5Header))
+		{
+			md5 = request->getHeader(MD5Header)->value();
+		}
+
+		log_i("Expected MD5:%s", md5.c_str());
+
+		if (md5.length() != 32)
+		{
+			handle_error(request, "MD5 parameter invalid. Check file exists", 500);
+			return;
+		}
+		
+		request->_tempFile.close();
+
+		const auto dir = request->getHeader(uploadDirHeader)->value();
+		const auto tmp_full_path = join_path(dir, filename + ".tmp");
+
+		//calculate hash of written file
+
+		auto file = SD.open(tmp_full_path);
+		MD5Builder hashBuilder;
+		hashBuilder.begin();
+		
+		file.seek(0);
+		hashBuilder.addStream(file, file.size());
+		hashBuilder.calculate();
+		file.close();
+		
+		md5.toUpperCase();
+		auto disk_md5 = hashBuilder.toString();
+		disk_md5.toUpperCase();
+
+		if (md5 != disk_md5)
+		{
+			handle_error(request, "Md5 hash of written file does not match. Found: " + disk_md5, 500);
+			SD.remove(tmp_full_path);
+			return;
+		}
+
+		const auto full_path = join_path(dir, filename);
+
+		if (!SD.rename(tmp_full_path, full_path))
+		{
+			handle_error(request, "Failed from rename temp file failed", 500);
+			return;
+		}
+	}
+}
+
+void web_server::handle_file_upload_complete(AsyncWebServerRequest *request)
+{
+	log_i("reboot");
+
+	if (!manage_security(request))
+	{
+		return;
+	}
+
+	request->send(200);
+}
+
 const char *web_server::get_content_type(const String &filename)
 {
 	if (filename.endsWith(".htm"))
@@ -891,4 +1026,9 @@ const char *web_server::get_content_type(const String &filename)
 	else if (filename.endsWith(".gz"))
 		return "application/x-gzip";
 	return "text/plain";
+}
+
+String web_server::join_path(const String &part1, const String &part2)
+{
+	return part1 + (part1.endsWith("/") ? "" : "/") + part2;
 }
