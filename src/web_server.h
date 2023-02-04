@@ -73,6 +73,9 @@ private:
     static void handle_file_upload_complete(AsyncWebServerRequest *request);
     static const char *get_content_type(const String &filename);
     static String join_path(const String &part1, const String &part2);
+    static String get_file_md5(const String &path);
+    
+
 
     static bool is_ip(const String &str);
     static String to_string_ip(const IPAddress &ip);

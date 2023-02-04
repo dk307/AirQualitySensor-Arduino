@@ -92,15 +92,15 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label for="renameNewFilename">Rename to:</label>
-              <input type="text" class="form-control" id="renameNewFilename" name="renameNewFilename">
+              <label for="renameNewName">Rename to:</label>
+              <input type="text" class="form-control" id="renameNewName">
             </div>
 
             <div class="mb-4">
               <div class="alert alert-danger" role="alert" id="renameActionStatus"></div>
             </div>
 
-            <input type="hidden" id="renameFilePath" name="renameFilePath">
+            <input type="hidden" id="renameOldFilePath">
           </div>
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary" id="confirmRename">Rename</button>
@@ -308,8 +308,8 @@
 
     function renameNode(filePath, name) {
       var url = "/fs/rename";
-      $('#renameFilePath').val(filePath);
-      $('#renameNewFilename').val(name);
+      $('#renameOldFilePath').val(filePath);
+      $('#renameNewName').val(name);
       $('#renameActionForm').attr('action', url);
       $('#renameActionStatus').hide();
       $('#renameModal').modal('show');
@@ -320,7 +320,13 @@
       e.preventDefault();
       var form = $('#renameActionForm');
 
+      var oldPath = $("#renameOldFilePath").val();
+      var newName = $("#renameNewName").val();
+      var parent = oldPath.substring(0, oldPath.lastIndexOf('/'));
+
       var formData = new FormData(this);
+      formData.append("oldPath", oldPath)
+      formData.append("newPath", parent + "/" + newName);
 
       $.ajax({
         type: form.attr('method'),
@@ -373,7 +379,7 @@
         contentType: false,
         cache: false,
         processData: false,
-        headers: { "md5": fileUploadFileUploadMd5, "uploadDir": current_dir },
+        headers: { "uploadDir": current_dir, "md5": fileUploadFileUploadMd5 },
         beforeSend: function () {
           $("#fileUploadUploadProgressBar").width('0%');
           $('#fileUploadUploadStatus').html('');
