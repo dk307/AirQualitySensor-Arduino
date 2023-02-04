@@ -165,13 +165,12 @@
                         <div class="modal-body">
                             <div class="input-group mb-4">
                                 <label class="input-group-text" for="ssid">Wifi Network</label>
-                                <input type="text" id="ssid" name="ssid" class="form-control form-control" required />
+                                <input type="text" id="ssid" name="ssid" class="form-control" required />
                             </div>
 
-                            <div class="input-group mb-4 input-group">
+                            <div class="input-group mb-2 input-group">
                                 <label class="input-group-text" for="wifipassword">Wifi Password</label>
-                                <input type="password" id="wifipassword" name="wifipassword" class="form-control"
-                                    required />
+                                <input type="password" id="wifipassword" name="wifipassword" class="form-control" required />
                                 <div class="input-group-text">
                                     <input class="form-check-input mt-0" type="checkbox" id="wifitooglepassword"
                                         value="" />
@@ -279,7 +278,7 @@
                                 <input type="text" id="webUserName" name="webUserName" class="form-control" required />
                             </div>
 
-                            <div class="form-outline mb-4 input-group">
+                            <div class="form-outline mb-2 input-group">
                                 <label class="input-group-text" for="webPassword">Password</label>
                                 <input type="password" id="webPassword" name="webPassword"
                                     class="form-control form-control" required />
@@ -339,7 +338,7 @@
                             </div>
 
 
-                            <div class="mb-4 d-flex border rounded">
+                            <div class="mb-2 d-flex border rounded">
                                 <div class="row align-items-center">
                                     <div class="col-3">
                                         <label class="mx-3">Display Brightness</label>
@@ -418,7 +417,7 @@
                                 <input class="form-control" id="fileUploadFileUploadId" type="file"
                                     name="fileUploadFileUploadId" required />
                             </div>
-                            <div class="mb-4" id="fileUploadUploadStatusWrapper">
+                            <div class="mb-2" id="fileUploadUploadStatusWrapper">
                                 <div>Upload Status:</div>
                                 <div class="progress" style="height: 18px;">
                                     <div id="fileUploadUploadProgressBar" class="progress-bar progress-bar-animated"
@@ -785,6 +784,25 @@
                 $('#screenBrightness').removeAttr('disabled');
             }
         });
+
+        //focus
+        $('#wifiSettingsModal').on('shown.bs.modal', function () {
+            $("#ssid").focus();
+        });
+
+        $('#websiteLoginModal').on('shown.bs.modal', function () {
+            $("#webUserName").focus();
+        });
+
+        $('#otherSettingsModal').on('shown.bs.modal', function () {
+            $("#hostName").focus();
+        });
+
+        $('#fileUploadUpdateModal').on('shown.bs.modal', function () {
+            $("#fileUploadFileUploadId").focus();
+        });
+
+
     </script>
 </body>
 

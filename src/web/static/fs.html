@@ -381,7 +381,7 @@
     $("#mkdirActionForm").on('submit', function (e) {
       e.preventDefault();
       var form = $('#mkdirActionForm');
- 
+
       var name = $("#mkdirName").val();
       var formData = new FormData(this);
       formData.append("dir", current_dir + "/" + name);
@@ -519,6 +519,16 @@
         refreshCurrent();
       }
     });
+
+
+    // focus
+    $('#mkdirModal').on('shown.bs.modal', function () {
+      $("#mkdirName").focus();
+    });
+
+    $('#renameModal').on('shown.bs.modal', function () {
+      $("#renameNewName").focus();
+    })
 
     loadDir(attempted_current_dir);
   </script>
