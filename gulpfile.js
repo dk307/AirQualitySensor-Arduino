@@ -11,7 +11,10 @@ var browserSync = require('browser-sync').create();
 var watch = require('gulp-watch');
 var reload = browserSync.reload;
 var stripcomments = require('gulp-strip-comments');
-var minifyInline = require('gulp-minify-inline');
+var htmlminify = require('gulp-html-minifier-terser');
+var minify = require('gulp-minify');
+
+
 
 var log = require('fancy-log');
 
@@ -20,19 +23,7 @@ const dataFolder = 'src/web/data/';
 const staticFolder = 'src/web/include/';
 const staticSDcardFolder = 'src/sdcard/web/';
 
-var toMinifiedHtml = function(options) {
-    return through.obj(function (source, encoding, callback) {
-        if (source.isNull()) {
-            callback(null, source);
-            return;
-        }
-        var contents = source.contents.toString();
-        source.contents = Buffer.from(htmlmin.minify(contents, options));
-        callback(null, source);
-    });
-}
-
-var toHeader = function(name, debug) {
+var toHeader = function (name, debug) {
     return through.obj(function (source, encoding, callback) {
         var parts = source.path.split(path.sep);
         var filename = parts[parts.length - 1];
@@ -42,7 +33,7 @@ var toHeader = function(name, debug) {
         var output = '';
         output += '#define ' + safename + '_len ' + source.contents.length + '\n';
         output += 'const uint8_t ' + safename + '[] = {';
-        for (var i=0; i<source.contents.length; i++) {
+        for (var i = 0; i < source.contents.length; i++) {
             if (i > 0) { output += ','; }
             if (0 === (i % 20)) { output += '\n'; }
             output += '0x' + ('00' + source.contents[i].toString(16)).slice(-2);
@@ -63,48 +54,59 @@ var toHeader = function(name, debug) {
 
 };
 
-gulp.task('html', function() {
+gulp.task('html', function () {
     return gulp.src(baseFolder + '*.html').
         pipe(htmlvalidate()).
-        pipe(toMinifiedHtml({
+        pipe(htmlminify({
             collapseWhitespace: true,
-            removeComments: true,
+            minifyJS: true,
             minifyCSS: true,
-            minifyJS: true
+            removeComments: true,
+            removeAttributeQuotes: true,
+            collapseBooleanAttributes: true,
+            collapseInlineTagWhitespace: true,
+            decodeEntities: true,
+            minifyURLs: true,
+            removeEmptyAttributes: true,
+            removeRedundantAttributes: true,
+            sortAttributes: true,
+            sortClassName: true
         })).
-        pipe(minifyInline()).
-        pipe(htmlvalidate()).
+        pipe(htmlvalidate()). // validate again in end
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
         pipe(toHeader(null, true)).
         pipe(gulp.dest(staticFolder));
 });
 
-gulp.task('js', function() {
+gulp.task('js', function () {
     return gulp.src(baseFolder + '/js/*.js').
         pipe(stripcomments()).
         pipe(concat("s.js")).
+        pipe(minify()).
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
         pipe(gulp.dest(staticSDcardFolder));
 });
 
-gulp.task('js-extra', function() {
+gulp.task('js-extra', function () {
     return gulp.src(baseFolder + '/js/extra/*.js').
         pipe(stripcomments()).
+        pipe(minify()).
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
         pipe(gulp.dest(staticSDcardFolder));
 });
 
-gulp.task('css', function() {
+gulp.task('css', function () {
     return gulp.src(baseFolder + '/css/*.css').
+        pipe(minify()).
         pipe(gzip({ gzipOptions: { level: 9 } })).
         pipe(gulp.dest(dataFolder)).
         pipe(gulp.dest(staticSDcardFolder));
 });
 
-gulp.task('images', function() {
+gulp.task('images', function () {
     return gulp.src(baseFolder + '/media/*.png').
         pipe(imagemin()).
         pipe(gulp.dest(dataFolder)).
@@ -114,7 +116,7 @@ gulp.task('images', function() {
 gulp.task('default', gulp.series('html', 'js', 'js-extra', 'css', 'images'));
 
 
-gulp.task('serve', function() {
+gulp.task('serve', function () {
     browserSync.init({
         server: {
             baseDir: baseFolder
@@ -122,10 +124,10 @@ gulp.task('serve', function() {
     });
 });
 
-gulp.task('watchHtml', function() {gulp.watch(baseFolder +'**/*.html', reload)});
-gulp.task('watchJs', function() {gulp.watch(baseFolder +'**/*.js', reload)});
-gulp.task('watchCss', function() {gulp.watch(baseFolder +'**/*.css', reload)});
-gulp.task('watchPng', function() {gulp.watch(baseFolder +'**/*.png', reload)});
+gulp.task('watchHtml', function () { gulp.watch(baseFolder + '**/*.html', reload) });
+gulp.task('watchJs', function () { gulp.watch(baseFolder + '**/*.js', reload) });
+gulp.task('watchCss', function () { gulp.watch(baseFolder + '**/*.css', reload) });
+gulp.task('watchPng', function () { gulp.watch(baseFolder + '**/*.png', reload) });
 
 // Static server
 gulp.task('webserver', gulp.parallel(['serve', 'watchHtml', 'watchJs', 'watchCss', 'watchPng']));

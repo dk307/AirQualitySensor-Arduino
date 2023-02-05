@@ -12,7 +12,6 @@
 </head>
 
 <body>
-
   <div class="container py-5 h-100">
 
     <div class="row d-flex justify-content-center align-items-center">
@@ -20,7 +19,7 @@
         <div class="card shadow-lg" style="border-radius: 2rem;">
           <div class="card-body text-center">
 
-            <h3 class="mb-5 "><img src="media/logo.png" alt="Logo" /></h3>
+            <h3 class="mb-5 "><img src="/media/logo.png" alt="Logo" /></h3>
             <form class="needs-validation" action="/login.handler" method="post">
               <div class="form-floating mb-4">
                 <input type="text" id="username" name="username" class="form-control" autofocus required />
@@ -36,8 +35,8 @@
               </div>
             </form>
 
-            <div class="mb-4">
-              <div class="alert alert-danger" role="alert" id="message" hidden></div>
+            <div class="pt-2">
+              <div class="alert alert-danger" role="alert" id="message"></div>
             </div>
           </div>
         </div>
@@ -58,9 +57,12 @@
         }
       }
     }
+
     if (getURLParameter("msg")) {
-      document.getElementById("message").innerText = decodeURI(getURLParameter("msg"));
+      $("#message").html(decodeURI(getURLParameter("msg")));
       $("#message").show();
+    } else {
+      $("#message").hide();
     }
   </script>
 </body>

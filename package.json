@@ -14,11 +14,14 @@
     "gulp-htmllint": "0.0.19",
     "gulp-htmlmin": "^5.0.1",
     "gulp-imagemin": "^7.1.0",
-    "gulp-minify-inline": "^1.1.0",
+    "gulp-minify": "^3.1.0",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
     "gulp-strip-comments": "^2.5.2",
-    "gulp-watch": "^5.0.1",
-    "html-minifier": "^4.0.0"
+    "gulp-watch": "^5.0.1"
+  },
+  "dependencies": {
+    "gulp-html-minifier": "^0.1.8",
+    "gulp-html-minifier-terser": "^7.1.0"
   }
 }
