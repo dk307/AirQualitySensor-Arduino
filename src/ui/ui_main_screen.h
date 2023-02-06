@@ -43,9 +43,12 @@ public:
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
     {
-        log_i("Updating sensor %s to %d in main screen", get_sensor_name(index), value.value_or(-1));
         const auto &pair = panel_and_labels.at(static_cast<size_t>(index));
-        set_value_in_panel(pair, index, value);
+        if (pair.is_valid())
+        {
+            log_i("Updating sensor %s to %d in main screen", get_sensor_name(index), value.value_or(-1));
+            set_value_in_panel(pair, index, value);
+        }
     }
 
     void show_screen()

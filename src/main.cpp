@@ -5,6 +5,7 @@
 #include "web_server.h"
 #include "ntp_time.h"
 #include "operations.h"
+#include "logging.h"
 #include "hardware\display.h"
 
 sd_card card;
@@ -20,6 +21,7 @@ void boot_failure()
 void setup(void)
 {
 	Serial.begin(115200);
+
 	log_i("Start on Core %d", xPortGetCoreID());
 
 	if (!card.pre_begin())
@@ -35,6 +37,8 @@ void setup(void)
 	}
 
 	config::instance.pre_begin();
+
+	logger::instance.enable_sd_logging();
 
 	log_i("Pre Begin Done");
 

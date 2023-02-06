@@ -12,6 +12,11 @@ public:
     {
         lv_obj_t *panel{nullptr};
         lv_obj_t *label{nullptr};
+
+        bool is_valid() const
+        {
+            return panel || label;
+        }
     } panel_and_label;
 
     void init() override

@@ -341,7 +341,7 @@ void hardware::read_bh1750_sensor()
     std::optional<float> lux;
     if (bh1750_sensor.measurementReady(true))
     {
-        log_d("Reading BH1750 sensor");
+        log_v("Reading BH1750 sensor");
 
         lux = bh1750_sensor.readLightLevel();
         light_sensor_values->add_value(lux.value());
@@ -397,7 +397,7 @@ void hardware::read_ccs811_sensor()
 
             if (sht31_last_error == SHT31_OK)
             {
-                log_d("Setting env data for ccs811");
+                log_v("Setting env data for ccs811");
                 ccs811_sensor.setEnvironmentalData(sht31_sensor.getHumidity(), sht31_sensor.getTemperature());
             }
 
