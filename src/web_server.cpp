@@ -18,6 +18,7 @@
 #include "web/include/index.html.gz.h"
 #include "web/include/login.html.gz.h"
 #include "web/include/fs.html.gz.h"
+#include "web/include/debug.html.gz.h"
 
 enum class static_file_type
 {
@@ -43,6 +44,7 @@ static const char TextPlainMediaType[] = "text/plain";
 
 static const char LoginUrl[] = "/login.html";
 static const char IndexUrl[] = "/index.html";
+static const char DebugUrl[] = "/debug.html";
 static const char LogoUrl[] = "/media/logo.png";
 static const char FaviconUrl[] = "/media/favicon.png";
 static const char LogoutUrl[] = "/media/logout.png";
@@ -64,6 +66,7 @@ const static static_files_map static_files[] = {
 	{FSListUrl, fs_html_gz, fs_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
 	{IndexUrl, index_html_gz, index_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
 	{LoginUrl, login_html_gz, login_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
+	{DebugUrl, debug_html_gz, debug_html_gz_len, HtmlMediaType, static_file_type::array_zipped},
 	{LogoUrl, "/web/logo.png", 0, PngMediaType, static_file_type::sdcard},
 	{FaviconUrl, "/web/logo.png", 0, PngMediaType, static_file_type::sdcard},
 	{AllJsUrl, "/web/s.js", 0, JsMediaType, static_file_type::sdcard},
@@ -102,7 +105,12 @@ void web_server::begin()
 	log_i("WebServer Starting");
 	events.onConnect(std::bind(&web_server::on_event_connect, this, std::placeholders::_1));
 	events.setFilter(std::bind(&web_server::filter_events, this, std::placeholders::_1));
+
+	logging.onConnect(std::bind(&web_server::on_logging_connect, this, std::placeholders::_1));
+	logging.setFilter(std::bind(&web_server::filter_events, this, std::placeholders::_1));
+
 	http_server.addHandler(&events);
+	http_server.addHandler(&logging);
 	http_server.begin();
 	server_routing();
 	log_i("WebServer Started");
@@ -190,6 +198,18 @@ void web_server::on_event_connect(AsyncEventSourceClient *client)
 		{
 			notify_sensor_change(static_cast<sensor_id_index>(i));
 		}
+	}
+}
+
+void web_server::on_logging_connect(AsyncEventSourceClient *client)
+{
+	if (client->lastId())
+	{
+		log_i("Logging client reconnect");
+	}
+	else
+	{
+		log_i("Logging client first time");
 	}
 }
 
@@ -1143,3 +1163,4 @@ String web_server::join_path(const String &part1, const String &part2)
 {
 	return part1 + (part1.endsWith("/") ? "" : "/") + part2;
 }
+

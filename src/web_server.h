@@ -57,6 +57,7 @@ private:
     static void redirect_to_root(AsyncWebServerRequest *request);
     static void handle_error(AsyncWebServerRequest *request, const String &error, int code);
     void on_event_connect(AsyncEventSourceClient *client);
+    void on_logging_connect(AsyncEventSourceClient *client);
     bool filter_events(AsyncWebServerRequest *request);
 
     // fs ajax
@@ -89,4 +90,6 @@ private:
     AsyncWebServer http_server{80};
     AsyncEventSource events{"/events"};
     std::unique_ptr<std::vector<uint8_t>> restore_config_data;
+
+    AsyncEventSource logging{"/logs"};
 };
