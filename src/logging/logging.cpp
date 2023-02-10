@@ -1,7 +1,7 @@
 #include "logging.h"
 
 #include <vector>
-#include <mutex>
+#include <sempaphore_lockable.h>
 
 #include <SD.h>
 #include <task_wrapper.h>

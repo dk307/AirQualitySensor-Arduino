@@ -1,7 +1,7 @@
 #pragma once
 
 #include "lgfxdevice.h"
-#include <mutex>
+#include <sempaphore_lockable.h>
 #include "ui\ui2.h"
 #include "ui\ui_interface.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mutex>
+#include <sempaphore_lockable.h>
 
 #include "sd_card_sink.h"
 

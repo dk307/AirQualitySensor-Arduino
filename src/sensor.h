@@ -5,6 +5,7 @@
 #include <math.h>
 #include <atomic>
 #include <mutex>
+#include <sempaphore_lockable.h>
 #include <CircularBuffer.h>
 #include <psram_allocator.h>
 
