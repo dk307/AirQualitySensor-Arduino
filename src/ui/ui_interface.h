@@ -26,6 +26,5 @@ public:
     virtual bool is_wifi_connected() = 0;
     virtual String get_wifi_status() = 0;
 
-    virtual void set_ccs_811_baseline() = 0;
     virtual bool clean_sps_30() = 0;
 };

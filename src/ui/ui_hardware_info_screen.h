@@ -16,15 +16,10 @@ public:
         lv_obj_add_event_cb(screen, event_callback<ui_hardware_info_screen, &ui_hardware_info_screen::screen_callback>, LV_EVENT_ALL, this);
 
         // baseline
-        auto btn_set_baseline = create_btn("Set CCS 811 Baseline",
-                                           event_callback<ui_hardware_info_screen, &ui_hardware_info_screen::set_ccs_811_baseline>);
-
-        lv_obj_align(btn_set_baseline, LV_ALIGN_TOP_MID, 0, 25);
-
         auto btn_clean = create_btn("Clean SPS 30",
                                     event_callback<ui_hardware_info_screen, &ui_hardware_info_screen::clean_sps_30>);
 
-        lv_obj_align_to(btn_clean, btn_set_baseline, LV_ALIGN_OUT_BOTTOM_MID, 0, 25);
+        lv_obj_align(btn_clean, LV_ALIGN_TOP_MID, 0, 25);
 
         init_status_win();
 
@@ -93,18 +88,6 @@ private:
     {
         log_i("No clicked");
         lv_obj_add_flag(win_status, LV_OBJ_FLAG_HIDDEN);
-    }
-
-    void set_ccs_811_baseline(lv_event_t *e)
-    {
-        const auto code = lv_event_get_code(e);
-
-        if (code == LV_EVENT_PRESSED)
-        {
-            ui_interface_instance.set_ccs_811_baseline();
-            lv_label_set_text_static(win_status_label, "CCS 811 Baseline set.");
-            lv_obj_clear_flag(win_status, LV_OBJ_FLAG_HIDDEN);
-        }
     }
 
     void clean_sps_30(lv_event_t *e)

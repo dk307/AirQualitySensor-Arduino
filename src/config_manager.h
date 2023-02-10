@@ -136,18 +136,6 @@ struct config_data
         time_zone = time_zone_;
     }
 
-    std::optional<uint8_t> get_ccs811_baseline() const
-    {
-        std::lock_guard<std::mutex> lock(data_mutex);
-        return ccs811_baseline;
-    }
-
-    void set_ccs811_baseline(const std::optional<uint8_t> &value)
-    {
-        std::lock_guard<std::mutex> lock(data_mutex);
-        ccs811_baseline = value;
-    }
-
 private:
     String host_name;
     String web_user_name;
@@ -158,7 +146,6 @@ private:
     String ntp_server;
     uint64_t ntp_server_refresh_interval;
     TimeZoneSupported time_zone;
-    std::optional<uint16_t> ccs811_baseline;
 
     std::optional<uint8_t> manual_screen_brightness;
 

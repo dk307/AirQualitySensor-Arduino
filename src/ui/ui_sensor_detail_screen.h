@@ -292,7 +292,7 @@ private:
         {
             if (sensor_detail_screen_chart_series_data_time.has_value() && sensor_detail_screen_chart_series_data.size())
             {
-                const auto data_interval_seconds = (sensor_detail_screen_chart_series_data.size() * 60) / sensor_history::reads_per_minute;
+                const auto data_interval_seconds = (sensor_detail_screen_chart_series_data.size() * 60);
                 const float interval = float(chart_total_x_ticks - 1 - dsc->value) / (chart_total_x_ticks - 1);
                 // log_i("total seconds :%d,  Series length: %d,  %f", data_interval_seconds, sensor_detail_screen_chart_series_data.size(), interval);
                 const time_t tick_time = sensor_detail_screen_chart_series_data_time.value() - (data_interval_seconds * interval);

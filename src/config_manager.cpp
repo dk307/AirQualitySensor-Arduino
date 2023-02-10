@@ -17,7 +17,6 @@ static const char NtpServerId[] PROGMEM = "ntpserver";
 static const char NtpServerRefreshIntervalId[] PROGMEM = "ntpserverrefreshinterval";
 static const char TimeZoneId[] PROGMEM = "timezone";
 static const char ScreenBrightnessId[] PROGMEM = "screenbrightness";
-static const char CCS811Baseline[] PROGMEM = "ccs811baseline";
 
 config config::instance;
 
@@ -97,8 +96,6 @@ bool config::pre_begin()
     const auto screen_brightness = json_document[ScreenBrightnessId];
     data.set_manual_screen_brightness(!screen_brightness.isNull() ? std::optional<uint8_t>(screen_brightness.as<uint8_t>()) : std::nullopt);
 
-    const auto ccs_811_baseline = json_document[CCS811Baseline];
-    data.set_ccs811_baseline(!ccs_811_baseline.isNull() ? std::optional<uint16_t>(ccs_811_baseline.as<uint16_t>()) : std::nullopt);
 
     log_i("Loaded Config from file");
 
@@ -111,7 +108,6 @@ bool config::pre_begin()
     log_i("Ntp Server:%s", data.get_ntp_server().c_str());
     log_i("Ntp Server Refresh Interval:%d ms", data.get_ntp_server_refresh_interval());
     log_i("Time zone:%d", data.get_timezone());
-    log_i("CCS 811 baseline:%d", data.get_ccs811_baseline().value_or(0));
 
     return true;
 }
@@ -153,16 +149,6 @@ void config::save_config()
     else
     {
         json_document[ScreenBrightnessId] = nullptr;
-    }
-
-    const auto ccs_811_baseline = data.get_ccs811_baseline();
-    if (ccs_811_baseline.has_value())
-    {
-        json_document[CCS811Baseline] = ccs_811_baseline.value();
-    }
-    else
-    {
-        json_document[CCS811Baseline] = nullptr;
     }
 
     String json;

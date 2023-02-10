@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SHT31.h>
-#include <SparkFunCCS811.h>
 #include <sps30.h>
 #include <BH1750.h>
 
@@ -46,7 +45,6 @@ public:
     sensor_history::sensor_history_snapshot get_sensor_detail_info(sensor_id_index index) override;
     bool is_wifi_connected() override;
     String get_wifi_status() override;
-    void set_ccs_811_baseline() override;
     bool clean_sps_30() override;
 
 private:
@@ -62,8 +60,8 @@ private:
     std::unique_ptr<task_wrapper> sensor_refresh_task;
     std::unique_ptr<task_wrapper> lvgl_refresh_task;
 
-    using light_sensor_values_t = sensor_history_t<sensor_value::value_type, 20>;
-    std::unique_ptr<light_sensor_values_t> light_sensor_values;
+    using light_sensor_values_t = sensor_history_t<sensor_value::value_type, 10>;
+    light_sensor_values_t light_sensor_values;
 
     const int SDAWire = 11;
     const int SCLWire = 10;
@@ -72,11 +70,6 @@ private:
     const int sht31_i2c_address = 0x44;
     SHT31 sht31_sensor;
     int sht31_last_error{0xFF};
-
-    // CCS811
-    CCS811 ccs811_sensor;
-    uint32_t ccs811_sensor_last_read = 0;
-    bool ccs811_sensor_baseline_set{false};
 
     // SPS 30
     uint32_t sps30_sensor_last_read = 0;
@@ -90,15 +83,11 @@ private:
     static String get_up_time();
     void read_bh1750_sensor();
     void read_sht31_sensor();
-    void read_ccs811_sensor();
     void read_sps30_sensor();
     String get_sht31_status();
-    String get_ccs811_status();
-    String get_ccs811_error_register_status();
     String get_sps30_error_register_status();
     uint8_t lux_to_intensity(sensor_value::value_type lux);
     void set_auto_display_brightness();
-    void set_ccs811_baseline();
 
     static std::optional<sensor_value::value_type> round_value(float val, int places = 0);
     static void scan_i2c_bus();

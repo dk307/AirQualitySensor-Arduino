@@ -38,7 +38,7 @@ void setup(void)
 
 	config::instance.pre_begin();
 
-	logger::instance.enable_sd_logging();
+	// logger::instance.enable_sd_logging();
 
 	log_i("Pre Begin Done");
 

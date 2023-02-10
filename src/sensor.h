@@ -126,7 +126,7 @@ public:
         last_x_values.clear();
     }
 
-    sensor_history_snapshot get_snapshot() const
+    sensor_history_snapshot get_snapshot(int group_by_count) const
     {
         std::vector<T, psram::allocator<T>> return_values;
 
@@ -134,18 +134,30 @@ public:
         const auto size = last_x_values.size();
         if (size)
         {
-
-            return_values.reserve(last_x_values.size());
+            return_values.reserve(1 + (last_x_values.size() / group_by_count));
             stats stats_value{0, std::numeric_limits<T>::max(), std::numeric_limits<T>::min()};
             double sum = 0;
+            double group_sum = 0;
             for (auto i = 0; i < size; i++)
             {
                 const auto value = last_x_values[i];
                 sum += value;
+                group_sum += value;
                 stats_value.max = std::max(value, stats_value.max);
                 stats_value.min = std::min(value, stats_value.min);
-                return_values.push_back(last_x_values[i]);
+
+                if ((i % group_by_count) == 0)
+                {
+                    return_values.push_back(group_sum / group_by_count);
+                    group_sum = 0;
+                }
             }
+
+            // add partial group average
+            if (size % group_by_count) {
+                return_values.push_back(group_sum / (size % group_by_count));
+            }
+
             stats_value.mean = static_cast<T>(sum / size);
             return {stats_value, return_values};
         }
