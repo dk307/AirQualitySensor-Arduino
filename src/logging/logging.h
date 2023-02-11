@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sempaphore_lockable.h>
+#include <semaphore_lockable.h>
 
 #include "sd_card_sink.h"
 
@@ -13,7 +13,7 @@ public:
     static logger instance;
 
 private:
-    std::mutex serial_hook_mutex;
+    esp32::semaphore serial_hook_mutex;
     std::unique_ptr<sd_card_sink> sd_card_sink_instance;
     
     void hook_uart_logger();

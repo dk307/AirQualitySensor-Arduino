@@ -2,7 +2,7 @@
 
 #include "serial_hook_sink.h"
 
-#include <sempaphore_lockable.h>
+#include <semaphore_lockable.h>
 #include <mutex>
 #include <functional>
 #include <Arduino.h>
@@ -26,7 +26,7 @@ public:
 
     void log(char c) override
     {
-        std::lock_guard<sempaphore_lockable> lock(fs_buffer_mutex);
+        std::lock_guard<esp32::semaphore> lock(fs_buffer_mutex);
         fs_buffer.push_back(c);
     }
 
@@ -42,7 +42,7 @@ public:
     void flush_to_disk()
     {
         {
-            std::lock_guard<sempaphore_lockable> lock(fs_buffer_mutex);
+            std::lock_guard<esp32::semaphore> lock(fs_buffer_mutex);
             if (fs_buffer.empty())
             {
                 return;
@@ -86,7 +86,7 @@ public:
         }
         if (sd_card_file)
         {
-            std::lock_guard<sempaphore_lockable> lock(fs_buffer_mutex);
+            std::lock_guard<esp32::semaphore> lock(fs_buffer_mutex);
             sd_card_file.write(reinterpret_cast<uint8_t *>(fs_buffer.data()), fs_buffer.size()); // ignore error
             sd_card_file.flush();
             fs_buffer.clear();
@@ -99,7 +99,7 @@ private:
     File sd_card_file;
     const char *sd_card_name{"/logs/log.txt"};
     const uint8_t sd_card_max_files = 5;
-    sempaphore_lockable fs_buffer_mutex;
+    esp32::semaphore fs_buffer_mutex;
     std::vector<char> fs_buffer;
-    task_wrapper background_log_task;
+    esp32::task background_log_task;
 };

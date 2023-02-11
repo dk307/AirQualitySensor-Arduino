@@ -29,7 +29,7 @@ public:
 
 private:
     wifi_manager() = default;
-    std::unique_ptr<DNSServer, psram::deleter> dns_server;
+    std::unique_ptr<DNSServer, esp32::psram::deleter> dns_server;
 
     bool connect_new_ssid = false;
     String new_ssid;

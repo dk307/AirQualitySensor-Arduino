@@ -210,7 +210,7 @@ bool hardware::clean_sps_30()
 
 bool hardware::pre_begin()
 {
-    sensors_history = psram::make_unique<std::array<sensor_history, total_sensors>>();
+    sensors_history = esp32::psram::make_unique<std::array<sensor_history, total_sensors>>();
 
     if (!display_instance.pre_begin())
     {
@@ -286,8 +286,8 @@ void hardware::begin()
 {
     display_instance.begin();
 
-    sensor_refresh_task = std::make_unique<task_wrapper>([this]
-                                                         {
+    sensor_refresh_task = std::make_unique<esp32::task>([this]
+                                                      {
                                                             log_i("Hardware task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {
@@ -298,8 +298,8 @@ void hardware::begin()
                                                                 vTaskDelay(500);
                                                             } while(true); });
 
-    lvgl_refresh_task = std::make_unique<task_wrapper>([this]
-                                                       {
+    lvgl_refresh_task = std::make_unique<esp32::task>([this]
+                                                    {
                                                             log_i("Lvgl task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {

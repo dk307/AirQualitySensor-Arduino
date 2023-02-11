@@ -790,7 +790,7 @@ void web_server::notify_sensor_change(sensor_id_index id)
 		const auto value = sensor.get_value();
 		const String value_str = value.has_value() ? String(value.value(), 10) : String("-");
 
-		BasicJsonDocument<psram::psram_json_allocator> json_document(128);
+		BasicJsonDocument<esp32::psram::json_allocator> json_document(128);
 
 		auto &&definition = get_sensor_definition(id);
 		json_document["value"] = value_str;

@@ -4,8 +4,7 @@
 #include <ArduinoJson.h>
 #include <atomic>
 #include <mutex>
-
-#include <sempaphore_lockable.h>
+#include <semaphore_lockable.h>
 
 enum class TimeZoneSupported
 {
@@ -25,7 +24,7 @@ struct config_data
 
     void setDefaults()
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
 
         const auto defaultUserIDPassword = "admin";
         host_name.clear();
@@ -41,100 +40,100 @@ struct config_data
 
     String get_host_name() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return host_name;
     }
     void set_host_name(const String &host_name_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         host_name = host_name_;
     }
 
     String get_web_user_name() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return web_user_name;
     }
     void set_web_user_name(const String &web_user_name_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         web_user_name = web_user_name_;
     }
 
     String get_web_password() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return web_password;
     }
     void set_web_password(const String &web_password_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         web_password = web_password_;
     }
 
     String get_wifi_ssid() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return wifi_ssid;
     }
     void set_wifi_ssid(const String &wifi_ssid_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         wifi_ssid = wifi_ssid_;
     }
 
     String get_wifi_password() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return wifi_password;
     }
     void set_wifi_password(const String &wifi_password_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         wifi_password = wifi_password_;
     }
 
     std::optional<uint8_t> get_manual_screen_brightness() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return manual_screen_brightness;
     }
     void set_manual_screen_brightness(const std::optional<uint8_t> &screen_brightness_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         manual_screen_brightness = screen_brightness_;
     }
 
     String get_ntp_server() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return ntp_server;
     }
     void set_ntp_server(const String &ntp_server_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         ntp_server = ntp_server_;
     }
 
     uint64_t get_ntp_server_refresh_interval() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return ntp_server_refresh_interval;
     }
     void set_ntp_server_refresh_interval(uint64_t ntp_server_refresh_interval_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         ntp_server_refresh_interval = ntp_server_refresh_interval_;
     }
 
     TimeZoneSupported get_timezone() const
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         return time_zone;
     }
     void set_timezone(TimeZoneSupported time_zone_)
     {
-        std::lock_guard<sempaphore_lockable> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         time_zone = time_zone_;
     }
 
@@ -151,7 +150,7 @@ private:
 
     std::optional<uint8_t> manual_screen_brightness;
 
-    mutable sempaphore_lockable data_mutex;
+    mutable esp32::semaphore data_mutex;
 };
 
 class config : public change_callback

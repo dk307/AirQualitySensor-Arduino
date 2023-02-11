@@ -66,7 +66,7 @@ bool config::pre_begin()
         return false;
     }
 
-    BasicJsonDocument<psram::psram_json_allocator> json_document(2048);
+    BasicJsonDocument<esp32::psram::json_allocator> json_document(2048);
     if (!deserialize_to_json(config_data.c_str(), json_document))
     {
         reset();
@@ -129,7 +129,7 @@ void config::save_config()
 {
     log_i("Saving configuration");
 
-    BasicJsonDocument<psram::psram_json_allocator> json_document(2048);
+    BasicJsonDocument<esp32::psram::json_allocator> json_document(2048);
 
     json_document[(HostNameId)] = data.get_host_name();
     json_document[(WebUserNameId)] = data.get_web_user_name();
@@ -201,7 +201,7 @@ String config::get_all_config_as_json()
 
 bool config::restore_all_config_as_json(const std::vector<uint8_t> &json, const String &hashMd5)
 {
-    BasicJsonDocument<psram::psram_json_allocator> json_doc(2048);
+    BasicJsonDocument<esp32::psram::json_allocator> json_doc(2048);
     if (!deserialize_to_json(json, json_doc))
     {
         return false;

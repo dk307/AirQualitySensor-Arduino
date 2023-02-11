@@ -1,7 +1,7 @@
 #pragma once
 
 #include "lgfxdevice.h"
-#include <sempaphore_lockable.h>
+#include <semaphore_lockable.h>
 #include "ui\ui2.h"
 #include "ui\ui_interface.h"
 
@@ -24,7 +24,7 @@ public:
 
 private:
     LGFX display_device;
-    std::mutex lgvl_mutex;
+    esp32::semaphore lgvl_mutex;
 
     lv_disp_draw_buf_t draw_buf{};
     lv_disp_drv_t disp_drv{};

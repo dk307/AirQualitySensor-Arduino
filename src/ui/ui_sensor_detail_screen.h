@@ -119,7 +119,7 @@ private:
     lv_obj_t *sensor_detail_screen_top_label_units;
     lv_obj_t *sensor_detail_screen_chart;
     lv_chart_series_t *sensor_detail_screen_chart_series;
-    std::vector<sensor_value::value_type, psram::allocator<sensor_value::value_type>> sensor_detail_screen_chart_series_data;
+    std::vector<sensor_value::value_type, esp32::psram::allocator<sensor_value::value_type>> sensor_detail_screen_chart_series_data;
     std::optional<time_t> sensor_detail_screen_chart_series_data_time;
     const static uint8_t chart_total_x_ticks = 4;
 

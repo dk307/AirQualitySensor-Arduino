@@ -43,7 +43,7 @@ void display::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
 
 bool display::pre_begin()
 {
-    std::lock_guard<std::mutex> lock(lgvl_mutex);
+    std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
     lv_init();
     lv_fs_if_fatfs_init();
 
@@ -109,13 +109,13 @@ void display::begin()
                                                        {
             const auto& sensor =  hardware::instance.get_sensor(id);
             const auto value = sensor.get_value();          
-            std::lock_guard<std::mutex> lock(lgvl_mutex);
+            std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
             ui_instance.set_sensor_value(id, value); });
     }
 
     wifi_manager::instance.add_callback([this]
                                         {
-            std::lock_guard<std::mutex> lock(lgvl_mutex);
+            std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
             ui_instance.wifi_changed(); });
 
     log_i("Display Ready");
@@ -123,19 +123,19 @@ void display::begin()
 
 void display::loop()
 {
-    std::lock_guard<std::mutex> lock(lgvl_mutex);
+    std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
     lv_timer_handler();
 }
 
 void display::update_boot_message(const String &message)
 {
-    std::lock_guard<std::mutex> lock(lgvl_mutex);
+    std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
     ui_instance.update_boot_message(message);
 }
 
 void display::set_main_screen()
 {
-    std::lock_guard<std::mutex> lock(lgvl_mutex);
+    std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
     log_i("Switching to main screen");
     ui_instance.set_main_screen();
 }

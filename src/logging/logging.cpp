@@ -1,8 +1,6 @@
 #include "logging.h"
 
 #include <vector>
-#include <sempaphore_lockable.h>
-
 #include <SD.h>
 #include <task_wrapper.h>
 
@@ -82,7 +80,7 @@ private:
 
 bool logger::enable_sd_logging()
 {
-    std::lock_guard<std::mutex> lock(serial_hook_mutex);
+    std::lock_guard<esp32::semaphore> lock(serial_hook_mutex);
     // ensure logs dir
     const auto logDir = "/logs";
     if (!SD.exists(logDir))
@@ -110,7 +108,7 @@ bool logger::enable_sd_logging()
 
 void logger::disable_sd_logging()
 {
-    std::lock_guard<std::mutex> lock(serial_hook_mutex);
+    std::lock_guard<esp32::semaphore> lock(serial_hook_mutex);
 
     if (sd_card_sink_instance)
     {

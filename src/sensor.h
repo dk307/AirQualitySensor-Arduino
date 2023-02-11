@@ -5,7 +5,7 @@
 #include <math.h>
 #include <atomic>
 #include <mutex>
-#include <sempaphore_lockable.h>
+#include <semaphore_lockable.h>
 #include <CircularBuffer.h>
 #include <psram_allocator.h>
 
@@ -112,7 +112,7 @@ public:
     typedef struct
     {
         std::optional<stats> stat;
-        std::vector<T, psram::allocator<T>> history;
+        std::vector<T, esp32::psram::allocator<T>> history;
     } sensor_history_snapshot;
 
     void add_value(T value)
@@ -129,7 +129,7 @@ public:
 
     sensor_history_snapshot get_snapshot(int group_by_count) const
     {
-        std::vector<T, psram::allocator<T>> return_values;
+        std::vector<T, esp32::psram::allocator<T>> return_values;
 
         std::lock_guard<std::mutex> lock(data_mutex);
         const auto size = last_x_values.size();

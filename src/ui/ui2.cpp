@@ -141,7 +141,7 @@ void ui::inline_loop(uint64_t maxWait)
     while (millis() - now < maxWait)
     {
         lv_timer_handler();
-        delay(5);
+        delay(3);
     }
 }
 

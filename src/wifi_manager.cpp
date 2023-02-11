@@ -114,7 +114,7 @@ void wifi_manager::start_captive_portal()
     delay(100);
     WiFi.softAP(rfc_name.c_str());
 
-    dns_server = psram::make_unique<DNSServer>();
+    dns_server = esp32::psram::make_unique<DNSServer>();
 
     /* Setup the DNS server redirecting all the domains to the apIP */
     dns_server->setErrorReplyCode(DNSReplyCode::NoError);

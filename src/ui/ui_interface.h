@@ -17,7 +17,7 @@ public:
         config
     };
 
-    typedef std::vector<std::pair<String, String>, psram::allocator<std::pair<String, String>>> information_table_type;
+    typedef std::vector<std::pair<String, String>, esp32::psram::allocator<std::pair<String, String>>> information_table_type;
     virtual information_table_type get_information_table(information_type type) = 0;
 
     virtual void set_screen_brightness(uint8_t value) = 0;
