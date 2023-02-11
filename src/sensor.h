@@ -108,10 +108,12 @@ public:
         T max;
     } stats;
 
+    using vector_history_t = std::vector<T, esp32::psram::allocator<T>>;
+
     typedef struct
     {
         std::optional<stats> stat;
-        std::vector<T, esp32::psram::allocator<T>> history;
+        vector_history_t history;
     } sensor_history_snapshot;
 
     void add_value(T value)
@@ -126,15 +128,15 @@ public:
         last_x_values.clear();
     }
 
-    sensor_history_snapshot get_snapshot(int group_by_count) const
+    sensor_history_snapshot get_snapshot(uint8_t group_by_count) const
     {
-        std::vector<T, esp32::psram::allocator<T>> return_values;
+        vector_history_t return_values;
 
         std::lock_guard<esp32::semaphore> lock(data_mutex);
         const auto size = last_x_values.size();
         if (size)
         {
-            return_values.reserve(1 + (last_x_values.size() / group_by_count));
+            return_values.reserve(1 + (size / group_by_count));
             stats stats_value{0, std::numeric_limits<T>::max(), std::numeric_limits<T>::min()};
             double sum = 0;
             double group_sum = 0;
@@ -154,7 +156,8 @@ public:
             }
 
             // add partial group average
-            if (size % group_by_count) {
+            if (size % group_by_count)
+            {
                 return_values.push_back(group_sum / (size % group_by_count));
             }
 
@@ -166,7 +169,7 @@ public:
             return {std::nullopt, return_values};
         };
     }
-
+   
     std::optional<T> get_average() const
     {
         std::lock_guard<esp32::semaphore> lock(data_mutex);

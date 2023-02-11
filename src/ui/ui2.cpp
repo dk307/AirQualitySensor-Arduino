@@ -29,13 +29,15 @@ void ui::load_from_sd_card()
     log_d("2");
     common_fonts.font_montserrat_regular_numbers_40 = lv_font_load("S:display/font/montserrat/ui_font_m40regularnumbers.bin");
     log_d("3");
-    common_fonts.font_montserrat_light_numbers_112 = lv_font_load("S:display/font/montserrat/ui_font_m112lightnumbers.bin");
+    common_fonts.font_big_panel = lv_font_load("S:display/font/big_panel_top.bin");
     log_d("4");
     common_fonts.font_montserrat_medium_48 = lv_font_load("S:display/font/montserrat/ui_font_m48medium.bin");
     log_d("5");
     common_fonts.font_montserrat_medium_14 = lv_font_load("S:display/font/montserrat/ui_font_m14medium.bin");
     log_d("6");
     common_fonts.font_montserrat_medium_units_18 = lv_font_load("S:display/font/montserrat/ui_font_m18unitsmedium.bin");
+    log_d("7");
+    common_fonts.font_temp_hum = lv_font_load("S:display/font/temp_hum.bin");
 
     log_d("Loaded From SD Card");
 }
@@ -55,7 +57,7 @@ void ui::init()
     lv_disp_t *dispp = lv_disp_get_default();
 
     lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_GREEN), lv_palette_main(LV_PALETTE_LIME),
-                                              false, LV_FONT_DEFAULT);
+                                              true, LV_FONT_DEFAULT);
 
     lv_disp_set_theme(dispp, theme);
 

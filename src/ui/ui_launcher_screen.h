@@ -18,14 +18,14 @@ public:
         lv_obj_add_event_cb(screen, event_callback<ui_launcher_screen, &ui_launcher_screen::screen_callback>, LV_EVENT_ALL, this);
 
         lv_style_init(&button_style_default);
-        lv_style_set_text_color(&button_style_default, off_black_color);
+        lv_style_set_text_color(&button_style_default, text_color);
         lv_style_set_img_opa(&button_style_default, LV_OPA_100);
         lv_style_set_text_font(&button_style_default, &lv_font_montserrat_16);
 
         lv_style_init(&button_style_pressed);
         lv_style_set_img_recolor_opa(&button_style_pressed, LV_OPA_30);
-        lv_style_set_img_recolor(&button_style_pressed, lv_color_black());
-        lv_style_set_text_color(&button_style_pressed, lv_color_lighten(off_black_color, LV_OPA_50));
+        lv_style_set_img_recolor(&button_style_pressed,  text_color);
+        lv_style_set_text_color(&button_style_pressed, lv_color_lighten(text_color, LV_OPA_50));
         lv_style_set_text_font(&button_style_pressed, &lv_font_montserrat_16);
 
         int pad = 30;

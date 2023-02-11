@@ -3,6 +3,7 @@
 #include "ui_screen_with_sensor_panel.h"
 
 #include "sensor.h"
+#include "ntp_time.h"
 
 class ui_main_screen final : public ui_screen_with_sensor_panel
 {
@@ -16,21 +17,14 @@ public:
         lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
         const int x_pad = 9;
-        const int y_pad = 10;
-        const int big_panel_w = (screen_width - x_pad * 3) / 2;
-        const int big_panel_h = 150;
-        const int small_panel_w = (screen_width - x_pad * 3) / 2;
-        const int small_panel_h = 81;
+        const int y_pad = 8;
+        const int big_panel_w = (screen_width * 3) / 4;
+        const int big_panel_h = (screen_height * 2) / 3;
 
         panel_and_labels[static_cast<size_t>(sensor_id_index::pm_2_5)] =
-            create_big_panel(sensor_id_index::pm_2_5, x_pad, y_pad, big_panel_w, big_panel_h);
-        panel_and_labels[static_cast<size_t>(sensor_id_index::voc)] =
-            create_big_panel(sensor_id_index::voc, x_pad * 2 + big_panel_w, y_pad, big_panel_w, big_panel_h);
+            create_big_panel(sensor_id_index::pm_2_5, (screen_width - big_panel_w) / 2, y_pad, big_panel_w, big_panel_h);
 
-        panel_and_labels[static_cast<size_t>(sensor_id_index::pm_10)] =
-            create_small_panel(sensor_id_index::pm_10, x_pad, big_panel_h + y_pad * 2, small_panel_w, small_panel_h);
-        panel_and_labels[static_cast<size_t>(sensor_id_index::eCO2)] =
-            create_small_panel(sensor_id_index::eCO2, x_pad * 2 + small_panel_w, big_panel_h + y_pad * 2, small_panel_w, small_panel_h);
+        // create_graph(x_pad, y_pad, (screen_width - x_pad * 3) / 3, big_panel_h);
 
         panel_and_labels[static_cast<size_t>(sensor_id_index::temperatureF)] =
             create_temperature_panel(sensor_id_index::temperatureF, 10, -10);
@@ -62,7 +56,7 @@ private:
     panel_and_label create_big_panel(sensor_id_index index,
                                      lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
     {
-        auto panel = create_panel(x_ofs, y_ofs, w, h, 20);
+        auto panel = create_panel(x_ofs, y_ofs, w, h, 40);
 
         auto label = lv_label_create(panel);
         lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
@@ -77,8 +71,8 @@ private:
 
         lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
         lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(value_label, fonts->font_montserrat_light_numbers_112, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_color(value_label, lv_color_black(), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(value_label, fonts->font_big_panel, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(value_label, text_color, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         add_panel_callback_event(panel, index);
 
@@ -99,7 +93,6 @@ private:
         lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -110,48 +103,14 @@ private:
         return panel;
     }
 
-    panel_and_label create_small_panel(sensor_id_index index,
-                                       lv_coord_t x_ofs, lv_coord_t y_ofs, lv_coord_t w, lv_coord_t h)
-    {
-        auto panel = create_panel(x_ofs, y_ofs, w, h, 13);
-
-        auto label = lv_label_create(panel);
-        lv_obj_set_size(label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_label_set_text(label, get_sensor_name(index));
-        lv_obj_set_style_text_color(label, off_black_color, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_opa(label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(label, fonts->font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        auto value_label = lv_label_create(panel);
-        lv_obj_set_size(value_label, lv_pct(100), LV_SIZE_CONTENT);
-
-        lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
-        lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(value_label, fonts->font_montserrat_bold_numbers_48, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_color(value_label, lv_color_black(), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_letter_space(value_label, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-        add_panel_callback_event(panel, index);
-
-        panel_and_label pair{panel, value_label};
-        set_default_value_in_panel(pair);
-
-        lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 5);
-        lv_obj_align(value_label, LV_ALIGN_BOTTOM_MID, 0, -5);
-
-        return pair;
-    }
-
     panel_and_label create_temperature_panel(sensor_id_index index,
                                              lv_coord_t x_ofs, lv_coord_t y_ofs)
     {
         auto panel = lv_obj_create(screen);
-        lv_obj_set_size(panel, 180, LV_SIZE_CONTENT);
+        lv_obj_set_size(panel, screen_width / 2, 72);
         lv_obj_align(panel, LV_ALIGN_BOTTOM_LEFT, x_ofs, y_ofs);
         lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(panel, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_GESTURE_BUBBLE);
 
         lv_obj_set_style_radius(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -163,12 +122,11 @@ private:
 
         auto value_label = lv_label_create(panel);
         lv_obj_set_size(value_label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_obj_align(value_label, LV_ALIGN_BOTTOM_LEFT, 48, 0);
+        lv_obj_align(value_label, LV_ALIGN_BOTTOM_LEFT, 56, 0);
         lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
         lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(value_label, fonts->font_montserrat_medium_48, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_color(value_label, lv_color_hex(0x0), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(value_label, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(value_label, fonts->font_temp_hum, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(value_label, text_color, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_label_set_text_fmt(value_label, "- %s", get_sensor_unit(index));
 
         add_panel_callback_event(panel, index);
@@ -179,12 +137,10 @@ private:
                                           lv_coord_t x_ofs, lv_coord_t y_ofs)
     {
         auto panel = lv_obj_create(screen);
-        lv_obj_set_size(panel, 240, LV_SIZE_CONTENT);
+        lv_obj_set_size(panel, screen_width / 2,  72);
         lv_obj_align(panel, LV_ALIGN_BOTTOM_RIGHT, x_ofs, y_ofs);
         lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(panel, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_opa(panel, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_add_flag(panel, LV_OBJ_FLAG_EVENT_BUBBLE | LV_OBJ_FLAG_GESTURE_BUBBLE);
 
         lv_obj_set_style_radius(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -196,12 +152,11 @@ private:
 
         auto value_label = lv_label_create(panel);
         lv_obj_set_size(value_label, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_obj_align(value_label, LV_ALIGN_BOTTOM_RIGHT, -48, 0);
+        lv_obj_align(value_label, LV_ALIGN_BOTTOM_RIGHT, -56, 0);
         lv_label_set_long_mode(value_label, LV_LABEL_LONG_SCROLL);
         lv_obj_set_style_text_align(value_label, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_font(value_label, fonts->font_montserrat_medium_48, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_text_color(value_label, lv_color_hex(0x0), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_bg_color(value_label, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(value_label, fonts->font_temp_hum, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_color(value_label, text_color, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_label_set_text_fmt(value_label, "- %s", get_sensor_unit(index));
 
         add_panel_callback_event(panel, index);

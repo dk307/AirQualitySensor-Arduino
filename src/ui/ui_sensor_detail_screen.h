@@ -19,10 +19,10 @@ public:
         lv_obj_clear_flag(screen, LV_OBJ_FLAG_SCROLLABLE);
 
         sensor_detail_screen_top_label =
-            create_sensor_label(screen, fonts->font_montserrat_medium_48, LV_ALIGN_TOP_MID, 0, y_pad, lv_color_black());
+            create_sensor_label(screen, fonts->font_montserrat_medium_48, LV_ALIGN_TOP_MID, 0, y_pad, text_color);
 
         sensor_detail_screen_top_label_units =
-            create_sensor_label(screen, fonts->font_montserrat_medium_units_18, LV_ALIGN_TOP_RIGHT, -2 * x_pad, y_pad + 10, off_black_color);
+            create_sensor_label(screen, fonts->font_montserrat_medium_units_18, LV_ALIGN_TOP_RIGHT, -2 * x_pad, y_pad + 10, text_color);
 
         lv_obj_set_style_text_align(sensor_detail_screen_top_label_units, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -55,6 +55,7 @@ public:
         {
             const auto extra_chart_x = 45;
             sensor_detail_screen_chart = lv_chart_create(screen);
+            lv_obj_set_style_bg_opa(sensor_detail_screen_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_size(sensor_detail_screen_chart,
                             screen_width - panel_w - x_pad * 3 - extra_chart_x - 10,
                             screen_height - top_y_margin - 3 * y_pad - 20);
@@ -62,7 +63,7 @@ public:
             lv_obj_set_style_size(sensor_detail_screen_chart, 0, LV_PART_INDICATOR);
             sensor_detail_screen_chart_series =
                 lv_chart_add_series(sensor_detail_screen_chart,
-                                    lv_color_darken(lv_theme_get_color_primary(sensor_detail_screen_chart), LV_OPA_50),
+                                    lv_theme_get_color_primary(sensor_detail_screen_chart),
                                     LV_CHART_AXIS_PRIMARY_Y);
             lv_obj_set_style_text_font(sensor_detail_screen_chart, fonts->font_montserrat_medium_14, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_chart_set_axis_tick(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_Y, 5, 1, 3, 1, true, 200);
@@ -119,7 +120,7 @@ private:
     lv_obj_t *sensor_detail_screen_top_label_units;
     lv_obj_t *sensor_detail_screen_chart;
     lv_chart_series_t *sensor_detail_screen_chart_series;
-    std::vector<sensor_value::value_type, esp32::psram::allocator<sensor_value::value_type>> sensor_detail_screen_chart_series_data;
+    sensor_history::vector_history_t sensor_detail_screen_chart_series_data;
     std::optional<time_t> sensor_detail_screen_chart_series_data_time;
     const static uint8_t chart_total_x_ticks = 4;
 
@@ -171,13 +172,13 @@ private:
         set_padding_zero(panel);
 
         auto current_static_label =
-            create_sensor_label(panel, fonts->font_montserrat_medium_14, LV_ALIGN_TOP_MID, 0, 3, lv_color_black());
+            create_sensor_label(panel, fonts->font_montserrat_medium_14, LV_ALIGN_TOP_MID, 0, 3, text_color);
 
         lv_label_set_text_static(current_static_label, label_text);
 
         auto value_label =
             create_sensor_label(panel, fonts->font_montserrat_regular_numbers_40, LV_ALIGN_BOTTOM_MID,
-                                0, -3, lv_color_white());
+                                0, -3, text_color);
 
         return {panel, value_label};
     }
@@ -329,7 +330,8 @@ private:
 
             auto &&values = sensor_info.history;
             lv_chart_set_point_count(sensor_detail_screen_chart, values.size());
-            lv_chart_set_range(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_Y, stats.min, stats.max);
+            const auto range = std::max<sensor_value::value_type>((stats.max - stats.min) * 0.1, 2);
+            lv_chart_set_range(sensor_detail_screen_chart, LV_CHART_AXIS_PRIMARY_Y, stats.min - range / 2, stats.max + range / 2);
 
             sensor_detail_screen_chart_series_data = std::move(values);
 

@@ -287,7 +287,7 @@ void hardware::begin()
     display_instance.begin();
 
     sensor_refresh_task = std::make_unique<esp32::task>([this]
-                                                      {
+                                                        {
                                                             log_i("Hardware task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {
@@ -299,7 +299,7 @@ void hardware::begin()
                                                             } while(true); });
 
     lvgl_refresh_task = std::make_unique<esp32::task>([this]
-                                                    {
+                                                      {
                                                             log_i("Lvgl task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {

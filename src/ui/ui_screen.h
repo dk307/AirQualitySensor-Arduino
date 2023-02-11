@@ -8,8 +8,9 @@
 struct ui_common_fonts
 {
     // fonts loaded from sd card - bpp4
-    lv_font_t *font_montserrat_light_numbers_112;  // 0x20,0,1,2,3,4,5,6,7,8,9,-
-    lv_font_t *font_montserrat_bold_numbers_48; // 0x20,0,1,2,3,4,5,6,7,8,9,-
+    lv_font_t *font_big_panel;                     // 0x20,0,1,2,3,4,5,6,7,8,9,-
+    lv_font_t *font_temp_hum;                      // 0x20,0,1,2,3,4,5,6,7,8,9,F,µ,g,/,m,³,°,F,⁒,p,-
+    lv_font_t *font_montserrat_bold_numbers_48;    // 0x20,0,1,2,3,4,5,6,7,8,9,-
     lv_font_t *font_montserrat_regular_numbers_40; // 0x20,0,1,2,3,4,5,6,7,8,9,-
     lv_font_t *font_montserrat_medium_48;          // 0x20-0x7F,0,1,2,3,4,5,6,7,8,9,F,µ,g,/,m,³,°,F,⁒,p,-
     lv_font_t *font_montserrat_medium_units_18;    // 0x20,F,µ,g,/,m,³,°,F,⁒,p,-
@@ -38,6 +39,7 @@ protected:
     const static int screen_width = 480;
     const static int screen_height = 320;
     const lv_color_t off_black_color = lv_color_hex(0x1E1E1E);
+    const lv_color_t text_color = lv_color_hex(0xFFFAFA);
 
     ui_interface &ui_interface_instance;
     ui_inter_screen_interface &inter_screen_interface;
@@ -92,7 +94,9 @@ protected:
 
     void set_default_screen()
     {
-        lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_grad_dir(screen, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(screen, lv_color_hex(0x0C0D0C), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_grad_color(screen, lv_color_hex(0x111210), LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 
 private:
