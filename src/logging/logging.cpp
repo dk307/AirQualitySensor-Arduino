@@ -19,7 +19,7 @@ SerialHook *serial_hook_instance = nullptr;
 //     }
 
 //     std::atomic_bool enable_callback_logging{false};
-//     std::mutex callback_buffer_mutex;
+//     esp32::semaphore callback_buffer_mutex;
 //     std::vector<char> callback_buffer;
 //     task_wrapper background_callback_task;
 //     std::function<void(const String &log)> logging_callback;
@@ -42,13 +42,13 @@ public:
 
     void add_sink(serial_hook_sink *sink)
     {
-        std::lock_guard<std::mutex> lock(sinks_mutex);
+        std::lock_guard<esp32::semaphore> lock(sinks_mutex);
         sinks.push_back(sink);
     }
 
     void remove_sink(serial_hook_sink *sink)
     {
-        std::lock_guard<std::mutex> lock(sinks_mutex);
+        std::lock_guard<esp32::semaphore> lock(sinks_mutex);
         sinks.push_back(sink);
     }
 
@@ -64,7 +64,7 @@ private:
 
     void hookImpl(char c)
     {
-        std::lock_guard<std::mutex> lock(sinks_mutex);
+        std::lock_guard<esp32::semaphore> lock(sinks_mutex);
         for (auto &&sink : sinks)
         {
             if (sink)
@@ -74,7 +74,7 @@ private:
         }
     }
 
-    std::mutex sinks_mutex;
+    esp32::semaphore sinks_mutex;
     std::vector<serial_hook_sink *> sinks;
 };
 

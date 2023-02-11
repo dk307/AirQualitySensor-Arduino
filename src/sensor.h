@@ -1,7 +1,6 @@
 #pragma once
 
 #include <change_callback.h>
-
 #include <math.h>
 #include <atomic>
 #include <mutex>
@@ -117,13 +116,13 @@ public:
 
     void add_value(T value)
     {
-        std::lock_guard<std::mutex> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         last_x_values.push(value);
     }
 
     void clear()
     {
-        std::lock_guard<std::mutex> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         last_x_values.clear();
     }
 
@@ -131,7 +130,7 @@ public:
     {
         std::vector<T, esp32::psram::allocator<T>> return_values;
 
-        std::lock_guard<std::mutex> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         const auto size = last_x_values.size();
         if (size)
         {
@@ -170,7 +169,7 @@ public:
 
     std::optional<T> get_average() const
     {
-        std::lock_guard<std::mutex> lock(data_mutex);
+        std::lock_guard<esp32::semaphore> lock(data_mutex);
         const auto size = last_x_values.size();
         if (size)
         {
@@ -189,7 +188,7 @@ public:
     }
 
 private:
-    mutable std::mutex data_mutex;
+    mutable esp32::semaphore data_mutex;
     CircularBuffer<T, countT> last_x_values;
 };
 
