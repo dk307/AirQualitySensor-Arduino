@@ -19,7 +19,7 @@ public:
         const int x_pad = 9;
         const int y_pad = 8;
         const int big_panel_w = (screen_width * 3) / 4;
-        const int big_panel_h = (screen_height * 2) / 3;
+        const int big_panel_h = ((screen_height * 2) / 3) - 15;
 
         panel_and_labels[static_cast<size_t>(sensor_id_index::pm_2_5)] =
             create_big_panel(sensor_id_index::pm_2_5, (screen_width - big_panel_w) / 2, y_pad, big_panel_w, big_panel_h);
@@ -75,7 +75,7 @@ private:
         add_panel_callback_event(panel, index);
 
         lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 9);
-        lv_obj_align(value_label, LV_ALIGN_BOTTOM_MID, 0, -9);
+        lv_obj_align(value_label, LV_ALIGN_BOTTOM_MID, 0, -1);
 
         panel_and_label pair{panel, value_label};
         set_default_value_in_panel(pair);
@@ -94,6 +94,9 @@ private:
         lv_obj_set_style_clip_corner(panel, false, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_grad_dir(panel, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+        lv_obj_set_style_shadow_spread(panel, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_width(panel, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+        
         lv_obj_set_style_radius(panel, radius, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);
 
