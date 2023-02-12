@@ -24,19 +24,11 @@ void ui::load_from_sd_card()
         log_e("lv fs not ready");
     }
 
-    log_d("1");
-    common_fonts.font_montserrat_bold_numbers_48 = lv_font_load("S:display/font/montserrat/ui_font_m48boldnumbers.bin");
-    log_d("2");
     common_fonts.font_montserrat_regular_numbers_40 = lv_font_load("S:display/font/montserrat/ui_font_m40regularnumbers.bin");
-    log_d("3");
     common_fonts.font_big_panel = lv_font_load("S:display/font/big_panel_top.bin");
-    log_d("4");
     common_fonts.font_montserrat_medium_48 = lv_font_load("S:display/font/montserrat/ui_font_m48medium.bin");
-    log_d("5");
     common_fonts.font_montserrat_medium_14 = lv_font_load("S:display/font/montserrat/ui_font_m14medium.bin");
-    log_d("6");
     common_fonts.font_montserrat_medium_units_18 = lv_font_load("S:display/font/montserrat/ui_font_m18unitsmedium.bin");
-    log_d("7");
     common_fonts.font_temp_hum = lv_font_load("S:display/font/temp_hum.bin");
 
     log_d("Loaded From SD Card");
