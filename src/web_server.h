@@ -77,8 +77,6 @@ private:
     static String join_path(const String &part1, const String &part2);
     static String get_file_md5(const String &path);
     
-
-
     static bool is_ip(const String &str);
     static String to_string_ip(const IPAddress &ip);
     template <class Array, class K, class T>
@@ -86,6 +84,7 @@ private:
     template <class V, class T>
     static void add_to_json_doc(V &doc, T id, float value);
     void notify_sensor_change(sensor_id_index id);
+    void send_log_data(const String& c);
 
     AsyncWebServer http_server{80};
     AsyncEventSource events{"/events"};

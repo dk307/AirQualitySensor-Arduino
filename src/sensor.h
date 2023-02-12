@@ -179,8 +179,7 @@ public:
             double sum = 0;
             for (auto i = 0; i < size; i++)
             {
-                const auto value = last_x_values[i];
-                sum += value;
+                sum += last_x_values[i];
             }
             return static_cast<T>(sum / size);
         }

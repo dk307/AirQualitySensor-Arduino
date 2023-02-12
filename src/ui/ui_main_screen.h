@@ -24,8 +24,6 @@ public:
         panel_and_labels[static_cast<size_t>(sensor_id_index::pm_2_5)] =
             create_big_panel(sensor_id_index::pm_2_5, (screen_width - big_panel_w) / 2, y_pad, big_panel_w, big_panel_h);
 
-        // create_graph(x_pad, y_pad, (screen_width - x_pad * 3) / 3, big_panel_h);
-
         panel_and_labels[static_cast<size_t>(sensor_id_index::temperatureF)] =
             create_temperature_panel(sensor_id_index::temperatureF, 10, -10);
         panel_and_labels[static_cast<size_t>(sensor_id_index::humidity)] =

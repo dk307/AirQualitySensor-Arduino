@@ -4,40 +4,23 @@
 #include <SD.h>
 #include <task_wrapper.h>
 
-#include "serial_hook_sink.h"
-
 logger logger::instance;
-
-class SerialHook;
-SerialHook *serial_hook_instance = nullptr;
-
-// class web_callback_sink final : public serial_hook_sink
-// {
-// public:
-//     web_callback_sink() : background_callback_task(std::bind(&SerialHook::callback_log_task, this))
-//     {
-//     }
-
-//     std::atomic_bool enable_callback_logging{false};
-//     esp32::semaphore callback_buffer_mutex;
-//     std::vector<char> callback_buffer;
-//     task_wrapper background_callback_task;
-//     std::function<void(const String &log)> logging_callback;
-// };
 
 class SerialHook
 {
 public:
     SerialHook()
     {
-        serial_hook_instance = this;
+        logger::instance.serial_hook_instance = this;
         ets_install_putc2(serial_hook);
+        log_i("Hooked Logging");
     }
 
     ~SerialHook()
     {
         ets_install_putc2(NULL);
-        serial_hook_instance = nullptr;
+        logger::instance.serial_hook_instance = nullptr;
+        log_i("Removed Logging Hook");
     }
 
     void add_sink(serial_hook_sink *sink)
@@ -49,13 +32,23 @@ public:
     void remove_sink(serial_hook_sink *sink)
     {
         std::lock_guard<esp32::semaphore> lock(sinks_mutex);
-        sinks.push_back(sink);
+        auto iter = std::find(sinks.begin(), sinks.end(), sink);
+        if (iter != sinks.end())
+        {
+            sinks.erase(iter);
+        }
+    }
+
+    auto sink_size()
+    {
+        std::lock_guard<esp32::semaphore> lock(sinks_mutex);
+        return sinks.size();
     }
 
 private:
     static void serial_hook(char c)
     {
-        auto h = serial_hook_instance;
+        auto h = logger::instance.serial_hook_instance;
         if (h)
         {
             h->hookImpl(c);
@@ -81,6 +74,9 @@ private:
 bool logger::enable_sd_logging()
 {
     std::lock_guard<esp32::semaphore> lock(serial_hook_mutex);
+
+    log_i("Enabling sd card logging");
+
     // ensure logs dir
     const auto logDir = "/logs";
     if (!SD.exists(logDir))
@@ -106,21 +102,56 @@ bool logger::enable_sd_logging()
     return true;
 }
 
-void logger::disable_sd_logging()
+bool logger::enable_web_logging(const std::function<void(const String &)> &callbackP)
 {
     std::lock_guard<esp32::semaphore> lock(serial_hook_mutex);
 
-    if (sd_card_sink_instance)
+    log_i("Enabling web callback card logging");
+    hook_uart_logger();
+
+    if (web_callback_sink_instance)
     {
-        serial_hook_instance->remove_sink(sd_card_sink_instance.get());
-        sd_card_sink_instance.reset();
+        serial_hook_instance->remove_sink(web_callback_sink_instance.get());
+        web_callback_sink_instance.reset();
+    }
+
+    web_callback_sink_instance = std::make_unique<web_callback_sink>(callbackP);
+    serial_hook_instance->add_sink(web_callback_sink_instance.get());
+
+    return true;
+}
+
+template <class T>
+void logger::remove_sink(std::unique_ptr<T> &p)
+{
+    std::lock_guard<esp32::semaphore> lock(serial_hook_mutex);
+
+    if (p)
+    {
+        serial_hook_instance->remove_sink(p.get());
+        p.reset();
     }
 
     if (serial_hook_instance)
     {
-        delete serial_hook_instance;
-        serial_hook_instance = nullptr;
+        if (!serial_hook_instance->sink_size())
+        {
+            delete serial_hook_instance;
+            p.reset();
+        }
     }
+}
+
+void logger::disable_sd_logging()
+{
+    remove_sink(sd_card_sink_instance);
+    log_i("Disabled sd card logging");
+}
+
+void logger::disable_web_logging()
+{
+    remove_sink(web_callback_sink_instance);
+    log_i("Disabled web callback card logging");
 }
 
 void logger::hook_uart_logger()

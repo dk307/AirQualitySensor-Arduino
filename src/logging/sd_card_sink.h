@@ -15,6 +15,7 @@ class sd_card_sink final : public serial_hook_sink
 public:
     sd_card_sink() : background_log_task(std::bind(&sd_card_sink::flush_to_disk_task, this))
     {
+        background_log_task.spawn_same("sd_card_sink", 4096, tskIDLE_PRIORITY);
     }
 
     ~sd_card_sink()

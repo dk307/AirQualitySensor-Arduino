@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" href="media/favicon.png" type="image/x-icon">
   <link rel="icon" href="media/favicon.png" type="image/x-icon">
-  <title>SD Card</title>
+  <title>Debug</title>
 
   <link rel="stylesheet" href="/css/bootstrap.min.css" />
   <link rel="stylesheet" href="/css/datatables.min.css" />
@@ -18,20 +18,25 @@
       word-wrap: break-word;
     }
   </style>
-
 </head>
 
 <body>
   <nav class="navbar navbar bg-light">
     <form class="container-fluid justify-content-start">
-      <button class="btn btn-primary me-2" type="button">Show Logs</button>
-      <button class="btn btn-primary" type="button">Smaller button</button>
+      <button class="btn btn-primary me-3" type="button" id="startWebLoggingId">Start Web logging</button>
+      <button class="btn btn-primary me-3" type="button" id="stopWebLoggingId">Stop Web logging</button>
+      <button class="btn btn-primary me-3" type="button" id="startSDLoggingId">Start SD Card logging</button>
+      <button class="btn btn-primary me-3" type="button" id="stopSDLoggingId">Stop SD Card logging</button>
     </form>
   </nav>
 
   <div class="modal-body">
-    <pre class="logs"><code id="logsBlock"></code></pre>
+    <pre class="logs">
+      <code id="logsBlock"></code>
+    </pre>
   </div>
+
+  <script src="/js/s.js"></script>
 
   <script>
     var logsSource;
@@ -50,6 +55,34 @@
       logsSource.addEventListener("logs", appendLogs);
     });
 
+    function ajaxPost(url, text) {
+      $.ajax({
+        type: "POST",
+        url: url,
+        success: function (data) {
+          alert(text + " success");
+        },
+        error: function () {
+          alert(text + " failed");
+        }
+      });
+    }
+
+    document.getElementById('startWebLoggingId').addEventListener('click', function () {
+      ajaxPost("/api/log/webstart", "Web Logging enable");
+    });
+
+    document.getElementById('stopWebLoggingId').addEventListener('click', function () {
+      ajaxPost("/api/log/webstop", "Web Logging disable");
+    });
+
+    document.getElementById('startSDLoggingId').addEventListener('click', function () {
+      ajaxPost("/api/log/sdstart", "SD Card Logging enable");
+    });
+
+    document.getElementById('stopSDLoggingId').addEventListener('click', function () {
+      ajaxPost("/api/log/sdstop", "SD Card Logging disable");
+    });
   </script>
 
 </body>

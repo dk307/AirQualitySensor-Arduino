@@ -15,6 +15,7 @@
 
 #include "operations.h"
 #include "hardware.h"
+#include "logging/logging.h"
 #include "web/include/index.html.gz.h"
 #include "web/include/login.html.gz.h"
 #include "web/include/fs.html.gz.h"
@@ -181,6 +182,33 @@ void web_server::server_routing()
 	http_server.on("/fs/delete", HTTP_POST, handle_fs_delete);
 	http_server.on("/fs/rename", HTTP_POST, handle_fs_rename);
 	http_server.onNotFound(handle_file_read);
+
+	// log
+	http_server.on("/api/log/webstart", HTTP_POST, [this](AsyncWebServerRequest *request)
+				   {
+			if (logger::instance.enable_web_logging(std::bind(&web_server::send_log_data, this, std::placeholders::_1))) {
+					request->send(200);
+			} else {
+					request->send(500);
+			} });
+
+	http_server.on("/api/log/webstop", HTTP_POST, [this](AsyncWebServerRequest *request)
+				   {
+			logger::instance.disable_web_logging();
+					request->send(200); });
+
+	http_server.on("/api/log/sdstart", HTTP_POST, [this](AsyncWebServerRequest *request)
+				   {
+			if (logger::instance.enable_sd_logging()) {
+					request->send(200);
+			} else {
+					request->send(500);
+			} });
+
+	http_server.on("/api/log/sdstop", HTTP_POST, [this](AsyncWebServerRequest *request)
+				   {
+			logger::instance.disable_sd_logging();
+					request->send(200); });
 }
 
 void web_server::on_event_connect(AsyncEventSourceClient *client)
@@ -211,6 +239,7 @@ void web_server::on_logging_connect(AsyncEventSourceClient *client)
 	{
 		log_i("Logging client first time");
 	}
+	send_log_data("Start");
 }
 
 void web_server::wifi_get(AsyncWebServerRequest *request)
@@ -1164,3 +1193,10 @@ String web_server::join_path(const String &part1, const String &part2)
 	return part1 + (part1.endsWith("/") ? "" : "/") + part2;
 }
 
+void web_server::send_log_data(const String &c)
+{
+	if (logging.count())
+	{
+		logging.send(c.c_str(), "logs", millis());
+	}
+}
