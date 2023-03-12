@@ -6,6 +6,7 @@
 #include "config_manager.h"
 #include "hardware/display.h"
 #include "hardware.h"
+#include "logging/logging_tags.h"
 
 #include <Arduino.h>
 #include <Wifi.h>
@@ -81,7 +82,7 @@ void hardware::set_screen_brightness(uint8_t value)
 {
     if (current_brightness != value)
     {
-        log_i("Setting display brightness to %d", value);
+        ESP_LOGI(DISPLAY_TAG, "Setting display brightness to %d", value);
         display_instance.set_brightness(std::max<uint8_t>(30, value));
         current_brightness = value;
     }
@@ -100,6 +101,7 @@ ui_interface::information_table_type hardware::get_information_table(information
             {"PsRam", to_string(stringify_size(ESP.getFreePsram(), 1), " free out of ", stringify_size(ESP.getPsramSize(), 1))},
             {"Uptime", get_up_time()},
             {"SD Card Size", to_string(SD.cardSize() / (1024 * 1024), " MB")},
+            {"Screen Brightness", to_string((display_instance.get_brightness() * 100) / 256, " %")},
             {"SHT31 sensor status", get_sht31_status()},
             {"SPS30 sensor status", get_sps30_error_register_status()},
         };
@@ -198,12 +200,12 @@ bool hardware::clean_sps_30()
     const auto sps_error = sps30_start_manual_fan_cleaning();
     if (sps_error != NO_ERROR)
     {
-        log_e("SPS30 manual clean up failed with :%d", sps_error);
+        ESP_LOGE(SENSOR_SPS30_TAG, "SPS30 manual clean up failed with :%d", sps_error);
         return false;
     }
     else
     {
-        log_e("SPS30 manual cleanup started");
+        ESP_LOGI(SENSOR_SPS30_TAG, "SPS30 manual cleanup started");
         return true;
     }
 }
@@ -220,7 +222,7 @@ bool hardware::pre_begin()
     // Wire is already used by touch i2c
     if (!Wire1.begin(SDAWire, SCLWire))
     {
-        log_e("Failed to begin I2C interface");
+        ESP_LOGE(HARDWARE_TAG, "Failed to begin I2C interface");
         return false;
     }
 
@@ -228,37 +230,37 @@ bool hardware::pre_begin()
 
     if (!bh1750_sensor.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x23, &Wire1))
     {
-        log_e("Failed to start BH 1750");
+        ESP_LOGI(SENSOR_BH1750_TAG, "Failed to start BH 1750");
     }
     else
     {
-        log_i("BH1750 Initialized");
+        ESP_LOGI(SENSOR_BH1750_TAG, "BH1750 Initialized");
     }
 
     if (!sht31_sensor.begin(sht31_i2c_address, &Wire1)) // Wire is already used by touch i2c
     {
-        log_e("Failed to start SHT31");
+        ESP_LOGE(SENSOR_SHT31_TAG, "Failed to start SHT31");
     }
     else
     {
-        log_i("SHT31 Initialized");
+        ESP_LOGI(SENSOR_SHT31_TAG, "SHT31 Initialized");
         sht31_sensor.heatOff();
     }
 
     const auto sps_error = sps30_probe();
     if (sps_error == NO_ERROR)
     {
-        log_i("SPS30 Found");
+        ESP_LOGI(SENSOR_SPS30_TAG, "SPS30 Found");
 
         const auto sps_error1 = sps30_start_measurement();
         if (sps_error1 != NO_ERROR)
         {
-            log_e("SPS30 start measurement failed with :%d", sps_error1);
+            ESP_LOGE(SENSOR_SPS30_TAG, "SPS30 start measurement failed with :%d", sps_error1);
         }
     }
     else
     {
-        log_e("SPS30 Probe failed with :%d", sps_error);
+        ESP_LOGE(SENSOR_SPS30_TAG, "SPS30 Probe failed with :%d", sps_error);
     }
 
     set_auto_display_brightness();
@@ -276,7 +278,7 @@ void hardware::set_sensor_value(sensor_id_index index, const std::optional<senso
     }
     else
     {
-        log_w("Got an invalid value for sensor:%s", get_sensor_name(index));
+        ESP_LOGW(HARDWARE_TAG, "Got an invalid value for sensor:%s", get_sensor_name(index));
         (*sensors_history)[i].clear();
         sensors[i].set_invalid_value();
     }
@@ -288,7 +290,7 @@ void hardware::begin()
 
     sensor_refresh_task = std::make_unique<esp32::task>([this]
                                                         {
-                                                            log_i("Hardware task started on core:%d", xPortGetCoreID());
+                                                            ESP_LOGI( HARDWARE_TAG, "Hardware task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {
                                                                 read_bh1750_sensor();
@@ -300,7 +302,7 @@ void hardware::begin()
 
     lvgl_refresh_task = std::make_unique<esp32::task>([this]
                                                       {
-                                                            log_i("Lvgl task started on core:%d", xPortGetCoreID());
+                                                            ESP_LOGI(HARDWARE_TAG, "Lvgl task started on core:%d", xPortGetCoreID());
                                                             do
                                                             {
                                                                 display_instance.loop();                                                                                                                         
@@ -312,27 +314,30 @@ void hardware::begin()
     sensor_refresh_task->spawn_arduino_other_core("sensor task", 4196);
 }
 
-void hardware::read_bh1750_sensor()
+uint64_t hardware::read_bh1750_sensor()
 {
     std::optional<float> lux;
     if (bh1750_sensor.measurementReady(true))
     {
-        log_v("Reading BH1750 sensor");
+        ESP_LOGV(SENSOR_BH1750_TAG, "Reading BH1750 sensor");
 
         lux = bh1750_sensor.readLightLevel();
         light_sensor_values.add_value(lux.value());
     }
 
-    const auto now = millis();
-    if (now - sht31_sensor.lastRead() >= sensor_history::sensor_interval)
+    const auto now = esp_timer_get_time() / 1000;
+    if (now - bh1750_sensor_last_read >= sensor_history::sensor_interval)
     {
         if (lux.has_value())
         {
-            set_sensor_value(sensor_id_index::light_intensity, round_value(lux.value()));
+            const auto value = round_value(lux.value());
+            ESP_LOGI(SENSOR_BH1750_TAG, "Setting new value:%d", value.value_or(std::numeric_limits<sensor_value::value_type>::max()));
+            set_sensor_value(sensor_id_index::light_intensity, value);
+            bh1750_sensor_last_read = now;
         }
         else
         {
-            log_e("Failed to read from BH1750");
+            ESP_LOGE(SENSOR_BH1750_TAG, "Failed to read from BH1750");
             set_sensor_value(sensor_id_index::light_intensity, std::nullopt);
         }
     }
@@ -343,18 +348,21 @@ void hardware::read_sht31_sensor()
     const auto now = millis();
     if (now - sht31_sensor.lastRead() >= sensor_history::sensor_interval)
     {
-        log_i("Reading SHT31 sensor");
-
         if (sht31_sensor.read(false))
         {
-            set_sensor_value(sensor_id_index::temperatureF, round_value(sht31_sensor.getFahrenheit()));
-            set_sensor_value(sensor_id_index::humidity, round_value(sht31_sensor.getHumidity()));
+            const auto temp = round_value(sht31_sensor.getFahrenheit());
+            const auto hum = round_value(sht31_sensor.getHumidity());
+            ESP_LOGI(SENSOR_SHT31_TAG, "Setting SHT31 sensor values:%d F, %d %%",
+                     temp.value_or(std::numeric_limits<sensor_value::value_type>::max()),
+                     hum.value_or(std::numeric_limits<sensor_value::value_type>::max()));
+            set_sensor_value(sensor_id_index::temperatureF, temp);
+            set_sensor_value(sensor_id_index::humidity, hum);
             sht31_last_error = SHT31_OK;
         }
         else
         {
             sht31_last_error = sht31_sensor.getError();
-            log_e("Failed to read from SHT31 sensor with error:%x", sht31_last_error);
+            ESP_LOGE(SENSOR_SHT31_TAG, "Failed to read from SHT31 sensor with error:%x", sht31_last_error);
             set_sensor_value(sensor_id_index::temperatureF, std::nullopt);
             set_sensor_value(sensor_id_index::humidity, std::nullopt);
         }
@@ -366,7 +374,7 @@ void hardware::read_sps30_sensor()
     const auto now = millis();
     if (now - sps30_sensor_last_read >= sensor_history::sensor_interval)
     {
-        log_i("Reading SPS30 sensor");
+
         bool read = false;
         uint16_t ready = 0;
 
@@ -381,20 +389,33 @@ void hardware::read_sps30_sensor()
                 sps30_sensor_last_read = now;
                 read = true;
 
-                set_sensor_value(sensor_id_index::pm_10, round_value(m.mc_10p0));
-                set_sensor_value(sensor_id_index::pm_1, round_value(m.mc_1p0));
-                set_sensor_value(sensor_id_index::pm_2_5, round_value(m.mc_2p5));
-                set_sensor_value(sensor_id_index::pm_4, round_value(m.mc_4p0));
-                set_sensor_value(sensor_id_index::typical_particle_size, round_value(m.typical_particle_size));
+                const auto val_10 = round_value(m.mc_10p0);
+                const auto val_1 = round_value(m.mc_1p0);
+                const auto val_2_5 = round_value(m.mc_2p5);
+                const auto val_4 = round_value(m.mc_4p0);
+                const auto val_p = round_value(m.typical_particle_size);
+
+                ESP_LOGI(SENSOR_SPS30_TAG, "Setting SPS30 sensor values PM2.5:%d, PM1:%d, PM4:%d, PM10:%d, Particle Size:%d",
+                         val_2_5.value_or(std::numeric_limits<sensor_value::value_type>::max()),
+                         val_1.value_or(std::numeric_limits<sensor_value::value_type>::max()),
+                         val_4.value_or(std::numeric_limits<sensor_value::value_type>::max()),
+                         val_10.value_or(std::numeric_limits<sensor_value::value_type>::max()),
+                         val_p.value_or(std::numeric_limits<sensor_value::value_type>::max()));
+
+                set_sensor_value(sensor_id_index::pm_10, val_10);
+                set_sensor_value(sensor_id_index::pm_1, val_1);
+                set_sensor_value(sensor_id_index::pm_2_5, val_2_5);
+                set_sensor_value(sensor_id_index::pm_4, val_4);
+                set_sensor_value(sensor_id_index::typical_particle_size, val_p);
             }
             else
             {
-                log_e("Failed to read from SPS sensor with failed to read measurement error:0x%x", error);
+                ESP_LOGE(SENSOR_SPS30_TAG, "Failed to read from SPS sensor with failed to read measurement error:0x%x", error);
             }
         }
         else
         {
-            log_e("Failed to read from SPS sensor with data not ready error:0x%x", error);
+            ESP_LOGE(SENSOR_SPS30_TAG, "Failed to read from SPS sensor with data not ready error:0x%x", error);
         }
 
         if (!read)
@@ -422,7 +443,7 @@ std::optional<sensor_value::value_type> hardware::round_value(float val, int pla
 
 void hardware::scan_i2c_bus()
 {
-    log_d("Scanning...");
+    ESP_LOGD(HARDWARE_TAG, "Scanning...");
 
     auto nDevices = 0;
     for (auto address = 1; address < 127; address++)
@@ -435,13 +456,13 @@ void hardware::scan_i2c_bus()
 
         if (error == 0)
         {
-            log_i("I2C device found at address 0x%x", address);
+            ESP_LOGI(HARDWARE_TAG, "I2C device found at address 0x%x", address);
             nDevices++;
         }
     }
     if (nDevices == 0)
     {
-        log_i("No I2C devices found");
+        ESP_LOGI(HARDWARE_TAG, "No I2C devices found");
     }
 }
 
@@ -524,7 +545,7 @@ uint8_t hardware::lux_to_intensity(sensor_value::value_type lux)
 {
     // https://learn.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values
     const auto intensity = (std::log10(lux) / 5) * 255;
-    return std::max<uint8_t>(5, intensity);
+    return intensity;
 }
 
 void hardware::set_auto_display_brightness()
@@ -539,7 +560,8 @@ void hardware::set_auto_display_brightness()
     else
     {
         const auto avg_lux = light_sensor_values.get_average();
-        required_brightness = avg_lux.value_or(128);
+        ESP_LOGV(SENSOR_BH1750_TAG, "Average lux:%d", avg_lux.value_or(128));
+        required_brightness = lux_to_intensity(avg_lux.value_or(128));
     }
 
     set_screen_brightness(required_brightness);

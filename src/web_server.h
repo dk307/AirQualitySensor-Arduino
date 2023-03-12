@@ -84,7 +84,10 @@ private:
     template <class V, class T>
     static void add_to_json_doc(V &doc, T id, float value);
     void notify_sensor_change(sensor_id_index id);
+
+
     void send_log_data(const String& c);
+    static void on_get_log_info(AsyncWebServerRequest *request);
 
     AsyncWebServer http_server{80};
     AsyncEventSource events{"/events"};

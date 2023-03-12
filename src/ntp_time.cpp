@@ -1,6 +1,7 @@
 #include "ntp_time.h"
 
 #include "config_manager.h"
+#include "logging/logging_tags.h"
 #include <TimeLib.h>
 #include <Timezone.h>
 
@@ -36,14 +37,14 @@ void ntp_time::begin()
 {
     WiFi.onEvent(std::bind(&ntp_time::on_got_ip, this, std::placeholders::_1, std::placeholders::_2), ARDUINO_EVENT_WIFI_STA_GOT_IP);
 
-    log_i("Wifi Status:%d", WiFi.status());
+    ESP_LOGI(NTP_TAG, "Wifi Status:%d", WiFi.status());
     force_reconnect = true;
 
     const auto ftn = [this]
     {
         if (ntp_server != config::instance.data.get_ntp_server())
         {
-            log_d("Ntp server reset, get time again");
+            ESP_LOGI(NTP_TAG, "Ntp server reset, get time again");
             force_reconnect = true;
         }
     };
@@ -57,17 +58,17 @@ void ntp_time::time_is_set(struct timeval *tv)
     const auto status = sntp_get_sync_status();
     if (!ntp_time::instance.time_set)
     {
-        log_i("Time is set");
+        ESP_LOGI(NTP_TAG, "Time is set");
         ntp_time::instance.time_set = true;
 
         const auto t = time(NULL);
         tm t2{};
         gmtime_r(&t, &t2);
-        log_i("Time:%s", asctime(&t2));
+        ESP_LOGI(NTP_TAG, "Time:%s", asctime(&t2));
     }
     else
     {
-        log_d("Time is updated");
+        ESP_LOGI(NTP_TAG, "Time is updated");
     }
 }
 
@@ -75,7 +76,7 @@ void ntp_time::loop()
 {
     if (force_reconnect)
     {
-        log_i("Doing NTP Setup");
+        ESP_LOGI(NTP_TAG, "Doing NTP Setup");
         force_reconnect = false;
         ntp_server = config::instance.data.get_ntp_server();
         sntp_set_sync_interval(config::instance.data.get_ntp_server_refresh_interval());
@@ -86,7 +87,7 @@ void ntp_time::loop()
 
 void ntp_time::on_got_ip(WiFiEvent_t event, WiFiEventInfo_t info)
 {
-    log_i("Got Wifi IP");
+    ESP_LOGI(NTP_TAG, "Got Wifi IP, forcing reconnect");
     force_reconnect = true;
 }
 

@@ -16,6 +16,7 @@
 #include "operations.h"
 #include "hardware.h"
 #include "logging/logging.h"
+#include "logging/logging_tags.h"
 #include "web/include/index.html.gz.h"
 #include "web/include/login.html.gz.h"
 #include "web/include/fs.html.gz.h"
@@ -103,7 +104,7 @@ String create_hash(const String &user, const String &password, const String &ipA
 
 void web_server::begin()
 {
-	log_i("WebServer Starting");
+	ESP_LOGI(WEBSERVER_TAG, "WebServer Starting");
 	events.onConnect(std::bind(&web_server::on_event_connect, this, std::placeholders::_1));
 	events.setFilter(std::bind(&web_server::filter_events, this, std::placeholders::_1));
 
@@ -114,7 +115,7 @@ void web_server::begin()
 	http_server.addHandler(&logging);
 	http_server.begin();
 	server_routing();
-	log_i("WebServer Started");
+	ESP_LOGI(WEBSERVER_TAG, "WebServer Started");
 
 	for (auto i = 0; i < total_sensors; i++)
 	{
@@ -128,7 +129,7 @@ bool web_server::manage_security(AsyncWebServerRequest *request)
 {
 	if (!is_authenticated(request))
 	{
-		log_w("Auth Failed");
+		ESP_LOGW(WEBSERVER_TAG, "Auth Failed");
 		request->send(401, JsonMediaType, ("{\"msg\": \"Not-authenticated\"}"));
 		return false;
 	}
@@ -139,7 +140,7 @@ bool web_server::filter_events(AsyncWebServerRequest *request)
 {
 	if (!is_authenticated(request))
 	{
-		log_w("Dropping events request");
+		ESP_LOGW(WEBSERVER_TAG, "Dropping events request");
 		return false;
 	}
 	return true;
@@ -209,17 +210,19 @@ void web_server::server_routing()
 				   {
 			logger::instance.disable_sd_logging();
 					request->send(200); });
+
+	http_server.on("/api/log/info", HTTP_GET, on_get_log_info);
 }
 
 void web_server::on_event_connect(AsyncEventSourceClient *client)
 {
 	if (client->lastId())
 	{
-		log_i("Events client reconnect");
+		ESP_LOGI(WEBSERVER_TAG, "Events client reconnect");
 	}
 	else
 	{
-		log_i("Events client first time");
+		ESP_LOGI(WEBSERVER_TAG, "Events client first time");
 
 		// send all the events
 		for (auto i = 0; i < total_sensors; i++)
@@ -233,18 +236,18 @@ void web_server::on_logging_connect(AsyncEventSourceClient *client)
 {
 	if (client->lastId())
 	{
-		log_i("Logging client reconnect");
+		ESP_LOGI(WEBSERVER_TAG, "Logging client reconnect");
 	}
 	else
 	{
-		log_i("Logging client first time");
+		ESP_LOGI(WEBSERVER_TAG, "Logging client first time");
 	}
 	send_log_data("Start");
 }
 
 void web_server::wifi_get(AsyncWebServerRequest *request)
 {
-	log_i("/api/wifi/get");
+	ESP_LOGI(WEBSERVER_TAG, "/api/wifi/get");
 	if (!manage_security(request))
 	{
 		return;
@@ -264,7 +267,7 @@ void web_server::wifi_update(AsyncWebServerRequest *request)
 	const auto SsidParameter = ("ssid");
 	const auto PasswordParameter = ("wifipassword");
 
-	log_i("Wifi Update");
+	ESP_LOGI(WEBSERVER_TAG, "Wifi Update");
 
 	if (!manage_security(request))
 	{
@@ -293,7 +296,7 @@ void web_server::add_key_value_object(Array &array, const K &key, const T &value
 
 void web_server::information_get(AsyncWebServerRequest *request)
 {
-	log_d("/api/information/get");
+	ESP_LOGD(WEBSERVER_TAG, "/api/information/get");
 	if (!manage_security(request))
 	{
 		return;
@@ -315,13 +318,13 @@ void web_server::information_get(AsyncWebServerRequest *request)
 
 void web_server::config_get(AsyncWebServerRequest *request)
 {
-	log_w("/api/information/get");
+	ESP_LOGI(WEBSERVER_TAG, "/api/information/get");
 	if (!manage_security(request))
 	{
 		return;
 	}
 	const auto json = config::instance.get_all_config_as_json();
-	request->send(200, (JsonMediaType), json);
+	request->send(200, JsonMediaType, json);
 }
 
 template <class V, class T>
@@ -335,7 +338,7 @@ void web_server::add_to_json_doc(V &doc, T id, float value)
 
 void web_server::sensor_get(AsyncWebServerRequest *request)
 {
-	log_d("/api/sensor/get");
+	ESP_LOGI(WEBSERVER_TAG, "/api/sensor/get");
 	if (!manage_security(request))
 	{
 		return;
@@ -349,11 +352,11 @@ void web_server::sensor_get(AsyncWebServerRequest *request)
 // Check if header is present and correct
 bool web_server::is_authenticated(AsyncWebServerRequest *request)
 {
-	log_v("Checking if authenticated");
+	ESP_LOGV(WEBSERVER_TAG, "Checking if authenticated");
 	if (request->hasHeader((CookieHeader)))
 	{
 		const String cookie = request->header((CookieHeader));
-		log_v("Found cookie:%s", cookie.c_str());
+		ESP_LOGV(WEBSERVER_TAG, "Found cookie:%s", cookie.c_str());
 
 		const String token = create_hash(config::instance.data.get_web_user_name(),
 										 config::instance.data.get_web_password(),
@@ -361,11 +364,11 @@ bool web_server::is_authenticated(AsyncWebServerRequest *request)
 
 		if (cookie.indexOf(String(AuthCookieName) + token) != -1)
 		{
-			log_v("Authentication Successful");
+			ESP_LOGV(WEBSERVER_TAG, "Authentication Successful");
 			return true;
 		}
 	}
-	log_d("Authentication Failed");
+	ESP_LOGD(WEBSERVER_TAG, "Authentication Failed");
 	return false;
 }
 
@@ -374,12 +377,12 @@ void web_server::handle_login(AsyncWebServerRequest *request)
 	const auto UserNameParameter = ("username");
 	const auto PasswordParameter = ("password");
 
-	log_i("Handle login");
+	ESP_LOGI(WEBSERVER_TAG, "Handle login");
 	String msg;
 	if (request->hasHeader((CookieHeader)))
 	{
 		// Print cookies
-		log_v("Found cookie: %s", request->header((CookieHeader)).c_str());
+		ESP_LOGV(WEBSERVER_TAG, "Found cookie: %s", request->header((CookieHeader)).c_str());
 	}
 
 	if (request->hasArg(UserNameParameter) && request->hasArg(PasswordParameter))
@@ -389,23 +392,23 @@ void web_server::handle_login(AsyncWebServerRequest *request)
 		if (request->arg(UserNameParameter).equalsIgnoreCase(user) &&
 			request->arg(PasswordParameter).equalsConstantTime(password))
 		{
-			log_w("User/Password correct");
+			ESP_LOGW(WEBSERVER_TAG, "User/Password correct");
 			auto response = request->beginResponse(301); // Sends 301 redirect
 
 			response->addHeader(("Location"), ("/"));
 			response->addHeader((CacheControlHeader), ("no-cache"));
 
 			const String token = create_hash(user, password, request->client()->remoteIP().toString());
-			log_d("Token:%s", token.c_str());
+			ESP_LOGD(WEBSERVER_TAG, "Token:%s", token.c_str());
 			response->addHeader(("Set-Cookie"), String(AuthCookieName) + token);
 
 			request->send(response);
-			log_i("Log in Successful");
+			ESP_LOGI(WEBSERVER_TAG, "Log in Successful");
 			return;
 		}
 
 		msg = ("Wrong username/password! Try again.");
-		log_w("Log in Failed");
+		ESP_LOGW(WEBSERVER_TAG, "Log in Failed");
 		auto response = request->beginResponse(301); // Sends 301 redirect
 
 		response->addHeader(("Location"), String(("/login.html?msg=")) + msg);
@@ -424,7 +427,7 @@ void web_server::handle_login(AsyncWebServerRequest *request)
  */
 void web_server::handle_logout(AsyncWebServerRequest *request)
 {
-	log_i("Disconnection");
+	ESP_LOGI(WEBSERVER_TAG, "Disconnection");
 	AsyncWebServerResponse *response = request->beginResponse(301); // Sends 301 redirect
 	response->addHeader("Location", "/login.html?msg=User disconnected");
 	response->addHeader("CacheControlHeader", "no-cache");
@@ -438,7 +441,7 @@ void web_server::web_login_update(AsyncWebServerRequest *request)
 	const auto webUserName = "webUserName";
 	const auto webPassword = "webPassword";
 
-	log_i("web login Update");
+	ESP_LOGI(WEBSERVER_TAG, "web login Update");
 
 	if (!manage_security(request))
 	{
@@ -447,7 +450,7 @@ void web_server::web_login_update(AsyncWebServerRequest *request)
 
 	if (request->hasArg(webUserName) && request->hasArg("webPassword"))
 	{
-		log_i("Updating web username/password");
+		ESP_LOGI(WEBSERVER_TAG, "Updating web username/password");
 		config::instance.data.set_web_password(request->arg(webUserName));
 		config::instance.data.set_wifi_password(request->arg(webPassword));
 	}
@@ -469,7 +472,7 @@ void web_server::other_settings_update(AsyncWebServerRequest *request)
 	const auto autoScreenBrightness = "autoScreenBrightness";
 	const auto screenBrightness = "screenBrightness";
 
-	log_i("config Update");
+	ESP_LOGI(WEBSERVER_TAG, "config Update", request->args());
 
 	if (!manage_security(request))
 	{
@@ -511,7 +514,7 @@ void web_server::other_settings_update(AsyncWebServerRequest *request)
 
 void web_server::restart_device(AsyncWebServerRequest *request)
 {
-	log_i("restart");
+	ESP_LOGI(WEBSERVER_TAG, "restart");
 
 	if (!manage_security(request))
 	{
@@ -524,7 +527,7 @@ void web_server::restart_device(AsyncWebServerRequest *request)
 
 void web_server::factory_reset(AsyncWebServerRequest *request)
 {
-	log_i("factoryReset");
+	ESP_LOGI(WEBSERVER_TAG, "factoryReset");
 
 	if (!manage_security(request))
 	{
@@ -537,7 +540,7 @@ void web_server::factory_reset(AsyncWebServerRequest *request)
 
 void web_server::reboot_on_upload_complete(AsyncWebServerRequest *request)
 {
-	log_i("reboot");
+	ESP_LOGI(WEBSERVER_TAG, "reboot");
 
 	if (!manage_security(request))
 	{
@@ -551,11 +554,11 @@ void web_server::reboot_on_upload_complete(AsyncWebServerRequest *request)
 void web_server::handle_file_read(AsyncWebServerRequest *request)
 {
 	auto path = request->url();
-	log_d("handleFileRead: %s", path.c_str());
+	ESP_LOGD(WEBSERVER_TAG, "handleFileRead: %s", path.c_str());
 
 	if (path.endsWith(("/")) || path.isEmpty())
 	{
-		log_d("Redirecting to index page");
+		ESP_LOGD(WEBSERVER_TAG, "Redirecting to index page");
 		path = (IndexUrl);
 	}
 
@@ -567,7 +570,7 @@ void web_server::handle_file_read(AsyncWebServerRequest *request)
 
 	if (!worksWithoutAuth && !is_authenticated(request))
 	{
-		log_d("Redirecting to login page");
+		ESP_LOGD(WEBSERVER_TAG, "Redirecting to login page");
 		path = String(LoginUrl);
 	}
 
@@ -583,7 +586,7 @@ void web_server::handle_file_read(AsyncWebServerRequest *request)
 			switch (static_file.type)
 			{
 			case static_file_type::array_zipped:
-				response = request->beginResponse_P(200,
+				response = request->beginResponse(200,
 													mediaType,
 													reinterpret_cast<const uint8_t *>(static_file.data),
 													static_file.size);
@@ -604,12 +607,12 @@ void web_server::handle_file_read(AsyncWebServerRequest *request)
 				}
 
 				request->send(response);
-				log_d("Served path:%s mimeType: %s", path.c_str(), mediaType.c_str());
+				ESP_LOGD(WEBSERVER_TAG, "Served path:%s mimeType: %s", path.c_str(), mediaType.c_str());
 				return;
 			}
 			else
 			{
-				log_w("File not found path:%s mimeType: %s", path.c_str(), mediaType.c_str());
+				ESP_LOGW(WEBSERVER_TAG, "File not found path:%s mimeType: %s", path.c_str(), mediaType.c_str());
 			}
 		}
 	}
@@ -623,7 +626,7 @@ bool web_server::is_captive_portal_request(AsyncWebServerRequest *request)
 {
 	if (!is_ip(request->host()))
 	{
-		log_i("Request redirected to captive portal");
+		ESP_LOGI(WEBSERVER_TAG, "Request redirected to captive portal");
 		AsyncWebServerResponse *response = request->beginResponse(302, String(TextPlainMediaType), String());
 		response->addHeader(("Location"), String("http://") + to_string_ip(request->client()->localIP()));
 		request->send(response);
@@ -690,7 +693,7 @@ void web_server::firmware_update_upload(AsyncWebServerRequest *request,
 										size_t len,
 										bool final)
 {
-	log_d("firmwareUpdateUpload");
+	ESP_LOGD(WEBSERVER_TAG, "firmwareUpdateUpload");
 
 	if (!manage_security(request))
 	{
@@ -707,7 +710,7 @@ void web_server::firmware_update_upload(AsyncWebServerRequest *request,
 			md5 = request->getHeader(MD5Header)->value();
 		}
 
-		log_i("Expected MD5:%s", md5.c_str());
+		ESP_LOGI(WEBSERVER_TAG, "Expected MD5:%s", md5.c_str());
 
 		if (md5.length() != 32)
 		{
@@ -751,7 +754,7 @@ void web_server::restore_configuration_upload(AsyncWebServerRequest *request,
 											  size_t len,
 											  bool final)
 {
-	log_i("restoreConfigurationUpload");
+	ESP_LOGI(WEBSERVER_TAG, "restoreConfigurationUpload");
 
 	if (!manage_security(request))
 	{
@@ -777,7 +780,7 @@ void web_server::restore_configuration_upload(AsyncWebServerRequest *request,
 			md5 = request->getHeader((MD5Header))->value();
 		}
 
-		log_d("Expected MD5:%s", md5.c_str());
+		ESP_LOGD(WEBSERVER_TAG, "Expected MD5:%s", md5.c_str());
 
 		if (md5.length() != 32)
 		{
@@ -797,7 +800,7 @@ void web_server::handle_error(AsyncWebServerRequest *request, const String &mess
 {
 	if (!message.isEmpty())
 	{
-		log_e("%s", message.c_str());
+		ESP_LOGE(WEBSERVER_TAG, "%s", message.c_str());
 	}
 	AsyncWebServerResponse *response = request->beginResponse(code, TextPlainMediaType, message);
 	response->addHeader((CacheControlHeader), ("no-cache, no-store, must-revalidate"));
@@ -837,7 +840,7 @@ void web_server::handle_dir_list(AsyncWebServerRequest *request)
 {
 	const auto dir_param = "dir";
 
-	log_d("/fs/list");
+	ESP_LOGI(WEBSERVER_TAG, "/fs/list");
 	if (!manage_security(request))
 	{
 		return;
@@ -896,7 +899,7 @@ void web_server::handle_fs_download(AsyncWebServerRequest *request)
 {
 	const auto path_param = "path";
 
-	log_d("/fs/download");
+	ESP_LOGI(WEBSERVER_TAG, "/fs/download");
 	if (!manage_security(request))
 	{
 		return;
@@ -936,7 +939,7 @@ void web_server::handle_fs_delete(AsyncWebServerRequest *request)
 {
 	const auto path_param = "deleteFilePath";
 
-	log_d("/fs/delete");
+	ESP_LOGI(WEBSERVER_TAG, "/fs/delete");
 	if (!manage_security(request))
 	{
 		return;
@@ -950,7 +953,7 @@ void web_server::handle_fs_delete(AsyncWebServerRequest *request)
 
 	const auto path = request->arg(path_param);
 
-	log_i("Deleting %s", path.c_str());
+	ESP_LOGI(WEBSERVER_TAG, "Deleting %s", path.c_str());
 
 	auto file = SD.open(path);
 	if (!file)
@@ -977,7 +980,7 @@ void web_server::handle_dir_create(AsyncWebServerRequest *request)
 {
 	const auto path_param = "dir";
 
-	log_d("/fs/mkdir");
+	ESP_LOGI(WEBSERVER_TAG, "/fs/mkdir");
 	if (!manage_security(request))
 	{
 		return;
@@ -991,7 +994,7 @@ void web_server::handle_dir_create(AsyncWebServerRequest *request)
 
 	const auto path = request->arg(path_param);
 
-	log_i("mkdir %s", path.c_str());
+	ESP_LOGI(WEBSERVER_TAG, "mkdir %s", path.c_str());
 	if (!SD.mkdir(path))
 	{
 		handle_error(request, "Failed to create " + path, 500);
@@ -1006,7 +1009,7 @@ void web_server::handle_fs_rename(AsyncWebServerRequest *request)
 	const auto path_original_path = "oldPath";
 	const auto path_dest_path = "newPath";
 
-	log_d("/fs/rename");
+	ESP_LOGI(WEBSERVER_TAG, "/fs/rename");
 	if (!manage_security(request))
 	{
 		return;
@@ -1021,7 +1024,7 @@ void web_server::handle_fs_rename(AsyncWebServerRequest *request)
 	const auto original_path = request->arg(path_original_path);
 	const auto new_path = request->arg(path_dest_path);
 
-	log_i("Renaming %s to %s", original_path.c_str(), new_path.c_str());
+	ESP_LOGI(WEBSERVER_TAG, "Renaming %s to %s", original_path.c_str(), new_path.c_str());
 	if (!SD.rename(original_path, new_path))
 	{
 		handle_error(request, "Failed to rename to " + new_path, 500);
@@ -1038,7 +1041,7 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 									size_t len,
 									bool final)
 {
-	log_i("/fs/upload");
+	ESP_LOGI(WEBSERVER_TAG, "/fs/upload");
 
 	if (!manage_security(request))
 	{
@@ -1054,7 +1057,7 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 			const auto dir = request->getHeader(uploadDirHeader)->value();
 			const auto full_path = join_path(dir, filename + ".tmp");
 
-			log_i("Creating File: %s", full_path.c_str());
+			ESP_LOGI(WEBSERVER_TAG, "Creating File: %s", full_path.c_str());
 			request->_tempFile = SD.open(full_path, "w+", true);
 			if (!request->_tempFile)
 			{
@@ -1097,7 +1100,7 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 			md5 = request->getHeader(MD5Header)->value();
 		}
 
-		log_d("Expected MD5:%s", md5.c_str());
+		ESP_LOGD(WEBSERVER_TAG, "Expected MD5:%s", md5.c_str());
 
 		if (md5.length() != 32)
 		{
@@ -1129,7 +1132,7 @@ void web_server::handle_file_upload(AsyncWebServerRequest *request,
 			return;
 		}
 
-		log_i("File Uploaded: %s", full_path.c_str());
+		ESP_LOGI(WEBSERVER_TAG, "File Uploaded: %s", full_path.c_str());
 	}
 }
 
@@ -1148,7 +1151,7 @@ String web_server::get_file_md5(const String &path)
 
 void web_server::handle_file_upload_complete(AsyncWebServerRequest *request)
 {
-	log_i("file upload complete");
+	ESP_LOGI(WEBSERVER_TAG, "file upload complete");
 	if (!manage_security(request))
 	{
 		return;
@@ -1199,4 +1202,16 @@ void web_server::send_log_data(const String &c)
 	{
 		logging.send(c.c_str(), "logs", millis());
 	}
+}
+
+void web_server::on_get_log_info(AsyncWebServerRequest *request)
+{
+	ESP_LOGI(WEBSERVER_TAG, "/api/log/info");
+
+	BasicJsonDocument<esp32::psram::json_allocator> json_document(128);
+	json_document["logLevel"] = logger::instance.get_general_logging_level();
+
+	String json;
+	serializeJson(json_document, json);
+	request->send(200, JsonMediaType, json);
 }

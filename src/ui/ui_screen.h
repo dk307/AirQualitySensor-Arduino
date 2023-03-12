@@ -5,6 +5,8 @@
 #include "ui_interface.h"
 #include "ui_inter_screen_interface.h"
 
+#include "logging/logging_tags.h"
+
 struct ui_common_fonts
 {
     // fonts loaded from sd card - bpp4

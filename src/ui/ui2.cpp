@@ -10,14 +10,14 @@
 
 void lv_logger(const char *dsc)
 {
-    log_printf("%s", dsc);
+    ESP_LOGI(UI_TAG, "%s", dsc);
 }
 
 void ui::load_from_sd_card()
 {
     if (lv_fs_is_ready('S'))
     {
-        log_i("lv fs is ready. Loading from SD Card");
+        ESP_LOGI(UI_TAG, "lv fs is ready. Loading from SD Card");
     }
     else
     {
@@ -31,14 +31,13 @@ void ui::load_from_sd_card()
     common_fonts.font_montserrat_medium_units_18 = lv_font_load("S:display/font/montserrat/ui_font_m18unitsmedium.bin");
     common_fonts.font_temp_hum = lv_font_load("S:display/font/temp_hum.bin");
 
-    log_d("Loaded From SD Card");
+    ESP_LOGI(UI_TAG,"Loaded From SD Card");
 }
 
 void ui::no_wifi_img_animation_cb(void *var, int32_t v)
 {
     auto pThis = (ui *)var;
     const auto op = v > 256 ? 512 - v : v;
-    // log_d("%d", op);
     lv_style_set_img_opa(&pThis->no_wifi_image_style, op);
     lv_obj_refresh_style(pThis->no_wifi_image, LV_PART_ANY, LV_STYLE_PROP_ANY);
 }
@@ -58,7 +57,7 @@ void ui::init()
 
     inline_loop(100);
 
-    log_i("Loaded boot screen");
+    ESP_LOGI(UI_TAG, "Loaded boot screen");
 
     boot_screen.set_boot_message("Loading from SD Card");
     inline_loop(50);
@@ -159,7 +158,7 @@ void ui::update_boot_message(const String &message)
 
 void ui::show_top_level_message(const String &message, uint32_t period)
 {
-    log_i("Showing top level message:%s", message.c_str());
+    ESP_LOGI(UI_TAG, "Showing top level message:%s", message.c_str());
     lv_label_set_text(top_message_label, message.c_str());
     lv_obj_clear_flag(top_message_panel, LV_OBJ_FLAG_HIDDEN);
     lv_timer_reset(top_message_timer);
@@ -178,13 +177,13 @@ void ui::wifi_changed()
     {
         if (ui_interface_instance.is_wifi_connected())
         {
-            log_i("Hiding No wifi icon");
+            ESP_LOGI(UI_TAG, "Hiding No wifi icon");
             lv_obj_add_flag(no_wifi_image, LV_OBJ_FLAG_HIDDEN);
             lv_anim_timeline_stop(no_wifi_image_animation_timeline);
         }
         else
         {
-            log_i("Showing No wifi icon");
+            ESP_LOGI(UI_TAG, "Showing No wifi icon");
             lv_obj_clear_flag(no_wifi_image, LV_OBJ_FLAG_HIDDEN);
             lv_anim_timeline_start(no_wifi_image_animation_timeline);
         }

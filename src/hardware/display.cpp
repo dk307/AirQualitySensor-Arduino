@@ -43,13 +43,15 @@ void display::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
 
 bool display::pre_begin()
 {
+    ESP_LOGI(DISPLAY_TAG, "Setting up display");
+
     std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
     lv_init();
     lv_fs_if_fatfs_init();
 
     if (!display_device.init())
     {
-        log_e("Failed to init display");
+        ESP_LOGE(DISPLAY_TAG, "Failed to init display");
     }
     display_device.setRotation(1);
 
@@ -59,19 +61,19 @@ bool display::pre_begin()
     const auto screenWidth = display_device.width();
     const auto screenHeight = display_device.height();
 
-    log_i("Display initialized width:%d height:%d", screenWidth, screenHeight);
+    ESP_LOGI(DISPLAY_TAG, "Display initialized width:%d height:%d", screenWidth, screenHeight);
 
-    log_d("LV initialized");
+    ESP_LOGI(DISPLAY_TAG, "LV initialized");
     const int buffer_size = 80;
 
     const auto display_buffer_size = screenWidth * buffer_size * sizeof(lv_color_t);
-    log_i("Display buffer size:%d", display_buffer_size);
+    ESP_LOGI(DISPLAY_TAG, "Display buffer size:%d", display_buffer_size);
     disp_draw_buf = (lv_color_t *)heap_caps_malloc(display_buffer_size, MALLOC_CAP_DMA);
     disp_draw_buf2 = (lv_color_t *)heap_caps_malloc(display_buffer_size, MALLOC_CAP_DMA);
 
     lv_disp_draw_buf_init(&draw_buf, disp_draw_buf, disp_draw_buf2, screenWidth * buffer_size);
 
-    log_d("LVGL display buffer initialized");
+    ESP_LOGD(DISPLAY_TAG, "LVGL display buffer initialized");
 
     /*** LVGL : Setup & Initialize the display device driver ***/
     lv_disp_drv_init(&disp_drv);
@@ -82,7 +84,7 @@ bool display::pre_begin()
     disp_drv.user_data = &display_device;
     lv_display = lv_disp_drv_register(&disp_drv);
 
-    log_d("LVGL display initialized");
+    ESP_LOGD(DISPLAY_TAG, "LVGL display initialized");
 
     //*** LVGL : Setup & Initialize the input device driver ***F
     lv_indev_drv_init(&indev_drv);
@@ -91,12 +93,12 @@ bool display::pre_begin()
     indev_drv.user_data = &display_device;
     lv_indev_drv_register(&indev_drv);
 
-    log_d("LVGL input device driver initialized");
+    ESP_LOGD(DISPLAY_TAG, "LVGL input device driver initialized");
 
     ui_instance.init();
 
     display_device.setBrightness(128);
-    log_i("Done");
+    ESP_LOGI(DISPLAY_TAG, "Display setup done");
     return true;
 }
 
@@ -118,7 +120,7 @@ void display::begin()
             std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
             ui_instance.wifi_changed(); });
 
-    log_i("Display Ready");
+    ESP_LOGI(DISPLAY_TAG, "Display Ready");
 }
 
 void display::loop()
@@ -136,7 +138,7 @@ void display::update_boot_message(const String &message)
 void display::set_main_screen()
 {
     std::lock_guard<esp32::semaphore> lock(lgvl_mutex);
-    log_i("Switching to main screen");
+    ESP_LOGI(DISPLAY_TAG, "Switching to main screen");
     ui_instance.set_main_screen();
 }
 

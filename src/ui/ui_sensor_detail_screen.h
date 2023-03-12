@@ -80,7 +80,7 @@ public:
 
         lv_obj_add_event_cb(screen, event_callback<ui_sensor_detail_screen, &ui_sensor_detail_screen::screen_callback>, LV_EVENT_ALL, this);
 
-        log_d("Sensor detail init done");
+        ESP_LOGD(UI_TAG, "Sensor detail init done");
     }
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
@@ -89,7 +89,7 @@ public:
         {
             if (get_sensor_id_index() == index)
             {
-                log_i("Updating sensor %s to %d in details screen", get_sensor_name(index), value.value_or(-1));
+                ESP_LOGI(UI_TAG, "Updating sensor %s to %d in details screen", get_sensor_name(index), value.value_or(-1));
                 set_current_values(index, value);
             }
         }
@@ -102,7 +102,7 @@ public:
 
     void show_screen(sensor_id_index index)
     {
-        log_i("Panel pressed for sensor index:%d", index);
+        ESP_LOGI(UI_TAG, "Panel pressed for sensor index:%d", get_sensor_name(index));
         lv_obj_set_user_data(screen, reinterpret_cast<void *>(index));
 
         const auto sensor_definition = get_sensor_definition(index);
@@ -295,7 +295,7 @@ private:
             {
                 const auto data_interval_seconds = (sensor_detail_screen_chart_series_data.size() * 60);
                 const float interval = float(chart_total_x_ticks - 1 - dsc->value) / (chart_total_x_ticks - 1);
-                // log_i("total seconds :%d,  Series length: %d,  %f", data_interval_seconds, sensor_detail_screen_chart_series_data.size(), interval);
+                // ESP_LOGI("total seconds :%d,  Series length: %d,  %f", data_interval_seconds, sensor_detail_screen_chart_series_data.size(), interval);
                 const time_t tick_time = sensor_detail_screen_chart_series_data_time.value() - (data_interval_seconds * interval);
 
                 tm t{};
@@ -340,7 +340,7 @@ private:
         }
         else
         {
-            log_d("No stats for %d", index);
+            ESP_LOGD(UI_TAG, "No stats for %d", index);
             set_default_value_in_panel(panel_and_labels[label_and_unit_label_average_index]);
             set_default_value_in_panel(panel_and_labels[label_and_unit_label_min_index]);
             set_default_value_in_panel(panel_and_labels[label_and_unit_label_max_index]);

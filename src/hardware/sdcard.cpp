@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <SD.h>
 #include <FS.h>
+#include "logging/logging_tags.h"
 
 bool sd_card::pre_begin()
 {
@@ -18,20 +19,20 @@ bool sd_card::mount()
 {
     if (!SD.begin(SD_CS, SPI, 4000000, "/sd", 15, false))
     {
-        log_e("Failed to initialize SD Card");
+        ESP_LOGE(HARDWARE_TAG, "Failed to initialize SD Card");
         return false;
     }
 
     const auto card_type = SD.cardType();
     if (card_type == CARD_NONE)
     {
-        log_e("No SD card");
+        ESP_LOGE(HARDWARE_TAG, "No SD card");
         return false;
     }
     else
     {
-        log_i("SD card type :%d", card_type);
-        log_i("SD Card Size: %llu MB", SD.cardSize() / (1024 * 1024));
+        ESP_LOGI(HARDWARE_TAG, "SD card type :%d", card_type);
+        ESP_LOGI(HARDWARE_TAG, "SD Card Size: %llu MB", SD.cardSize() / (1024 * 1024));
     }
 
     return true;

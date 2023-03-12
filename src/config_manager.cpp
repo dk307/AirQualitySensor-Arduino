@@ -1,4 +1,5 @@
 #include "config_manager.h"
+#include "logging/logging_tags.h"
 
 #include <Arduino.h>
 #include <psram_allocator.h>
@@ -61,7 +62,7 @@ bool config::pre_begin()
 
     if (config_data.isEmpty())
     {
-        log_w("No stored config found");
+        ESP_LOGW(CONFIG_TAG, "No stored config found");
         reset();
         return false;
     }
@@ -79,7 +80,7 @@ bool config::pre_begin()
 
     if (!checksum.equalsIgnoreCase(read_checksum))
     {
-        log_e("Config data checksum mismatch");
+        ESP_LOGE(CONFIG_TAG, "Config data checksum mismatch");
         reset();
         return false;
     }
@@ -96,38 +97,37 @@ bool config::pre_begin()
     const auto screen_brightness = json_document[ScreenBrightnessId];
     data.set_manual_screen_brightness(!screen_brightness.isNull() ? std::optional<uint8_t>(screen_brightness.as<uint8_t>()) : std::nullopt);
 
+    ESP_LOGI(CONFIG_TAG, "Loaded Config from file");
 
-    log_i("Loaded Config from file");
-
-    log_i("Hostname:%s", data.get_host_name().c_str());
-    log_i("Web user name:%s", data.get_web_user_name().c_str());
-    log_i("Web user password:%s", data.get_web_password().c_str());
-    log_i("Wifi ssid:%s", data.get_wifi_ssid().c_str());
-    log_i("Wifi ssid password:%s", data.get_wifi_password().c_str());
-    log_i("Manual screen brightness:%d", data.get_manual_screen_brightness().value_or(0));
-    log_i("Ntp Server:%s", data.get_ntp_server().c_str());
-    log_i("Ntp Server Refresh Interval:%d ms", data.get_ntp_server_refresh_interval());
-    log_i("Time zone:%d", data.get_timezone());
+    ESP_LOGI(CONFIG_TAG, "Hostname:%s", data.get_host_name().c_str());
+    ESP_LOGI(CONFIG_TAG, "Web user name:%s", data.get_web_user_name().c_str());
+    ESP_LOGI(CONFIG_TAG, "Web user password:%s", data.get_web_password().c_str());
+    ESP_LOGI(CONFIG_TAG, "Wifi ssid:%s", data.get_wifi_ssid().c_str());
+    ESP_LOGI(CONFIG_TAG, "Wifi ssid password:%s", data.get_wifi_password().c_str());
+    ESP_LOGI(CONFIG_TAG, "Manual screen brightness:%d", data.get_manual_screen_brightness().value_or(0));
+    ESP_LOGI(CONFIG_TAG, "Ntp Server:%s", data.get_ntp_server().c_str());
+    ESP_LOGI(CONFIG_TAG, "Ntp Server Refresh Interval:%d ms", data.get_ntp_server_refresh_interval());
+    ESP_LOGI(CONFIG_TAG, "Time zone:%d", data.get_timezone());
 
     return true;
 }
 
 void config::reset()
 {
-    log_i("config reset is requested");
+    ESP_LOGI(CONFIG_TAG, "config reset is requested");
     data.setDefaults();
     request_save.store(true);
 }
 
 void config::save()
 {
-    log_d("config save is requested");
+    ESP_LOGD(CONFIG_TAG, "config save is requested");
     request_save.store(true);
 }
 
 void config::save_config()
 {
-    log_i("Saving configuration");
+    ESP_LOGI(CONFIG_TAG, "Saving configuration");
 
     BasicJsonDocument<esp32::psram::json_allocator> json_document(2048);
 
@@ -159,15 +159,15 @@ void config::save_config()
         const auto checksum = md5_hash(json);
         if (write_to_file((ConfigChecksumFilePath), checksum.c_str(), checksum.length()) != checksum.length())
         {
-            log_e("Failed to write config checksum file");
+            ESP_LOGE(CONFIG_TAG, "Failed to write config checksum file");
         }
     }
     else
     {
-        log_e("Failed to write config file");
+        ESP_LOGE(CONFIG_TAG, "Failed to write config file");
     }
 
-    log_i("Saving Configuration done");
+    ESP_LOGI(CONFIG_TAG, "Saving Configuration done");
     call_change_listeners();
 }
 
@@ -210,7 +210,7 @@ bool config::restore_all_config_as_json(const std::vector<uint8_t> &json, const 
     const auto expected_md5 = md5_hash(const_cast<uint8_t *>(json.data()), json.size());
     if (!expected_md5.equalsIgnoreCase(hashMd5))
     {
-        log_e("Uploaded Md5 for config does not match. File md5:%s", expected_md5.c_str());
+        ESP_LOGE(CONFIG_TAG, "Uploaded Md5 for config does not match. File md5:%s", expected_md5.c_str());
         return false;
     }
 
@@ -234,7 +234,7 @@ bool config::deserialize_to_json(const T &data, JDoc &jsonDocument)
     // Test if parsing succeeds.
     if (error)
     {
-        log_e("deserializeJson for config failed: %s", error.f_str());
+        ESP_LOGE(CONFIG_TAG, "deserializeJson for config failed: %s", error.f_str());
         return false;
     }
     return true;

@@ -1,4 +1,5 @@
 #include "logging.h"
+#include "logging_tags.h"
 
 #include <vector>
 #include <SD.h>
@@ -13,14 +14,14 @@ public:
     {
         logger::instance.serial_hook_instance = this;
         ets_install_putc2(serial_hook);
-        log_i("Hooked Logging");
+        ESP_LOGI(LOGGING_TAG, "Hooked Logging");
     }
 
     ~SerialHook()
     {
         ets_install_putc2(NULL);
         logger::instance.serial_hook_instance = nullptr;
-        log_i("Removed Logging Hook");
+        ESP_LOGI(LOGGING_TAG, "Removed Logging Hook");
     }
 
     void add_sink(serial_hook_sink *sink)
@@ -75,7 +76,7 @@ bool logger::enable_sd_logging()
 {
     std::lock_guard<esp32::semaphore> lock(serial_hook_mutex);
 
-    log_i("Enabling sd card logging");
+    ESP_LOGI(LOGGING_TAG, "Enabling sd card logging");
 
     // ensure logs dir
     const auto logDir = "/logs";
@@ -106,7 +107,7 @@ bool logger::enable_web_logging(const std::function<void(const String &)> &callb
 {
     std::lock_guard<esp32::semaphore> lock(serial_hook_mutex);
 
-    log_i("Enabling web callback card logging");
+    ESP_LOGI(LOGGING_TAG, "Enabling web callback card logging");
     hook_uart_logger();
 
     if (web_callback_sink_instance)
@@ -145,13 +146,13 @@ void logger::remove_sink(std::unique_ptr<T> &p)
 void logger::disable_sd_logging()
 {
     remove_sink(sd_card_sink_instance);
-    log_i("Disabled sd card logging");
+    ESP_LOGI(LOGGING_TAG, "Disabled sd card logging");
 }
 
 void logger::disable_web_logging()
 {
     remove_sink(web_callback_sink_instance);
-    log_i("Disabled web callback card logging");
+    ESP_LOGI(LOGGING_TAG, "Disabled web callback card logging");
 }
 
 void logger::hook_uart_logger()
@@ -160,4 +161,10 @@ void logger::hook_uart_logger()
     {
         serial_hook_instance = new SerialHook();
     }
+}
+
+void logger::set_logging_level(const char *tag, esp_log_level_t level)
+{
+    ESP_LOGI(LOGGING_TAG, "Setting log level for %s to %d", tag, level);
+    esp_log_level_set(tag, level);
 }

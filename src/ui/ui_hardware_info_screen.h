@@ -86,7 +86,7 @@ private:
 
     void close_win_confirm(lv_event_t *e)
     {
-        log_i("No clicked");
+        ESP_LOGI(UI_TAG, "No clicked");
         lv_obj_add_flag(win_status, LV_OBJ_FLAG_HIDDEN);
     }
 

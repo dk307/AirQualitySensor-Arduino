@@ -53,6 +53,9 @@ void setup(void)
 	hardware::instance.set_main_screen();
 
 	log_i("Done on core:%d", xPortGetCoreID());
+
+	// turn off logging by default
+	logger::instance.set_general_logging_level(ESP_LOG_NONE);
 }
 
 void loop(void)

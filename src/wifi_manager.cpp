@@ -1,6 +1,7 @@
 #include "wifi_manager.h"
 #include "config_manager.h"
 #include "operations.h"
+#include "logging/logging_tags.h"
 
 #include <WiFi.h>
 #include <StreamString.h>
@@ -11,6 +12,8 @@ wifi_manager wifi_manager::instance;
 
 void wifi_manager::begin()
 {
+    ESP_LOGI(WIFI_TAG, "Start");
+
     WiFi.persistent(false);
     WiFi.onEvent(std::bind(&wifi_manager::wifi_event, this, std::placeholders::_1, std::placeholders::_2));
     // WiFi.setAutoReconnect(false);
@@ -30,7 +33,7 @@ void wifi_manager::wifi_start()
 
 void wifi_manager::set_new_wifi(const String &newSSID, const String &newPass)
 {
-    log_i("Trying up setup new wifi:%s pwd:%s", newSSID.c_str(), newPass.c_str());
+    ESP_LOGI(WIFI_TAG, "Trying up setup new wifi:%s pwd:%s", newSSID.c_str(), newPass.c_str());
     new_ssid = newSSID;
     new_password = newPass;
     connect_new_ssid = true;
@@ -50,14 +53,14 @@ bool wifi_manager::connect_wifi(const String &ssid, const String &password)
     const auto rfc_name = get_rfc_name();
     WiFi.setHostname(rfc_name.c_str());
 
-    log_i("wifi connection:%s pwd:%s", ssid.c_str(), password.c_str());
+    ESP_LOGI(WIFI_TAG, "wifi connection:%s pwd:%s", ssid.c_str(), password.c_str());
     WiFi.begin(ssid.c_str(), password.c_str());
 
     constexpr unsigned long timeout = 30000;
     if (WiFi.waitForConnectResult(timeout) == WL_CONNECTED)
     {
         // connected
-        log_i("Connected to WiFi %s with IP: %s", ssid.c_str(), WiFi.localIP().toString().c_str());
+        ESP_LOGI(WIFI_TAG, "Connected to WiFi %s with IP: %s", ssid.c_str(), WiFi.localIP().toString().c_str());
         return true;
     }
 
@@ -77,7 +80,7 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
         const bool connected = connect_wifi(newSSID, newPass);
         if (!connected)
         {
-            log_e("New connection unsuccessful for %s", newSSID.c_str());
+            ESP_LOGE(WIFI_TAG, "New connection unsuccessful for %s", newSSID.c_str());
             if (!in_captive_portal)
             {
                 const bool connect_old = connect_wifi(oldSSID, oldPSK);
@@ -93,7 +96,7 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
         }
         else
         {
-            log_i("Connected to new WiFi details with IP: %s", WiFi.localIP().toString().c_str());
+            ESP_LOGI(WIFI_TAG, "Connected to new WiFi details with IP: %s", WiFi.localIP().toString().c_str());
 
             config::instance.data.set_wifi_ssid(newSSID);
             config::instance.data.set_wifi_password(newPass);
@@ -106,7 +109,7 @@ void wifi_manager::set_wifi(const String &newSSID, const String &newPass)
 void wifi_manager::start_captive_portal()
 {
     const auto rfc_name = get_rfc_name();
-    log_i("Opening a captive portal with AP :%s", rfc_name.c_str());
+    ESP_LOGI(WIFI_TAG, "Opening a captive portal with AP :%s", rfc_name.c_str());
 
     const auto mode = WiFi.getMode();
 
@@ -118,7 +121,7 @@ void wifi_manager::start_captive_portal()
 
     /* Setup the DNS server redirecting all the domains to the apIP */
     dns_server->setErrorReplyCode(DNSReplyCode::NoError);
-    dns_server->start(53, F("*"), WiFi.softAPIP());
+    dns_server->start(53, ("*"), WiFi.softAPIP());
 
     captive_portal_start = millis();
     in_captive_portal = true;
@@ -129,7 +132,7 @@ void wifi_manager::stop_captive_portal_if_running()
 {
     if (in_captive_portal)
     {
-        log_i("Stopping captive portal");
+        ESP_LOGI(WIFI_TAG, "Stopping captive portal");
         dns_server.reset();
 
         WiFi.softAPdisconnect(true);
@@ -177,7 +180,7 @@ void wifi_manager::loop()
         // only wait for 5 min in portal and then reboot
         if ((now - captive_portal_start) > max_captive_portal_time)
         {
-            log_i("Captive portal timeout. Restarting");
+            ESP_LOGI(WIFI_TAG, "Captive portal timeout. Restarting");
             operations::instance.reboot();
             return;
         }
@@ -203,14 +206,14 @@ void wifi_manager::loop()
             {
                 if (reconnect_retries <= max_connection_retries)
                 {
-                    log_w("Disconnected from wifi, connection retry no:%d", reconnect_retries);
+                    ESP_LOGW(WIFI_TAG, "Disconnected from wifi, connection retry no:%d", reconnect_retries);
                     if (!connect_saved_wifi())
                     {
-                        log_w("Connection to saved wifi failed for retry no:%d", reconnect_retries);
+                        ESP_LOGW(WIFI_TAG, "Connection to saved wifi failed for retry no:%d", reconnect_retries);
                     }
                     else
                     {
-                        log_i("Connection to saved wifi succeeded for retry no:%d", reconnect_retries);
+                        ESP_LOGI(WIFI_TAG, "Connection to saved wifi succeeded for retry no:%d", reconnect_retries);
                     }
                     reconnect_retries++;
                     reconnect_last_retry = millis(); // get the time again to account for time taken to connect to wifi
@@ -225,7 +228,7 @@ void wifi_manager::loop()
                 // valid connection for connection_retry_interval
                 if ((now - reconnect_last_retry >= connection_retry_interval) && reconnect_retries)
                 {
-                    log_i("Wifi connection is stable now");
+                    ESP_LOGI(WIFI_TAG, "Wifi connection is stable now");
                     reconnect_retries = 0;
                 }
             }
@@ -286,15 +289,24 @@ void wifi_manager::wifi_event(arduino_event_id_t event, arduino_event_info_t inf
     {
     case ARDUINO_EVENT_WIFI_AP_START:
     case ARDUINO_EVENT_WIFI_AP_STOP:
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+
     case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
         call_change_listeners();
         break;
 
+    case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+        ESP_LOGI(WIFI_EVENT_TAG, "WiFi Got IP :%s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+        call_change_listeners();
+        break;
+
     case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+        ESP_LOGI(WIFI_EVENT_TAG, "WiFi STA disconnected with reason:%d", info.wifi_sta_disconnected.reason);
+        check_connection = true;
+        call_change_listeners();
+        break;
     case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
-        log_d("WiFi STA disconnected");
+        ESP_LOGI(WIFI_EVENT_TAG, "WiFi STA disconnected");
         check_connection = true;
         call_change_listeners();
         break;
@@ -303,11 +315,11 @@ void wifi_manager::wifi_event(arduino_event_id_t event, arduino_event_info_t inf
 
 bool wifi_manager::is_wifi_connected()
 {
-    log_d("Captive Portal:%d", in_captive_portal);
-    log_d("Mode:%d", WiFi.getMode());
-    log_d("SSID:%s", WiFi.SSID().c_str());
-    log_d("Status:%d", WiFi.status());
-    log_d("IP:%s", WiFi.localIP().toString().c_str());
+    ESP_LOGV(WIFI_TAG, "Captive Portal:%d", in_captive_portal);
+    ESP_LOGV(WIFI_TAG, "Mode:%d", WiFi.getMode());
+    ESP_LOGV(WIFI_TAG, "SSID:%s", WiFi.SSID().c_str());
+    ESP_LOGV(WIFI_TAG, "Status:%d", WiFi.status());
+    ESP_LOGV(WIFI_TAG, "IP:%s", WiFi.localIP().toString().c_str());
 
     if (!in_captive_portal)
     {

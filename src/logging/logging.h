@@ -12,8 +12,20 @@ class logger
 public:
     bool enable_sd_logging();
     void disable_sd_logging();
-    bool enable_web_logging(const std::function<void(const String& c)> &callbackP);
+    bool enable_web_logging(const std::function<void(const String &c)> &callbackP);
     void disable_web_logging();
+
+    auto get_general_logging_level()
+    {
+        return esp_log_level_get("*");
+    }
+
+    void set_logging_level(const char *tag, esp_log_level_t level);
+
+    void set_general_logging_level(esp_log_level_t level)
+    {
+        set_logging_level("*", level);
+    }
 
     static logger instance;
 

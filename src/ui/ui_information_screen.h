@@ -58,6 +58,7 @@ public:
 
     void show_screen()
     {
+        ESP_LOGI(UI_TAG, "Showing information screen");
         lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_NONE, 0, 0, false);
     }
 
@@ -76,13 +77,13 @@ private:
         lv_event_code_t event_code = lv_event_get_code(e);
         if (event_code == LV_EVENT_SCREEN_LOAD_START)
         {
-            log_d("setting screen shown");
+            ESP_LOGD(UI_TAG, "setting screen shown");
             load_information(nullptr);
             refresh_timer = lv_timer_create(timer_callback<ui_information_screen, &ui_information_screen::load_information>, 1000, this);
         }
         else if (event_code == LV_EVENT_SCREEN_UNLOADED)
         {
-            log_d("setting screen hidden");
+            ESP_LOGD(UI_TAG, "setting screen hidden");
             if (refresh_timer)
             {
                 lv_timer_del(refresh_timer);
@@ -96,7 +97,6 @@ private:
         lv_event_code_t event_code = lv_event_get_code(e);
         if (event_code == LV_EVENT_VALUE_CHANGED)
         {
-            log_d("setting tab");
             load_information(nullptr);
             lv_timer_reset(refresh_timer);
         }
@@ -119,8 +119,6 @@ private:
 
     void load_information(lv_timer_t *)
     {
-        log_v("updating info table");
-
         const auto current_tab = lv_tabview_get_tab_act(tab_view);
         if (current_tab == 3)
         {

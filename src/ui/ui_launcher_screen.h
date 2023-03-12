@@ -128,31 +128,31 @@ private:
 
     void show_information(lv_event_t *e)
     {
-        log_i("Showing information clicked");
+        ESP_LOGI(UI_TAG, "Showing information clicked");
         inter_screen_interface.show_setting_screen();
     }
 
     void hardware_info(lv_event_t *e)
     {
-        log_i("Showing Hardware clicked");
+        ESP_LOGI(UI_TAG, "Showing Hardware clicked");
         inter_screen_interface.show_hardware_info_screen();
     }
 
     void restart(lv_event_t *)
     {
-        log_i("Restart clicked");
+        ESP_LOGI(UI_TAG, "Restart clicked");
         show_confirm(confirm_type::restart);
     }
 
     void factory_reset(lv_event_t *)
     {
-        log_i("Factory Reset");
+        ESP_LOGI(UI_TAG, "Factory Reset");
         show_confirm(confirm_type::factory_reset);
     }
 
     void yes_win_confirm(lv_event_t *e)
     {
-        log_i("Yes clicked");
+        ESP_LOGI(UI_TAG, "Yes clicked");
         lv_obj_add_flag(win_confirm, LV_OBJ_FLAG_HIDDEN);
         confirm_type type = (confirm_type)(uintptr_t)lv_obj_get_user_data(win_confirm);
 
@@ -171,7 +171,7 @@ private:
 
     void close_win_confirm(lv_event_t *e)
     {
-        log_i("No clicked");
+        ESP_LOGI(UI_TAG, "No clicked");
         lv_obj_add_flag(win_confirm, LV_OBJ_FLAG_HIDDEN);
     }
 

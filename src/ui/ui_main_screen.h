@@ -30,7 +30,7 @@ public:
             create_humidity_panel(sensor_id_index::humidity, -10, -10);
 
         lv_obj_add_event_cb(screen, event_callback<ui_main_screen, &ui_main_screen::screen_callback>, LV_EVENT_ALL, this);
-        log_d("Main screen init done");
+        ESP_LOGD(UI_TAG, "Main screen init done");
     }
 
     void set_sensor_value(sensor_id_index index, const std::optional<sensor_value::value_type> &value)
@@ -38,13 +38,14 @@ public:
         const auto &pair = panel_and_labels.at(static_cast<size_t>(index));
         if (pair.is_valid())
         {
-            log_i("Updating sensor %s to %d in main screen", get_sensor_name(index), value.value_or(-1));
+            ESP_LOGI(UI_TAG, "Updating sensor %s to %d in main screen", get_sensor_name(index), value.value_or(-1));
             set_value_in_panel(pair, index, value);
         }
     }
 
     void show_screen()
     {
+        ESP_LOGI(UI_TAG, "Showing main screen");
         lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_NONE, 0, 0, false);
     }
 
@@ -96,7 +97,7 @@ private:
 
         lv_obj_set_style_shadow_spread(panel, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_shadow_width(panel, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
-        
+
         lv_obj_set_style_radius(panel, radius, LV_PART_MAIN | LV_STATE_DEFAULT);
         set_padding_zero(panel);
 
@@ -138,7 +139,7 @@ private:
                                           lv_coord_t x_ofs, lv_coord_t y_ofs)
     {
         auto panel = lv_obj_create(screen);
-        lv_obj_set_size(panel, screen_width / 2,  72);
+        lv_obj_set_size(panel, screen_width / 2, 72);
         lv_obj_align(panel, LV_ALIGN_BOTTOM_RIGHT, x_ofs, y_ofs);
         lv_obj_set_style_border_width(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -171,7 +172,7 @@ private:
 
         if (event_code == LV_EVENT_LONG_PRESSED)
         {
-            log_i("Long press detected");
+            ESP_LOGI(UI_TAG, "Long press detected");
             inter_screen_interface.show_launcher_screen();
         }
         else if (event_code == LV_EVENT_SCREEN_LOAD_START)
